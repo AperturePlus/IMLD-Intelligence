@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: imld-intelligence
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/imld_intelligence
+
+mybatis:
+  mapper-locations: classpath:xenosoft/imldintelligence/modules/**/internal/repository/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
