@@ -1,4 +1,7 @@
-package xenosoft.imldintelligence.module.identity.internal.repository;
+package xenosoft.imldintelligence.module.identity.internal.repository.impl;
+
+import xenosoft.imldintelligence.module.identity.internal.repository.RoleRepository;
+import xenosoft.imldintelligence.module.identity.internal.repository.mybatis.RoleMapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;

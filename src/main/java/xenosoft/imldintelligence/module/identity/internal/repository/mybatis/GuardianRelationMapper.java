@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.module.identity.internal.repository;
+package xenosoft.imldintelligence.module.identity.internal.repository.mybatis;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
