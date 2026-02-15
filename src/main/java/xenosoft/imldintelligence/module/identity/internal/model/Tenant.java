@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.modules.identity.internal.model;
+package xenosoft.imldintelligence.module.identity.internal.model;
 
 import lombok.Data;
 
@@ -9,6 +9,7 @@ public class Tenant {
     private Long id;
     private String tenantCode;
     private String tenantName;
+    private String deployMode;   // PRIVATE_HOSPITAL / SAAS
 
     private String status;
     private OffsetDateTime createdAt;

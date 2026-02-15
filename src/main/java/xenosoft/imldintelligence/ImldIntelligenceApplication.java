@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("xenosoft.imldintelligence.modules.**.internal.repository")
+@MapperScan("xenosoft.imldintelligence.module.**.internal.repository")
 public class ImldIntelligenceApplication {
 
     public static void main(String[] args) {

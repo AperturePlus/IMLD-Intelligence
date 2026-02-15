@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.modules.clinical.internal.model;
+package xenosoft.imldintelligence.module.clinical.internal.model;
 
 import lombok.Data;
 

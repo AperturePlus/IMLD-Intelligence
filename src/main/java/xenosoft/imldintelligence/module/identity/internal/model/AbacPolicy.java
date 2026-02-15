@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.modules.identity.internal.model;
+package xenosoft.imldintelligence.module.identity.internal.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;

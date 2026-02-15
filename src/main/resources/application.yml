@@ -3,7 +3,9 @@ spring:
     name: imld-intelligence
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/imld_intelligence
+    url: jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8
+    username: postgres
+    password: L0-postgres
 
 mybatis:
   mapper-locations: classpath:xenosoft/imldintelligence/modules/**/internal/repository/*.xml
