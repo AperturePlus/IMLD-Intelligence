@@ -1,0 +1,31 @@
+imld:
+  deployment:
+    mode: private
+    tenant-mode: single-tenant
+  cloud-bridge:
+    enabled: false
+    network:
+      egress-allowlist: []
+  privacy:
+    data-egress:
+      minimum-necessary-enabled: true
+      deidentification-required: true
+      deny-raw-phi-egress: true
+  licensing:
+    model: private-buyout
+    private-edition:
+      business-model: buyout
+      startup-validation-enabled: true
+      activation-required: true
+      activation-code: ${IMLD_ACTIVATION_CODE:}
+      license-file-path: ${IMLD_LICENSE_FILE_PATH:/opt/imld/license/license.json}
+      public-key-file-path: ${IMLD_LICENSE_PUBLIC_KEY_FILE_PATH:/opt/imld/license/public.pem}
+      machine-binding-enabled: true
+  upgrade:
+    check-enabled: false
+    release-channel: lts
+    delivery-mode: offline-package
+    manifest-file-path: ${IMLD_UPGRADE_MANIFEST_FILE_PATH:}
+    entitlement:
+      enforce-support-window: true
+      allow-security-patch-after-expiry: true

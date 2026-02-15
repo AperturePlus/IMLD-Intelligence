@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8
+    username: postgres
+    password: postgres
+  sql:
+    init:
+      mode: always
+  ai:
+    openai:
+      chat:
+        enabled: false
+  autoconfigure:
+    exclude: org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkChatAutoConfiguration
+
+imld:
+  deployment:
+    mode: saas
+    tenant-mode: multi-tenant
+  cloud-bridge:
+    enabled: false
+  licensing:
+    private-edition:
+      startup-validation-enabled: false
+      machine-binding-enabled: false
+  upgrade:
+    check-enabled: false

@@ -14,4 +14,5 @@ public interface PatientRepository {
     Patient update(Patient patient);
     Boolean deleteById(Long tenantId, Long patientId);
     Boolean deleteByPatientNo(Long tenantId, String patientNo);
+
 }

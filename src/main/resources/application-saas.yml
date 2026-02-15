@@ -1,0 +1,15 @@
+imld:
+  deployment:
+    mode: saas
+    tenant-mode: multi-tenant
+  cloud-bridge:
+    enabled: false
+  licensing:
+    model: saas-subscription
+    private-edition:
+      startup-validation-enabled: false
+  upgrade:
+    check-enabled: true
+    release-channel: stable
+    entitlement:
+      enforce-support-window: false

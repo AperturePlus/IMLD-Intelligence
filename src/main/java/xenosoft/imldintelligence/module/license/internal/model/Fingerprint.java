@@ -1,6 +1,5 @@
 package xenosoft.imldintelligence.module.license.internal.model;
 
-import lombok.Data;
 import lombok.Getter;
 
 import java.net.NetworkInterface;

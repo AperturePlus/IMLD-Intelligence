@@ -9,9 +9,6 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema/domain-A.sql,classpath:schema/domain-B.sql,classpath:schema/domain-C.sql,classpath:schema/domain-D.sql,classpath:schema/index.sql
-  jpa:
-    hibernate:
-      ddl-auto: none
 
 mybatis:
   mapper-locations: classpath:xenosoft/imldintelligence/module/**/internal/repository/*.xml

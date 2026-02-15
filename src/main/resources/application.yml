@@ -1,14 +1,69 @@
 spring:
   application:
     name: imld-intelligence
+  profiles:
+    group:
+      dev-saas: dev,saas
+      dev-private: dev,private
+      dev-hybrid: dev,private,hybrid
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8
-    username: postgres
-    password: L0-postgres
+    driver-class-name: ${IMLD_DB_DRIVER:org.postgresql.Driver}
+    url: ${IMLD_DB_URL:jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8}
+    username: ${IMLD_DB_USERNAME:postgres}
+    password: ${IMLD_DB_PASSWORD:postgres}
+  sql:
+    init:
+      mode: ${IMLD_SQL_INIT_MODE:never}
+      schema-locations: classpath:schema/domain-A.sql,classpath:schema/domain-B.sql,classpath:schema/domain-C.sql,classpath:schema/domain-D.sql,classpath:schema/index.sql
+  ai:
+    openai:
+      chat:
+        enabled: ${IMLD_OPENAI_CHAT_ENABLED:false}
+  autoconfigure:
+    exclude: ${IMLD_AUTOCONFIG_EXCLUDES:org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkChatAutoConfiguration}
 
 mybatis:
   mapper-locations: classpath:xenosoft/imldintelligence/module/**/internal/repository/*.xml
   type-handlers-package: xenosoft.imldintelligence.shared.mybatis
   configuration:
     map-underscore-to-camel-case: true
+
+imld:
+  deployment:
+    mode: ${IMLD_DEPLOYMENT_MODE:saas}
+    tenant-mode: ${IMLD_TENANT_MODE:multi-tenant}
+  cloud-bridge:
+    enabled: ${IMLD_CLOUD_BRIDGE_ENABLED:false}
+    scenario-allowlist:
+      - followup.push
+      - vip.subscription
+    network:
+      egress-allowlist: []
+    security:
+      tls-required: true
+      mtls-required: ${IMLD_MTLS_REQUIRED:true}
+      request-signature-required: ${IMLD_REQUEST_SIGNATURE_REQUIRED:true}
+      replay-protection-enabled: ${IMLD_REPLAY_PROTECTION_ENABLED:true}
+  privacy:
+    data-egress:
+      minimum-necessary-enabled: true
+      deidentification-required: true
+      deny-raw-phi-egress: true
+  licensing:
+    model: ${IMLD_LICENSE_MODEL:saas-subscription}
+    private-edition:
+      business-model: ${IMLD_PRIVATE_BUSINESS_MODEL:buyout}
+      startup-validation-enabled: ${IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED:false}
+      activation-required: ${IMLD_ACTIVATION_REQUIRED:true}
+      activation-code: ${IMLD_ACTIVATION_CODE:}
+      license-file-path: ${IMLD_LICENSE_FILE_PATH:}
+      public-key-file-path: ${IMLD_LICENSE_PUBLIC_KEY_FILE_PATH:}
+      machine-binding-enabled: ${IMLD_MACHINE_BINDING_ENABLED:true}
+  upgrade:
+    check-enabled: ${IMLD_UPGRADE_CHECK_ENABLED:false}
+    release-channel: ${IMLD_UPGRADE_RELEASE_CHANNEL:lts}
+    delivery-mode: ${IMLD_UPGRADE_DELIVERY_MODE:offline-package}
+    manifest-file-path: ${IMLD_UPGRADE_MANIFEST_FILE_PATH:}
+    entitlement:
+      enforce-support-window: ${IMLD_UPGRADE_ENFORCE_SUPPORT_WINDOW:true}
+      allow-security-patch-after-expiry: ${IMLD_UPGRADE_ALLOW_SECURITY_PATCH_AFTER_EXPIRY:true}

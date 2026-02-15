@@ -1,0 +1,25 @@
+imld:
+  deployment:
+    mode: private
+  cloud-bridge:
+    enabled: true
+    scenario-allowlist:
+      - followup.push
+      - vip.subscription
+    network:
+      egress-allowlist:
+        - api.imld-cloud.example.com:443
+    security:
+      tls-required: true
+      mtls-required: true
+      request-signature-required: true
+      replay-protection-enabled: true
+  privacy:
+    data-egress:
+      minimum-necessary-enabled: true
+      deidentification-required: true
+      deny-raw-phi-egress: true
+  integration:
+    transport: event
+    outbound-only-default: true
+    contract-version: v1
