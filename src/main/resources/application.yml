@@ -19,8 +19,12 @@ spring:
     openai:
       chat:
         enabled: ${IMLD_OPENAI_CHAT_ENABLED:false}
+      embedding:
+        enabled: ${IMLD_OPENAI_EMBEDDING_ENABLED:false}
+      image:
+        enabled: ${IMLD_OPENAI_IMAGE_ENABLED:false}
   autoconfigure:
-    exclude: ${IMLD_AUTOCONFIG_EXCLUDES:org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkChatAutoConfiguration}
+    exclude: ${IMLD_AUTOCONFIG_EXCLUDES:org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkChatAutoConfiguration,org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkEmbeddingAutoConfiguration,org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkImageAutoConfiguration}
 
 mybatis:
   mapper-locations: classpath:xenosoft/imldintelligence/module/**/internal/repository/*.xml
