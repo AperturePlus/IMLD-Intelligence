@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="xenosoft.imldintelligence.module.screening.internal.repository.mybatis.TocClinicalTransferMapper">
+
+    <sql id="BaseColumns">
+        id,
+        tenant_id,
+        response_id,
+        patient_id,
+        transfer_status,
+        approved_by,
+        approved_at,
+        transfer_note,
+        created_at
+    </sql>
+
+    <resultMap id="TocClinicalTransferResultMap" type="xenosoft.imldintelligence.module.screening.model.TocClinicalTransfer">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="responseId" column="response_id"/>
+        <result property="patientId" column="patient_id"/>
+        <result property="transferStatus" column="transfer_status"/>
+        <result property="approvedBy" column="approved_by"/>
+        <result property="approvedAt" column="approved_at"/>
+        <result property="transferNote" column="transfer_note"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="TocClinicalTransferResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM toc_clinical_transfer
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </select>
+
+    <select id="listByTenantId" resultMap="TocClinicalTransferResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM toc_clinical_transfer
+        WHERE tenant_id = #{tenantId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="listByResponseId" resultMap="TocClinicalTransferResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM toc_clinical_transfer
+        WHERE tenant_id = #{tenantId}
+          AND response_id = #{responseId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="listByPatientId" resultMap="TocClinicalTransferResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM toc_clinical_transfer
+        WHERE tenant_id = #{tenantId}
+          AND patient_id = #{patientId}
+        ORDER BY id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO toc_clinical_transfer (
+            tenant_id,
+            response_id,
+            patient_id,
+            transfer_status,
+            approved_by,
+            approved_at,
+            transfer_note
+        ) VALUES (
+            #{tenantId},
+            #{responseId},
+            #{patientId},
+            #{transferStatus},
+            #{approvedBy},
+            #{approvedAt},
+            #{transferNote}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE toc_clinical_transfer
+        SET response_id = #{responseId},
+            patient_id = #{patientId},
+            transfer_status = #{transferStatus},
+            approved_by = #{approvedBy},
+            approved_at = #{approvedAt},
+            transfer_note = #{transferNote}
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE
+        FROM toc_clinical_transfer
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </delete>
+
+</mapper>
+

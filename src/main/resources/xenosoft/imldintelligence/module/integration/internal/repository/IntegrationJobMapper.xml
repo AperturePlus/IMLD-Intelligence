@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="xenosoft.imldintelligence.module.integration.internal.repository.mybatis.IntegrationJobMapper">
+
+    <sql id="BaseColumns">
+        id,
+        tenant_id,
+        job_no,
+        source_system,
+        direction,
+        biz_type,
+        request_payload,
+        response_payload,
+        status,
+        error_message,
+        started_at,
+        finished_at,
+        created_at
+    </sql>
+
+    <resultMap id="IntegrationJobResultMap" type="xenosoft.imldintelligence.module.integration.internal.model.IntegrationJob">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="jobNo" column="job_no"/>
+        <result property="sourceSystem" column="source_system"/>
+        <result property="direction" column="direction"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="requestPayload" column="request_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="responsePayload" column="response_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="status" column="status"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="finishedAt" column="finished_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="IntegrationJobResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM integration_job
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </select>
+
+    <select id="findByJobNo" resultMap="IntegrationJobResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM integration_job
+        WHERE tenant_id = #{tenantId}
+          AND job_no = #{jobNo}
+    </select>
+
+    <select id="listByTenantId" resultMap="IntegrationJobResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM integration_job
+        WHERE tenant_id = #{tenantId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="listBySourceSystem" resultMap="IntegrationJobResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM integration_job
+        WHERE tenant_id = #{tenantId}
+          AND source_system = #{sourceSystem}
+        ORDER BY id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO integration_job (
+            tenant_id,
+            job_no,
+            source_system,
+            direction,
+            biz_type,
+            request_payload,
+            response_payload,
+            status,
+            error_message,
+            started_at,
+            finished_at
+        ) VALUES (
+            #{tenantId},
+            #{jobNo},
+            #{sourceSystem},
+            #{direction},
+            #{bizType},
+            #{requestPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{responsePayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{status},
+            #{errorMessage},
+            #{startedAt},
+            #{finishedAt}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE integration_job
+        SET job_no = #{jobNo},
+            source_system = #{sourceSystem},
+            direction = #{direction},
+            biz_type = #{bizType},
+            request_payload = #{requestPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            response_payload = #{responsePayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            status = #{status},
+            error_message = #{errorMessage},
+            started_at = #{startedAt},
+            finished_at = #{finishedAt}
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE
+        FROM integration_job
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </delete>
+
+</mapper>
+

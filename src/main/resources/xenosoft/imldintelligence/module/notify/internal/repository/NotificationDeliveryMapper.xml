@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="xenosoft.imldintelligence.module.notify.internal.repository.mybatis.NotificationDeliveryMapper">
+
+    <sql id="BaseColumns">
+        id,
+        tenant_id,
+        message_id,
+        provider_name,
+        provider_message_id,
+        delivery_status,
+        fail_reason,
+        callback_payload,
+        delivered_at,
+        created_at
+    </sql>
+
+    <resultMap id="NotificationDeliveryResultMap" type="xenosoft.imldintelligence.module.notify.internal.model.NotificationDelivery">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="messageId" column="message_id"/>
+        <result property="providerName" column="provider_name"/>
+        <result property="providerMessageId" column="provider_message_id"/>
+        <result property="deliveryStatus" column="delivery_status"/>
+        <result property="failReason" column="fail_reason"/>
+        <result property="callbackPayload" column="callback_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="deliveredAt" column="delivered_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="NotificationDeliveryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM notification_delivery
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </select>
+
+    <select id="listByTenantId" resultMap="NotificationDeliveryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM notification_delivery
+        WHERE tenant_id = #{tenantId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="listByMessageId" resultMap="NotificationDeliveryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM notification_delivery
+        WHERE tenant_id = #{tenantId}
+          AND message_id = #{messageId}
+        ORDER BY id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification_delivery (
+            tenant_id,
+            message_id,
+            provider_name,
+            provider_message_id,
+            delivery_status,
+            fail_reason,
+            callback_payload,
+            delivered_at
+        ) VALUES (
+            #{tenantId},
+            #{messageId},
+            #{providerName},
+            #{providerMessageId},
+            #{deliveryStatus},
+            #{failReason},
+            #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{deliveredAt}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE notification_delivery
+        SET message_id = #{messageId},
+            provider_name = #{providerName},
+            provider_message_id = #{providerMessageId},
+            delivery_status = #{deliveryStatus},
+            fail_reason = #{failReason},
+            callback_payload = #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            delivered_at = #{deliveredAt}
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE
+        FROM notification_delivery
+        WHERE tenant_id = #{tenantId}
+          AND id = #{id}
+    </delete>
+
+</mapper>
+

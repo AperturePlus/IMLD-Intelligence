@@ -1,7 +1,5 @@
 package xenosoft.imldintelligence.module.license.internal.model;
 
-import lombok.Getter;
-
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -9,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+
+import lombok.Getter;
 
 @Getter
 public class Fingerprint {
@@ -27,7 +27,7 @@ public class Fingerprint {
 
     private String getMacAddress() {
         try {
-            StringBuilder sb = new StringBuilder();
+            //StringBuilder sb = new StringBuilder();
             Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
 
             List<String> macAddresses = new ArrayList<>();

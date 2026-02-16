@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.diagnoses.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 @lombok.Data
 public class DiagnosisResult{
     private Long id;
@@ -10,7 +12,9 @@ public class DiagnosisResult{
     private Double confidence;
     private Integer rankNo;
     private String riskLevel;
-    private String evidenceJson;
+    private JsonNode evidenceJson;
+    private Boolean isDisplayToPatient;
+    private java.time.OffsetDateTime createdAt;
 }
 
 /**

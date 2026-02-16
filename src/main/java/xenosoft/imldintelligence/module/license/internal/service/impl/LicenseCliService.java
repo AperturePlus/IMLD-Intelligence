@@ -1,23 +1,24 @@
 package xenosoft.imldintelligence.module.license.internal.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import xenosoft.imldintelligence.module.license.internal.model.Fingerprint;
-import xenosoft.imldintelligence.module.license.internal.model.LicenseEnvelope;
-import xenosoft.imldintelligence.module.license.internal.model.LicenseInfo;
-import xenosoft.imldintelligence.module.license.internal.model.ReleaseManifest;
-import xenosoft.imldintelligence.module.license.internal.service.CryptoService;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.PublicKey;
 import java.time.LocalDate;
 import java.util.Locale;
+
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import xenosoft.imldintelligence.module.license.internal.model.Fingerprint;
+import xenosoft.imldintelligence.module.license.internal.model.LicenseEnvelope;
+import xenosoft.imldintelligence.module.license.internal.model.LicenseInfo;
+import xenosoft.imldintelligence.module.license.internal.model.ReleaseManifest;
+import xenosoft.imldintelligence.module.license.internal.service.CryptoService;
 
 @Service
 public class LicenseCliService {
