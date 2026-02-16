@@ -2,7 +2,7 @@ package xenosoft.imldintelligence.module.screening.model;
 
 
 @lombok.Data
-public class Questionaire {
+public class Questionnaire {
     private Long id;
     private Long tenantId;
     private String questionnaireCode;

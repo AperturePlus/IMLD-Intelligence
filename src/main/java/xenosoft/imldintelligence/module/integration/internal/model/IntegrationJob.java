@@ -14,7 +14,8 @@ public class IntegrationJob {
     private String errorMessage;
     private java.time.OffsetDateTime startedAt;
     private java.time.OffsetDateTime finishedAt;
-    
+    private java.time.OffsetDateTime createdAt;
+
 }
 /**
  * CREATE TABLE integration_job (

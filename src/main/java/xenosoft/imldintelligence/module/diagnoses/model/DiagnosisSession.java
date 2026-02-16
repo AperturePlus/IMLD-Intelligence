@@ -11,11 +11,12 @@ public class DiagnosisSession {
     private Long doctorId;
     private String triggeredBy;
     private Long modelRegistryId;
-    private JsonNode inputSnapshotJson;
+    private JsonNode inputSnapshot;
     private String status;
     private java.time.OffsetDateTime startedAt;
     private java.time.OffsetDateTime completedAt;
-    
+    private java.time.OffsetDateTime createdAt;
+
 }
 
 /**

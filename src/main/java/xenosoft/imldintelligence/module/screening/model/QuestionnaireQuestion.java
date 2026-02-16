@@ -2,7 +2,7 @@ package xenosoft.imldintelligence.module.screening.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 @lombok.Data
-public class QuestionaireQuestion {
+public class QuestionnaireQuestion {
     private Long id;
     private Long tenantId;
     private Long questionnaireId;
@@ -29,5 +29,5 @@ public class QuestionaireQuestion {
                                         required_flag           BOOLEAN NOT NULL DEFAULT TRUE,
                                         created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
                                         UNIQUE (questionnaire_id, question_no)
-);s
+);
  */
