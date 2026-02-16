@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LicenseStartupValidator implements ApplicationRunner {
+    private static final String OPT_COMMAND = "license-cli-command";
     private final ValidateService validateService;
 
     public LicenseStartupValidator(ValidateService validateService) {
@@ -14,6 +15,9 @@ public class LicenseStartupValidator implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (args.containsOption(OPT_COMMAND)) {
+            return;
+        }
         validateService.validateStartupOrThrow();
     }
 }
