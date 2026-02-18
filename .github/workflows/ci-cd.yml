@@ -15,6 +15,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    # Add PostgreSQL service
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +46,12 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run build
-        run: ./gradlew --no-daemon build --stacktrace
+        run: ./gradlew --no-daemon build
+        env:
+          # Set database connection for tests
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
+          SPRING_DATASOURCE_USERNAME: testuser
+          SPRING_DATASOURCE_PASSWORD: testpass
 
       - name: Upload test reports
         if: always()

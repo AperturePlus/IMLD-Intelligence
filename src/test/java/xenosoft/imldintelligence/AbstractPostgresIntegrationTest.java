@@ -17,9 +17,16 @@ public abstract class AbstractPostgresIntegrationTest {
 
     @DynamicPropertySource
     static void registerPostgresProperties(DynamicPropertyRegistry registry) {
+        ensureContainerRunning();
         registry.add("spring.datasource.url", POSTGRESQL_CONTAINER::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRESQL_CONTAINER::getUsername);
         registry.add("spring.datasource.password", POSTGRESQL_CONTAINER::getPassword);
         registry.add("spring.datasource.driver-class-name", POSTGRESQL_CONTAINER::getDriverClassName);
+    }
+
+    private static synchronized void ensureContainerRunning() {
+        if (!POSTGRESQL_CONTAINER.isRunning()) {
+            POSTGRESQL_CONTAINER.start();
+        }
     }
 }
