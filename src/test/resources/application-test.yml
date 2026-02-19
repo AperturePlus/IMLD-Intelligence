@@ -1,17 +1,11 @@
 spring:
-  ai:
-    openai:
-      chat:
-        enabled: false
-  autoconfigure:
-    exclude: org.springframework.ai.model.openaisdk.autoconfigure.OpenAiSdkChatAutoConfiguration
   sql:
     init:
       mode: always
       schema-locations: classpath:schema/domain-A.sql,classpath:schema/domain-B.sql,classpath:schema/domain-C.sql,classpath:schema/domain-D.sql,classpath:schema/index.sql
 
 mybatis:
-  mapper-locations: classpath:xenosoft/imldintelligence/module/**/internal/repository/*.xml
+  mapper-locations: classpath*:xenosoft/imldintelligence/module/**/internal/repository/*.xml
   type-handlers-package: xenosoft.imldintelligence.shared.mybatis
   configuration:
     map-underscore-to-camel-case: true

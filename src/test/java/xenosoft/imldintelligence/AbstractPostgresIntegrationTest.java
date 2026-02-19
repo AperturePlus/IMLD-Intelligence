@@ -9,11 +9,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 public abstract class AbstractPostgresIntegrationTest {
     @Container
-    private static final PostgreSQLContainer<?> POSTGRESQL_CONTAINER =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("imld_core")
-                    .withUsername("postgres")
-                    .withPassword("postgres");
+    private static final SingletonPostgresContainer POSTGRESQL_CONTAINER = SingletonPostgresContainer.getInstance();
 
     @DynamicPropertySource
     static void registerPostgresProperties(DynamicPropertyRegistry registry) {
@@ -21,5 +17,30 @@ public abstract class AbstractPostgresIntegrationTest {
         registry.add("spring.datasource.username", POSTGRESQL_CONTAINER::getUsername);
         registry.add("spring.datasource.password", POSTGRESQL_CONTAINER::getPassword);
         registry.add("spring.datasource.driver-class-name", POSTGRESQL_CONTAINER::getDriverClassName);
+    }
+
+    private static final class SingletonPostgresContainer extends PostgreSQLContainer<SingletonPostgresContainer> {
+        private static SingletonPostgresContainer instance;
+
+        private SingletonPostgresContainer() {
+            super("postgres:16-alpine");
+            withDatabaseName("imld_core");
+            withUsername("postgres");
+            withPassword("postgres");
+        }
+
+        private static synchronized SingletonPostgresContainer getInstance() {
+            if (instance == null) {
+                instance = new SingletonPostgresContainer();
+                instance.start();
+            }
+            return instance;
+        }
+
+        @Override
+        public void stop() {
+            // Keep container alive for the full JVM lifetime so Spring's cached context
+            // never points to a stopped random port.
+        }
     }
 }
