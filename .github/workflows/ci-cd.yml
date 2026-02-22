@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # Add dependent services
+    # Add dependent services required by current tests
     services:
       postgres:
         image: postgres:18
@@ -41,25 +41,6 @@ jobs:
         ports:
           - 6379:6379
 
-      kafka:
-        image: bitnami/kafka:3.9
-        env:
-          KAFKA_CFG_NODE_ID: 1
-          KAFKA_CFG_PROCESS_ROLES: broker,controller
-          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-          KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-          KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-          ALLOW_PLAINTEXT_LISTENER: "yes"
-        options: >-
-          --health-cmd "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9092'"
-          --health-interval 15s
-          --health-timeout 10s
-          --health-retries 10
-        ports:
-          - 9092:9092
 
     steps:
       - name: Checkout
