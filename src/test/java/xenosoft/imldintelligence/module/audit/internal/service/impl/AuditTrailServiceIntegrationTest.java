@@ -11,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.aot.DisabledInAotMode;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import xenosoft.imldintelligence.AbstractPostgresIntegrationTest;
 import xenosoft.imldintelligence.module.audit.internal.aop.AuditedOperation;
@@ -110,6 +111,7 @@ class AuditTrailServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         String username = "rollback_" + unique("user");
 
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
         assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> {
             UserAccount user = new UserAccount();
