@@ -54,6 +54,27 @@ imld:
   deployment:
     mode: ${IMLD_DEPLOYMENT_MODE:saas}
     tenant-mode: ${IMLD_TENANT_MODE:multi-tenant}
+  audit:
+    enabled: ${IMLD_AUDIT_ENABLED:true}
+    query-api-enabled: ${IMLD_AUDIT_QUERY_API_ENABLED:true}
+    fail-closed: ${IMLD_AUDIT_FAIL_CLOSED:true}
+    query-role-allowlist: ${IMLD_AUDIT_QUERY_ROLE_ALLOWLIST:SYSTEM_ADMIN,COMPLIANCE_AUDITOR}
+    default-page-size: ${IMLD_AUDIT_DEFAULT_PAGE_SIZE:20}
+    max-page-size: ${IMLD_AUDIT_MAX_PAGE_SIZE:200}
+    max-payload-bytes: ${IMLD_AUDIT_MAX_PAYLOAD_BYTES:8192}
+    masking-enabled: ${IMLD_AUDIT_MASKING_ENABLED:true}
+    masked-fields:
+      - idNo
+      - id_card
+      - mobile
+      - phone
+      - email
+      - address
+      - password
+      - token
+      - authorization
+      - patientName
+      - guardianName
   cloud-bridge:
     enabled: ${IMLD_CLOUD_BRIDGE_ENABLED:false}
     scenario-allowlist:
