@@ -1,8 +1,10 @@
 package xenosoft.imldintelligence.module.license.internal.model;
 
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -52,7 +54,7 @@ public class Fingerprint {
 
             return "UNKNOWN_MAC";
 
-        } catch (Exception e) {
+        } catch (SocketException e) {
             return "UNKNOWN_MAC";
         }
     }
@@ -92,7 +94,7 @@ public class Fingerprint {
             }
             return hexString.toString().toUpperCase();
 
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 Hashing Failed", e);
         }
     }

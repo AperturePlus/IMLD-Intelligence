@@ -1,11 +1,20 @@
 package xenosoft.imldintelligence.module.license.internal.service.impl;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.PublicKey;
+import java.time.LocalDate;
+import java.util.Locale;
+
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.springframework.stereotype.Service;
+
 import xenosoft.imldintelligence.module.license.internal.config.DeploymentProperties;
 import xenosoft.imldintelligence.module.license.internal.config.LicenseProperties;
 import xenosoft.imldintelligence.module.license.internal.config.UpgradeProperties;
@@ -14,12 +23,6 @@ import xenosoft.imldintelligence.module.license.internal.model.LicenseEnvelope;
 import xenosoft.imldintelligence.module.license.internal.model.LicenseInfo;
 import xenosoft.imldintelligence.module.license.internal.model.ReleaseManifest;
 import xenosoft.imldintelligence.module.license.internal.service.CryptoService;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.PublicKey;
-import java.time.LocalDate;
-import java.util.Locale;
 
 @Service
 public class ValidateService {
@@ -184,7 +187,7 @@ public class ValidateService {
                 throw new IllegalStateException("Invalid signed envelope for " + artifactName + ": " + path);
             }
             return envelope;
-        } catch (Exception e) {
+        } catch (IOException | IllegalArgumentException | IllegalStateException e) {
             throw new IllegalStateException("Failed to read " + artifactName + " file: " + path, e);
         }
     }
