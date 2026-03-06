@@ -88,7 +88,7 @@
             #{doctorId},
             #{triggeredBy},
             #{modelRegistryId},
-            #{inputSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{inputSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status},
             #{startedAt},
             #{completedAt}
@@ -102,7 +102,7 @@
             doctor_id = #{doctorId},
             triggered_by = #{triggeredBy},
             model_registry_id = #{modelRegistryId},
-            input_snapshot = #{inputSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            input_snapshot = #{inputSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status},
             started_at = #{startedAt},
             completed_at = #{completedAt}

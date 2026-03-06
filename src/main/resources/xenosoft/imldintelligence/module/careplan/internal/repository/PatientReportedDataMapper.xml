@@ -86,7 +86,7 @@
             #{valueNumeric},
             #{valueText},
             #{source},
-            #{deviceInfo, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{deviceInfo, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{recordedAt}
         )
     </insert>
@@ -99,7 +99,7 @@
             value_numeric = #{valueNumeric},
             value_text = #{valueText},
             source = #{source},
-            device_info = #{deviceInfo, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            device_info = #{deviceInfo, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             recorded_at = #{recordedAt}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

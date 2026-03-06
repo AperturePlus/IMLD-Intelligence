@@ -77,7 +77,7 @@
             #{confidence},
             #{rankNo},
             #{riskLevel},
-            #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{isDisplayToPatient}
         )
     </insert>
@@ -90,7 +90,7 @@
             confidence = #{confidence},
             rank_no = #{rankNo},
             risk_level = #{riskLevel},
-            evidence_json = #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            evidence_json = #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             is_display_to_patient = #{isDisplayToPatient}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

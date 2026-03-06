@@ -75,7 +75,7 @@
             #{templateName},
             #{diseaseCode},
             #{department},
-            #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status},
             #{versionNo},
             #{createdBy}
@@ -88,7 +88,7 @@
             template_name = #{templateName},
             disease_code = #{diseaseCode},
             department = #{department},
-            template_schema = #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            template_schema = #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status},
             version_no = #{versionNo},
             created_by = #{createdBy}

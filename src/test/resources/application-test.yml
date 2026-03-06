@@ -6,6 +6,6 @@ spring:
 
 mybatis:
   mapper-locations: classpath*:xenosoft/imldintelligence/module/**/internal/repository/*.xml
-  type-handlers-package: xenosoft.imldintelligence.shared.mybatis
+  type-handlers-package: xenosoft.imldintelligence.common.mybatis
   configuration:
     map-underscore-to-camel-case: true

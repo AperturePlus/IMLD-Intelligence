@@ -84,7 +84,7 @@
             #{encounterId},
             #{historyType},
             #{templateCode},
-            #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{sourceType},
             #{recordedBy},
             #{recordedAt}
@@ -97,7 +97,7 @@
             encounter_id = #{encounterId},
             history_type = #{historyType},
             template_code = #{templateCode},
-            content_json = #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            content_json = #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             source_type = #{sourceType},
             recorded_by = #{recordedBy},
             recorded_at = #{recordedAt}

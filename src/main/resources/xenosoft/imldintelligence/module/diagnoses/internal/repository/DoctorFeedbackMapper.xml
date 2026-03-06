@@ -78,7 +78,7 @@
             #{resultId},
             #{doctorId},
             #{action},
-            #{modifiedValue, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{modifiedValue, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{rejectReason}
         )
     </insert>
@@ -89,7 +89,7 @@
             result_id = #{resultId},
             doctor_id = #{doctorId},
             action = #{action},
-            modified_value = #{modifiedValue, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            modified_value = #{modifiedValue, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             reject_reason = #{rejectReason}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

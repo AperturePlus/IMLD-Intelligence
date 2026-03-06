@@ -102,7 +102,7 @@
             #{referenceHigh},
             #{abnormalFlag},
             #{sourceType},
-            #{rawData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{rawData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{collectedAt}
         )
     </insert>
@@ -119,7 +119,7 @@
             reference_high = #{referenceHigh},
             abnormal_flag = #{abnormalFlag},
             source_type = #{sourceType},
-            raw_data = #{rawData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            raw_data = #{rawData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             collected_at = #{collectedAt}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

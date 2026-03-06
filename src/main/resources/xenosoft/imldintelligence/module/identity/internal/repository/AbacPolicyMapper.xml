@@ -72,9 +72,9 @@
             #{tenantId},
             #{policyCode},
             #{policyName},
-            #{subjectExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            #{resourceExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            #{actionExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{subjectExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            #{resourceExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            #{actionExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{effect},
             #{priority},
             #{status}
@@ -85,9 +85,9 @@
         UPDATE abac_policy
         SET policy_code = #{policyCode},
             policy_name = #{policyName},
-            subject_expr = #{subjectExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            resource_expr = #{resourceExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            action_expr = #{actionExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            subject_expr = #{subjectExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            resource_expr = #{resourceExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            action_expr = #{actionExpr, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             effect = #{effect},
             priority = #{priority},
             status = #{status}

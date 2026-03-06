@@ -65,7 +65,7 @@
             #{tenantId},
             #{reportId},
             #{versionNum},
-            #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{changeSummary},
             #{changedBy}
         )
@@ -75,7 +75,7 @@
         UPDATE report_version
         SET report_id = #{reportId},
             version_num = #{versionNum},
-            content_snapshot = #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            content_snapshot = #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             change_summary = #{changeSummary},
             changed_by = #{changedBy}
         WHERE tenant_id = #{tenantId}

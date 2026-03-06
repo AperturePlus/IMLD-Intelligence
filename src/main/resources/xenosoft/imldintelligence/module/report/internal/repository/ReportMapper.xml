@@ -108,7 +108,7 @@
             #{currentVersion},
             #{signedBy},
             #{signedAt},
-            #{signatureData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{signatureData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{createdBy}
         )
     </insert>
@@ -124,7 +124,7 @@
             current_version = #{currentVersion},
             signed_by = #{signedBy},
             signed_at = #{signedAt},
-            signature_data = #{signatureData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            signature_data = #{signatureData, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             created_by = #{createdBy},
             updated_at = now()
         WHERE tenant_id = #{tenantId}

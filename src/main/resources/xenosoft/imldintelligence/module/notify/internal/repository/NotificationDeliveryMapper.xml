@@ -73,7 +73,7 @@
             #{providerMessageId},
             #{deliveryStatus},
             #{failReason},
-            #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{deliveredAt}
         )
     </insert>
@@ -85,7 +85,7 @@
             provider_message_id = #{providerMessageId},
             delivery_status = #{deliveryStatus},
             fail_reason = #{failReason},
-            callback_payload = #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            callback_payload = #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             delivered_at = #{deliveredAt}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

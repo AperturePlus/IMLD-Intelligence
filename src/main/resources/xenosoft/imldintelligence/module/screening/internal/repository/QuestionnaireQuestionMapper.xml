@@ -84,8 +84,8 @@
             #{questionNo},
             #{content},
             #{questionType},
-            #{optionsJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            #{scoringRuleJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{optionsJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            #{scoringRuleJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{sortOrder},
             #{requiredFlag}
         )
@@ -97,8 +97,8 @@
             question_no = #{questionNo},
             content = #{content},
             question_type = #{questionType},
-            options_json = #{optionsJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            scoring_rule_json = #{scoringRuleJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            options_json = #{optionsJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            scoring_rule_json = #{scoringRuleJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             sort_order = #{sortOrder},
             required_flag = #{requiredFlag}
         WHERE tenant_id = #{tenantId}

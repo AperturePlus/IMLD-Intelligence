@@ -82,7 +82,7 @@
             #{sourceName},
             #{targetIndicatorCode},
             #{unitConversionExpr},
-            #{qualityRule, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{qualityRule, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status}
         )
     </insert>
@@ -94,7 +94,7 @@
             source_name = #{sourceName},
             target_indicator_code = #{targetIndicatorCode},
             unit_conversion_expr = #{unitConversionExpr},
-            quality_rule = #{qualityRule, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            quality_rule = #{qualityRule, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

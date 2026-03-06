@@ -71,7 +71,7 @@
             #{templateCode},
             #{templateName},
             #{diseaseCode},
-            #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status},
             #{versionNo},
             #{createdBy}
@@ -83,7 +83,7 @@
         SET template_code = #{templateCode},
             template_name = #{templateName},
             disease_code = #{diseaseCode},
-            plan_schema = #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            plan_schema = #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status},
             version_no = #{versionNo},
             created_by = #{createdBy}
