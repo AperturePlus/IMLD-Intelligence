@@ -269,3 +269,26 @@ CREATE TABLE IF NOT EXISTS imaging_report (
                                 examined_at             TIMESTAMPTZ,
                                 created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 用户有效角色视图（过滤 INACTIVE）
+CREATE OR REPLACE VIEW v_user_effective_roles AS
+SELECT
+    urr.tenant_id,
+    urr.user_id,
+    r.role_code,
+    r.role_name
+FROM user_role_rel urr JOIN role r ON r.id = urr.role_id
+WHERE r.status = 'ACTIVE';
+
+CREATE OR REPLACE VIEW v_user_subject AS
+SELECT
+    ua.id        AS user_id,
+    ua.tenant_id,
+    ua.user_type,
+    ua.dept_name,
+    ARRAY_AGG(r.role_code) FILTER (WHERE r.role_code IS NOT NULL) AS role_codes
+FROM user_account ua
+         LEFT JOIN user_role_rel urr ON urr.user_id = ua.id
+         LEFT JOIN role r ON r.id = urr.role_id AND r.status = 'ACTIVE'
+WHERE ua.status = 'ACTIVE'
+GROUP BY ua.id, ua.tenant_id, ua.user_type, ua.dept_name;

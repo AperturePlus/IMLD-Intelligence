@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.audit.internal.repository.SensitiveDataAccessLogRepository;
 import xenosoft.imldintelligence.module.audit.internal.repository.mybatis.SensitiveDataAccessLogMapper;
 import xenosoft.imldintelligence.module.audit.internal.repository.query.SensitiveDataAccessLogQuery;
-import xenosoft.imldintelligence.shared.model.SensitiveDataAccessLog;
+import xenosoft.imldintelligence.common.model.SensitiveDataAccessLog;
 
 import java.util.List;
 

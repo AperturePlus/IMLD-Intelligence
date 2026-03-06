@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.audit.internal.repository.ModelInvocationLogRepository;
 import xenosoft.imldintelligence.module.audit.internal.repository.mybatis.ModelInvocationLogMapper;
 import xenosoft.imldintelligence.module.audit.internal.repository.query.ModelInvocationLogQuery;
-import xenosoft.imldintelligence.shared.model.ModelInvocationLog;
+import xenosoft.imldintelligence.common.model.ModelInvocationLog;
 
 import java.util.List;
 

@@ -21,9 +21,9 @@ import xenosoft.imldintelligence.module.audit.internal.repository.query.Sensitiv
 import xenosoft.imldintelligence.module.audit.internal.service.AuditQueryService;
 import xenosoft.imldintelligence.module.audit.internal.service.model.PageResult;
 import xenosoft.imldintelligence.module.audit.internal.web.AuditHeaderNames;
-import xenosoft.imldintelligence.shared.model.AuditLog;
-import xenosoft.imldintelligence.shared.model.ModelInvocationLog;
-import xenosoft.imldintelligence.shared.model.SensitiveDataAccessLog;
+import xenosoft.imldintelligence.common.model.AuditLog;
+import xenosoft.imldintelligence.common.model.ModelInvocationLog;
+import xenosoft.imldintelligence.common.model.SensitiveDataAccessLog;
 
 import java.time.OffsetDateTime;
 

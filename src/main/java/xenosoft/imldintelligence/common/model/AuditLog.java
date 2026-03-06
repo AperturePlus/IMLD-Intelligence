@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.shared.model;
+package xenosoft.imldintelligence.common.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 @lombok.Data

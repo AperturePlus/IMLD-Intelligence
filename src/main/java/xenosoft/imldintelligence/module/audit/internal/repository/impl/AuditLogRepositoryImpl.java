@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.audit.internal.repository.AuditLogRepository;
 import xenosoft.imldintelligence.module.audit.internal.repository.mybatis.AuditLogMapper;
 import xenosoft.imldintelligence.module.audit.internal.repository.query.AuditLogQuery;
-import xenosoft.imldintelligence.shared.model.AuditLog;
+import xenosoft.imldintelligence.common.model.AuditLog;
 
 import java.util.List;
 

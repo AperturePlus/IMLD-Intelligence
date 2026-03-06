@@ -1,7 +1,7 @@
 package xenosoft.imldintelligence.module.audit.internal.api.dto;
 
 import lombok.Data;
-import xenosoft.imldintelligence.shared.model.AuditLog;
+import xenosoft.imldintelligence.common.model.AuditLog;
 
 import java.time.OffsetDateTime;
 

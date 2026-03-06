@@ -3,7 +3,7 @@ package xenosoft.imldintelligence.module.audit.internal.repository.mybatis;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.audit.internal.repository.query.SensitiveDataAccessLogQuery;
-import xenosoft.imldintelligence.shared.model.SensitiveDataAccessLog;
+import xenosoft.imldintelligence.common.model.SensitiveDataAccessLog;
 
 import java.util.List;
 

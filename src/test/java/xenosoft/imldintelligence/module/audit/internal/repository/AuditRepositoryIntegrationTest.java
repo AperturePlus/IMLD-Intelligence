@@ -15,9 +15,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.Tenant;
 import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
 import xenosoft.imldintelligence.module.identity.internal.repository.TenantRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
-import xenosoft.imldintelligence.shared.model.AuditLog;
-import xenosoft.imldintelligence.shared.model.ModelInvocationLog;
-import xenosoft.imldintelligence.shared.model.SensitiveDataAccessLog;
+import xenosoft.imldintelligence.common.model.AuditLog;
+import xenosoft.imldintelligence.common.model.ModelInvocationLog;
+import xenosoft.imldintelligence.common.model.SensitiveDataAccessLog;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;

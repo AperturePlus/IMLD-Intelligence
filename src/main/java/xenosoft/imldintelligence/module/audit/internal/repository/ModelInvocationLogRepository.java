@@ -1,7 +1,7 @@
 package xenosoft.imldintelligence.module.audit.internal.repository;
 
 import xenosoft.imldintelligence.module.audit.internal.repository.query.ModelInvocationLogQuery;
-import xenosoft.imldintelligence.shared.model.ModelInvocationLog;
+import xenosoft.imldintelligence.common.model.ModelInvocationLog;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.shared.model;
+package xenosoft.imldintelligence.common.model;
 
 @lombok.Data
 public class ModelInvocationLog {

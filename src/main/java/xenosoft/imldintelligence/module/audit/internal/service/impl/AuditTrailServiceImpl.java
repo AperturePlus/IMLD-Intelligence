@@ -16,9 +16,9 @@ import xenosoft.imldintelligence.module.audit.internal.service.command.AuditReco
 import xenosoft.imldintelligence.module.audit.internal.service.command.ModelInvocationRecordCommand;
 import xenosoft.imldintelligence.module.audit.internal.service.command.SensitiveAccessRecordCommand;
 import xenosoft.imldintelligence.module.audit.internal.service.exception.AuditPersistenceException;
-import xenosoft.imldintelligence.shared.model.AuditLog;
-import xenosoft.imldintelligence.shared.model.ModelInvocationLog;
-import xenosoft.imldintelligence.shared.model.SensitiveDataAccessLog;
+import xenosoft.imldintelligence.common.model.AuditLog;
+import xenosoft.imldintelligence.common.model.ModelInvocationLog;
+import xenosoft.imldintelligence.common.model.SensitiveDataAccessLog;
 
 import java.util.UUID;
 
