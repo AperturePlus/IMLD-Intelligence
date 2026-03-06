@@ -1,4 +1,4 @@
-package xenosoft.imldintelligence.shared.mybatis;
+package xenosoft.imldintelligence.common.mybatis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
