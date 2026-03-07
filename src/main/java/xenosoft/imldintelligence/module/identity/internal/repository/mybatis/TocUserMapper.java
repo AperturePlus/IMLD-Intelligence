@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.TocUser;
 
 import java.util.List;
 
+/**
+ * C端用户 MyBatis Mapper，定义C端用户的数据读写映射。
+ */
 @Mapper
 public interface TocUserMapper {
     TocUser findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

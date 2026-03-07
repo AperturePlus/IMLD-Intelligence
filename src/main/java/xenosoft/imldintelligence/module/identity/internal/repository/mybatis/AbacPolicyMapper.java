@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.AbacPolicy;
 
 import java.util.List;
 
+/**
+ * ABAC策略 MyBatis Mapper，定义ABAC策略的数据读写映射。
+ */
 @Mapper
 public interface AbacPolicyMapper {
     AbacPolicy findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

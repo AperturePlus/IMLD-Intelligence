@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.Encounter;
 
 import java.util.List;
 
+/**
+ * 就诊记录 MyBatis Mapper，定义就诊记录的数据读写映射。
+ */
 @Mapper
 public interface EncounterMapper {
     Encounter findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

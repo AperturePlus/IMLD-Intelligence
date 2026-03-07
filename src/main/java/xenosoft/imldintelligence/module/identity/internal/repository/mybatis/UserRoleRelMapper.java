@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.UserRoleRel;
 
 import java.util.List;
 
+/**
+ * 用户角色关系 MyBatis Mapper，定义用户角色关系的数据读写映射。
+ */
 @Mapper
 public interface UserRoleRelMapper {
     UserRoleRel findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

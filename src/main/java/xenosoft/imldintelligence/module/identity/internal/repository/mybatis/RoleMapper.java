@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.Role;
 
 import java.util.List;
 
+/**
+ * 角色 MyBatis Mapper，定义角色的数据读写映射。
+ */
 @Mapper
 public interface RoleMapper {
     Role findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

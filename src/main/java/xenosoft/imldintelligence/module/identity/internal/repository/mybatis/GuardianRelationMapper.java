@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.GuardianRelation
 
 import java.util.List;
 
+/**
+ * 监护人关系 MyBatis Mapper，定义监护人关系的数据读写映射。
+ */
 @Mapper
 public interface GuardianRelationMapper {
     GuardianRelation findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

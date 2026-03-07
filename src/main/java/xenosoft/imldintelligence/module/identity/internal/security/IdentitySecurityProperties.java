@@ -9,6 +9,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 身份安全配置属性，定义安全开关、公开路径以及 JWT 相关参数。
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "imld.security")
@@ -22,6 +25,11 @@ public class IdentitySecurityProperties {
     ));
     private Jwt jwt = new Jwt();
 
+    /**
+     * 在启用安全能力时校验 JWT 配置是否完整可用。
+     *
+     * @throws IllegalStateException JWT 配置缺失或不合法时抛出
+     */
     public void validateWhenSecurityEnabled() {
         if (!enabled) {
             return;
@@ -29,6 +37,11 @@ public class IdentitySecurityProperties {
         validateJwtConfiguration();
     }
 
+    /**
+     * 校验 JWT 发行者、密钥长度、过期时间与时钟偏移配置。
+     *
+     * @throws IllegalStateException JWT 配置缺失或不符合安全要求时抛出
+     */
     public void validateJwtConfiguration() {
         if (jwt.getIssuer() == null || jwt.getIssuer().isBlank()) {
             throw new IllegalStateException("JWT issuer must not be blank.");
@@ -50,6 +63,9 @@ public class IdentitySecurityProperties {
         }
     }
 
+    /**
+     * JWT 参数配置，定义签发者、密钥、访问令牌时长、刷新令牌时长与时钟偏移。
+     */
     @Getter
     @Setter
     public static class Jwt {

@@ -24,6 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 权限切面，负责拦截带权限注解的方法并执行授权校验。
+ */
 @Aspect
 @Component
 @RequiredArgsConstructor

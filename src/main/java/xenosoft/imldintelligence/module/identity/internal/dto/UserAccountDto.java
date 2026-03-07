@@ -8,6 +8,9 @@ import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
+/**
+ * UserAccount 数据传输对象，封装UserAccount相关的对外传输字段。
+ */
 public record UserAccountDto(
         @NotNull(message = "Id must not be null")
         @Positive(message = "Id must be greater than 0")

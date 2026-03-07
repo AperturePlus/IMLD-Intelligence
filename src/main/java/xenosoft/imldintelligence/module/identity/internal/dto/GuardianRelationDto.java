@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
 
+/**
+ * GuardianRelation 数据传输对象，封装GuardianRelation相关的对外传输字段。
+ */
 public record GuardianRelationDto(
         @NotNull(message = "Id must not be null")
         @Positive(message = "Id must be greater than 0")

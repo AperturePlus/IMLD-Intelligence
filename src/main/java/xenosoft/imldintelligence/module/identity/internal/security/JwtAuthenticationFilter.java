@@ -21,6 +21,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * JWT 认证过滤器，负责解析访问令牌并将用户主体写入安全上下文。
+ */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -32,6 +35,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

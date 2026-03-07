@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * 权限服务实现类，负责基于角色与策略完成授权判定。
+ */
 @Service
 @RequiredArgsConstructor
 public class PermissionSerivce implements IPermissionService {
@@ -36,6 +39,9 @@ public class PermissionSerivce implements IPermissionService {
     private final RoleRepository roleRepository;
     private final AbacPolicyRepository abacPolicyRepository;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isAllowed(Long tenantId, Long userId, String res, String action, Map<String, Object> resAttr) {
         if (!isPositive(tenantId) || !isPositive(userId) || !hasText(res) || !hasText(action)) {
@@ -67,6 +73,9 @@ public class PermissionSerivce implements IPermissionService {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Set<String> getEffectiveRoleCodes(Long tenantId, Long userId) {
         if (!isPositive(tenantId) || !isPositive(userId)) {
@@ -90,6 +99,9 @@ public class PermissionSerivce implements IPermissionService {
         return RoleAuthorityUtils.normalizeRoleCodes(roleCodes);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UserSubject loadSubject(Long tenantId, Long userId) {
         return userAccountRepository.findById(tenantId, userId)

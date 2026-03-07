@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.ConsentRecord;
 
 import java.util.List;
 
+/**
+ * 知情同意记录 MyBatis Mapper，定义知情同意记录的数据读写映射。
+ */
 @Mapper
 public interface ConsentRecordMapper {
     ConsentRecord findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

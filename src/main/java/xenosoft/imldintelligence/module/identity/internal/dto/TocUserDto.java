@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
 
+/**
+ * TocUser 数据传输对象，封装TocUser相关的对外传输字段。
+ */
 public record TocUserDto(
         @NotNull(message = "Id must not be null")
         @Positive(message = "Id must be greater than 0")

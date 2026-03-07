@@ -8,6 +8,9 @@ import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
 
+/**
+ * AbacPolicy 数据传输对象，封装AbacPolicy相关的对外传输字段。
+ */
 public record AbacPolicyDto(
         @NotNull(message = "Id must not be null")
         @Positive(message = "Id must be greater than 0")

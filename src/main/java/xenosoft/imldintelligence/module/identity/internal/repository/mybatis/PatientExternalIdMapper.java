@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.PatientExternalI
 
 import java.util.List;
 
+/**
+ * 患者外部标识 MyBatis Mapper，定义患者外部标识的数据读写映射。
+ */
 @Mapper
 public interface PatientExternalIdMapper {
     PatientExternalId findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

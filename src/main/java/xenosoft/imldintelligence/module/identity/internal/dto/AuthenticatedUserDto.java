@@ -8,6 +8,9 @@ import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
+/**
+ * AuthenticatedUser 数据传输对象，封装AuthenticatedUser相关的对外传输字段。
+ */
 public record AuthenticatedUserDto(
         @NotNull(message = "UserId must not be null")
         @Positive(message = "UserId must be greater than 0")

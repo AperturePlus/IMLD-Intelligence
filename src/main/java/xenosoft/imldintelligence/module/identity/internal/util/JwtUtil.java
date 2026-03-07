@@ -26,6 +26,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * JWT 工具类，负责生成、解析与校验访问令牌和刷新令牌。
+ */
 @Component
 public class JwtUtil {
     static final String CLAIM_USER_ID = "uid";
@@ -48,6 +51,12 @@ public class JwtUtil {
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
+    /**
+     * 根据用户主体生成访问令牌。
+     *
+     * @param userSubject 当前登录用户的主体信息
+     * @return 签发后的访问令牌
+     */
     public String generateAccessToken(UserSubject userSubject) {
         Objects.requireNonNull(userSubject, "userSubject must not be null");
 
@@ -61,6 +70,12 @@ public class JwtUtil {
         return buildToken(JwtTokenType.ACCESS, claims, String.valueOf(userSubject.userId()), properties.getJwt().getAccessTokenTtl());
     }
 
+    /**
+     * 根据刷新主体生成刷新令牌。
+     *
+     * @param refreshTokenSubject 刷新令牌主体信息
+     * @return 签发后的刷新令牌
+     */
     public String generateRefreshToken(RefreshTokenSubject refreshTokenSubject) {
         Objects.requireNonNull(refreshTokenSubject, "refreshTokenSubject must not be null");
 
@@ -71,6 +86,13 @@ public class JwtUtil {
         return buildToken(JwtTokenType.REFRESH, claims, String.valueOf(refreshTokenSubject.userId()), properties.getJwt().getRefreshTokenTtl());
     }
 
+    /**
+     * 解析访问令牌并恢复用户主体信息。
+     *
+     * @param token 待解析的访问令牌
+     * @return 访问令牌对应的用户主体信息
+     * @throws JwtException 令牌格式错误、已过期或类型不匹配时抛出
+     */
     public UserSubject parseAccessToken(String token) {
         Claims claims = parseClaims(token, JwtTokenType.ACCESS);
         return new UserSubject(
@@ -82,6 +104,13 @@ public class JwtUtil {
         );
     }
 
+    /**
+     * 解析刷新令牌并恢复刷新主体信息。
+     *
+     * @param token 待解析的刷新令牌
+     * @return 刷新令牌对应的主体信息
+     * @throws JwtException 令牌格式错误、已过期或类型不匹配时抛出
+     */
     public RefreshTokenSubject parseRefreshToken(String token) {
         Claims claims = parseClaims(token, JwtTokenType.REFRESH);
         return new RefreshTokenSubject(
@@ -90,14 +119,31 @@ public class JwtUtil {
         );
     }
 
+    /**
+     * 判断访问令牌是否有效。
+     *
+     * @param token 待校验的访问令牌
+     * @return 访问令牌有效时返回 {@code true}，否则返回 {@code false}
+     */
     public boolean isAccessTokenValid(String token) {
         return isTokenValid(token, JwtTokenType.ACCESS);
     }
 
+    /**
+     * 判断刷新令牌是否有效。
+     *
+     * @param token 待校验的刷新令牌
+     * @return 刷新令牌有效时返回 {@code true}，否则返回 {@code false}
+     */
     public boolean isRefreshTokenValid(String token) {
         return isTokenValid(token, JwtTokenType.REFRESH);
     }
 
+    /**
+     * 返回访问令牌的有效期秒数。
+     *
+     * @return 访问令牌默认有效期对应的秒数
+     */
     public long getAccessTokenExpiresInSeconds() {
         properties.validateJwtConfiguration();
         return properties.getJwt().getAccessTokenTtl().toSeconds();

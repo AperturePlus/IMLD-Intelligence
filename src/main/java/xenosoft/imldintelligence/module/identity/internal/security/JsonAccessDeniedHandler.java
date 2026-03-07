@@ -13,6 +13,9 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 访问拒绝处理器，负责输出统一的鉴权失败响应。
+ */
 public class JsonAccessDeniedHandler implements AccessDeniedHandler {
     private final ObjectMapper objectMapper;
 
@@ -20,6 +23,9 @@ public class JsonAccessDeniedHandler implements AccessDeniedHandler {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void handle(HttpServletRequest request,
                        HttpServletResponse response,

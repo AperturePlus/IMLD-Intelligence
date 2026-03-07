@@ -9,6 +9,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 
 import java.util.Optional;
 
+/**
+ * 当前用户主体提供器，用于从安全上下文读取当前登录用户。
+ */
 @Component
 public class CurrentUserSubjectProvider {
 

@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
+/**
+ * AuthToken 记录对象。
+ */
 public record AuthToken(
         @NotBlank(message = "Access token must not be blank")
         String accessToken,

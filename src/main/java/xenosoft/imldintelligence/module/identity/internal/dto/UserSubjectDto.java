@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 
+/**
+ * UserSubject 数据传输对象，封装UserSubject相关的对外传输字段。
+ */
 public record UserSubjectDto(
         @NotNull(message = "UserId must not be null")
         @Positive(message = "UserId must be greater than 0")

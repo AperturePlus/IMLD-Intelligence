@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
 
 import java.util.List;
 
+/**
+ * 用户账号 MyBatis Mapper，定义用户账号的数据读写映射。
+ */
 @Mapper
 public interface UserAccountMapper {
     UserAccount findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

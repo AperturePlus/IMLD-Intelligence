@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 
+/**
+ * PermissionDecision 数据传输对象，封装PermissionDecision相关的对外传输字段。
+ */
 public record PermissionDecisionDto(
         @NotNull(message = "TenantId must not be null")
         @Positive(message = "TenantId must be greater than 0")

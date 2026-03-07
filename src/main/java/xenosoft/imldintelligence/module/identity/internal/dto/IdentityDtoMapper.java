@@ -15,6 +15,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * 身份模块 DTO 映射工具类，负责在领域对象与对外 DTO 之间转换。
+ */
 public final class IdentityDtoMapper {
     private IdentityDtoMapper() {
     }

@@ -13,6 +13,9 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * JWT 未认证入口处理器，负责输出统一的未认证响应。
+ */
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final ObjectMapper objectMapper;
 
@@ -20,6 +23,9 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,

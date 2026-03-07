@@ -9,6 +9,9 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
+/**
+ * Patient 数据传输对象，封装Patient相关的对外传输字段。
+ */
 public record PatientDto(
         @NotNull(message = "Id must not be null")
         @Positive(message = "Id must be greater than 0")

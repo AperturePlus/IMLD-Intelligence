@@ -6,6 +6,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * 角色权限工具类，用于标准化角色编码并展开 Spring Security 权限名。
+ */
 public final class RoleAuthorityUtils {
     private static final String ROLE_PREFIX = "ROLE_";
 
@@ -54,4 +57,3 @@ public final class RoleAuthorityUtils {
         return Set.copyOf(authorities);
     }
 }
-

@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.Patient;
 
 import java.util.List;
 
+/**
+ * 患者 MyBatis Mapper，定义患者的数据读写映射。
+ */
 @Mapper
 public interface PatientMapper {
     Patient findById(@Param("tenantId") Long tenantId, @Param("id") Long id);

@@ -4,6 +4,9 @@ import io.jsonwebtoken.JwtException;
 
 import java.util.Arrays;
 
+/**
+ * JWT 令牌类型枚举，区分访问令牌与刷新令牌。
+ */
 public enum JwtTokenType {
     ACCESS("access"),
     REFRESH("refresh");

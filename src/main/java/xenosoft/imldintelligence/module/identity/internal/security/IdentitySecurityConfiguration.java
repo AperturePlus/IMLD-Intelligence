@@ -17,11 +17,28 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
 
+/**
+ * 身份安全配置类，按配置在 JWT 鉴权链与开放访问链之间切换。
+ *
+ * <p>开启安全能力时启用无状态 JWT 认证；关闭时放行全部请求，便于本地开发或特定部署模式降级运行。</p>
+ */
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 @EnableConfigurationProperties(IdentitySecurityProperties.class)
 public class IdentitySecurityConfiguration {
 
+    /**
+     * 构建启用 JWT 时使用的无状态安全过滤链。
+     *
+     * @param http Spring Security HTTP 配置对象
+     * @param properties 身份安全配置属性
+     * @param jwtAuthenticationFilter JWT 认证过滤器
+     * @param authenticationEntryPoint 未认证请求处理入口
+     * @param accessDeniedHandler 鉴权失败处理器
+     * @param authorizationCustomizers 各业务模块注册的请求授权定制器
+     * @return 启用鉴权后的安全过滤链
+     * @throws Exception 构建过滤链过程中发生配置错误时抛出
+     */
     @Bean
     @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "true")
     SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http,
@@ -46,6 +63,13 @@ public class IdentitySecurityConfiguration {
         return http.build();
     }
 
+    /**
+     * 构建关闭安全能力时使用的开放访问过滤链。
+     *
+     * @param http Spring Security HTTP 配置对象
+     * @return 允许匿名访问的安全过滤链
+     * @throws Exception 构建过滤链过程中发生配置错误时抛出
+     */
     @Bean
     @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "false", matchIfMissing = true)
     SecurityFilterChain openSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -55,6 +79,13 @@ public class IdentitySecurityConfiguration {
                 .build();
     }
 
+    /**
+     * 创建 JWT 认证过滤器 Bean。
+     *
+     * @param jwtUtil JWT 工具类
+     * @param authenticationEntryPoint 未认证请求处理入口
+     * @return JWT 认证过滤器实例
+     */
     @Bean
     @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "true")
     JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil,
@@ -62,12 +93,24 @@ public class IdentitySecurityConfiguration {
         return new JwtAuthenticationFilter(jwtUtil, authenticationEntryPoint);
     }
 
+    /**
+     * 创建未认证请求处理入口 Bean。
+     *
+     * @param objectMapper 用于输出错误响应的 JSON 序列化器
+     * @return 未认证请求处理入口
+     */
     @Bean
     @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "true")
     AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
         return new JwtAuthenticationEntryPoint(objectMapper);
     }
 
+    /**
+     * 创建鉴权失败处理器 Bean。
+     *
+     * @param objectMapper 用于输出错误响应的 JSON 序列化器
+     * @return 鉴权失败处理器
+     */
     @Bean
     @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "true")
     AccessDeniedHandler accessDeniedHandler(ObjectMapper objectMapper) {

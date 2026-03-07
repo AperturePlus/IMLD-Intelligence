@@ -6,6 +6,9 @@ import xenosoft.imldintelligence.module.identity.internal.model.Tenant;
 
 import java.util.List;
 
+/**
+ * 租户 MyBatis Mapper，定义租户的数据读写映射。
+ */
 @Mapper
 public interface TenantMapper {
     Tenant findById(@Param("id") Long id);
