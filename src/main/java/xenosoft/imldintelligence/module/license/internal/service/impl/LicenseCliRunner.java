@@ -1,18 +1,19 @@
 package xenosoft.imldintelligence.module.license.internal.service.impl;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
 import xenosoft.imldintelligence.module.license.internal.config.LicenseProperties;
 import xenosoft.imldintelligence.module.license.internal.config.UpgradeProperties;
 import xenosoft.imldintelligence.module.license.internal.model.LicenseInfo;
 import xenosoft.imldintelligence.module.license.internal.model.ReleaseManifest;
-
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Locale;
 
 @Component
 @Order(0)
@@ -50,14 +51,12 @@ public class LicenseCliRunner implements ApplicationRunner {
             return;
         }
 
-        try {
+        try (applicationContext) {
             switch (command.toLowerCase(Locale.ROOT)) {
                 case "import-license" -> runImportLicense(args);
                 case "check-upgrade" -> runCheckUpgrade(args);
                 default -> throw new IllegalArgumentException("Unknown license CLI command: " + command);
             }
-        } finally {
-            applicationContext.close();
         }
     }
 

@@ -26,7 +26,7 @@
         <result property="providerMessageId" column="provider_message_id"/>
         <result property="deliveryStatus" column="delivery_status"/>
         <result property="failReason" column="fail_reason"/>
-        <result property="callbackPayload" column="callback_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="callbackPayload" column="callback_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="deliveredAt" column="delivered_at"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
@@ -73,7 +73,7 @@
             #{providerMessageId},
             #{deliveryStatus},
             #{failReason},
-            #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{deliveredAt}
         )
     </insert>
@@ -85,7 +85,7 @@
             provider_message_id = #{providerMessageId},
             delivery_status = #{deliveryStatus},
             fail_reason = #{failReason},
-            callback_payload = #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            callback_payload = #{callbackPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             delivered_at = #{deliveredAt}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

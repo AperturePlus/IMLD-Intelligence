@@ -26,7 +26,7 @@
         <result property="encounterId" column="encounter_id"/>
         <result property="historyType" column="history_type"/>
         <result property="templateCode" column="template_code"/>
-        <result property="contentJson" column="content_json" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="contentJson" column="content_json" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="sourceType" column="source_type"/>
         <result property="recordedBy" column="recorded_by"/>
         <result property="recordedAt" column="recorded_at"/>
@@ -84,7 +84,7 @@
             #{encounterId},
             #{historyType},
             #{templateCode},
-            #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{sourceType},
             #{recordedBy},
             #{recordedAt}
@@ -97,7 +97,7 @@
             encounter_id = #{encounterId},
             history_type = #{historyType},
             template_code = #{templateCode},
-            content_json = #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            content_json = #{contentJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             source_type = #{sourceType},
             recorded_by = #{recordedBy},
             recorded_at = #{recordedAt}

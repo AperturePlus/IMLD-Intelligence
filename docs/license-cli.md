@@ -9,6 +9,7 @@
 ```
 
 成功输出关键字段：
+
 - `LICENSE_IMPORT_OK`
 - `licenseId`
 - `hospitalId`
@@ -22,6 +23,7 @@
 ```
 
 输出结构：
+
 - `UPGRADE_DECISION`
 - `allowed=true|false`
 - `reason`

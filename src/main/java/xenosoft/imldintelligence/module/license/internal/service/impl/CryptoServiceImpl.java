@@ -1,20 +1,29 @@
 package xenosoft.imldintelligence.module.license.internal.service.impl;
 
-import org.springframework.stereotype.Service;
-import xenosoft.imldintelligence.module.license.internal.service.CryptoService;
-
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+import org.springframework.stereotype.Service;
+
+import xenosoft.imldintelligence.module.license.internal.service.CryptoService;
+
 @Service
 public class CryptoServiceImpl implements CryptoService {
+
+    
+
     @Override
     public PublicKey loadRsaPublicKey(Path publicKeyPath) {
         try {
@@ -26,7 +35,7 @@ public class CryptoServiceImpl implements CryptoService {
             byte[] keyBytes = Base64.getDecoder().decode(sanitized);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
             return KeyFactory.getInstance("RSA").generatePublic(keySpec);
-        } catch (Exception e) {
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new IllegalStateException("Failed to load RSA public key: " + publicKeyPath, e);
         }
     }
@@ -38,7 +47,7 @@ public class CryptoServiceImpl implements CryptoService {
             verifier.initVerify(publicKey);
             verifier.update(payload.getBytes(StandardCharsets.UTF_8));
             return verifier.verify(Base64.getDecoder().decode(signatureBase64));
-        } catch (Exception e) {
+        } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
             throw new IllegalStateException("Failed to verify signature", e);
         }
     }
@@ -57,7 +66,7 @@ public class CryptoServiceImpl implements CryptoService {
                 builder.append(hex);
             }
             return builder.toString().toUpperCase();
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Failed to calculate SHA-256", e);
         }
     }

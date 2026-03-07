@@ -8,6 +8,21 @@ spring:
     init:
       mode: always
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: imld-intelligence-dev
+    consumer:
+      group-id: imld-intelligence-dev-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    producer:
+      acks: all
+
 imld:
   deployment:
     mode: saas

@@ -26,7 +26,7 @@
         <result property="templateName" column="template_name"/>
         <result property="diseaseCode" column="disease_code"/>
         <result property="department" column="department"/>
-        <result property="templateSchema" column="template_schema" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="templateSchema" column="template_schema" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="status" column="status"/>
         <result property="versionNo" column="version_no"/>
         <result property="createdBy" column="created_by"/>
@@ -75,7 +75,7 @@
             #{templateName},
             #{diseaseCode},
             #{department},
-            #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status},
             #{versionNo},
             #{createdBy}
@@ -88,7 +88,7 @@
             template_name = #{templateName},
             disease_code = #{diseaseCode},
             department = #{department},
-            template_schema = #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            template_schema = #{templateSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status},
             version_no = #{versionNo},
             created_by = #{createdBy}

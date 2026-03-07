@@ -28,8 +28,8 @@
         <result property="sourceSystem" column="source_system"/>
         <result property="direction" column="direction"/>
         <result property="bizType" column="biz_type"/>
-        <result property="requestPayload" column="request_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
-        <result property="responsePayload" column="response_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="requestPayload" column="request_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
+        <result property="responsePayload" column="response_payload" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="status" column="status"/>
         <result property="errorMessage" column="error_message"/>
         <result property="startedAt" column="started_at"/>
@@ -89,8 +89,8 @@
             #{sourceSystem},
             #{direction},
             #{bizType},
-            #{requestPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            #{responsePayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{requestPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            #{responsePayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status},
             #{errorMessage},
             #{startedAt},
@@ -104,8 +104,8 @@
             source_system = #{sourceSystem},
             direction = #{direction},
             biz_type = #{bizType},
-            request_payload = #{requestPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
-            response_payload = #{responsePayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            request_payload = #{requestPayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
+            response_payload = #{responsePayload, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status},
             error_message = #{errorMessage},
             started_at = #{startedAt},

@@ -21,7 +21,7 @@
         <result property="tenantId" column="tenant_id"/>
         <result property="reportId" column="report_id"/>
         <result property="versionNum" column="version_num"/>
-        <result property="contentSnapshot" column="content_snapshot" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="contentSnapshot" column="content_snapshot" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="changeSummary" column="change_summary"/>
         <result property="changedBy" column="changed_by"/>
         <result property="createdAt" column="created_at"/>
@@ -65,7 +65,7 @@
             #{tenantId},
             #{reportId},
             #{versionNum},
-            #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{changeSummary},
             #{changedBy}
         )
@@ -75,7 +75,7 @@
         UPDATE report_version
         SET report_id = #{reportId},
             version_num = #{versionNum},
-            content_snapshot = #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            content_snapshot = #{contentSnapshot, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             change_summary = #{changeSummary},
             changed_by = #{changedBy}
         WHERE tenant_id = #{tenantId}

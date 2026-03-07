@@ -24,7 +24,7 @@
         <result property="templateCode" column="template_code"/>
         <result property="templateName" column="template_name"/>
         <result property="diseaseCode" column="disease_code"/>
-        <result property="planSchema" column="plan_schema" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="planSchema" column="plan_schema" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="status" column="status"/>
         <result property="versionNo" column="version_no"/>
         <result property="createdBy" column="created_by"/>
@@ -71,7 +71,7 @@
             #{templateCode},
             #{templateName},
             #{diseaseCode},
-            #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{status},
             #{versionNo},
             #{createdBy}
@@ -83,7 +83,7 @@
         SET template_code = #{templateCode},
             template_name = #{templateName},
             disease_code = #{diseaseCode},
-            plan_schema = #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            plan_schema = #{planSchema, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             status = #{status},
             version_no = #{versionNo},
             created_by = #{createdBy}

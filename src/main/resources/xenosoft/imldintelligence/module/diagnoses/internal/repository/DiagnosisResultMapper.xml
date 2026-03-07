@@ -28,7 +28,7 @@
         <result property="confidence" column="confidence"/>
         <result property="rankNo" column="rank_no"/>
         <result property="riskLevel" column="risk_level"/>
-        <result property="evidenceJson" column="evidence_json" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler"/>
+        <result property="evidenceJson" column="evidence_json" jdbcType="OTHER" typeHandler="xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler"/>
         <result property="isDisplayToPatient" column="is_display_to_patient"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
@@ -77,7 +77,7 @@
             #{confidence},
             #{rankNo},
             #{riskLevel},
-            #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             #{isDisplayToPatient}
         )
     </insert>
@@ -90,7 +90,7 @@
             confidence = #{confidence},
             rank_no = #{rankNo},
             risk_level = #{riskLevel},
-            evidence_json = #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.shared.mybatis.JsonNodeTypeHandler},
+            evidence_json = #{evidenceJson, jdbcType=OTHER, typeHandler=xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler},
             is_display_to_patient = #{isDisplayToPatient}
         WHERE tenant_id = #{tenantId}
           AND id = #{id}

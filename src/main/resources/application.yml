@@ -14,11 +14,39 @@ spring:
   sql:
     init:
       mode: ${IMLD_SQL_INIT_MODE:never}
-      schema-locations: classpath:schema/domain-A.sql,classpath:schema/domain-B.sql,classpath:schema/domain-C.sql,classpath:schema/domain-D.sql,classpath:schema/index.sql
+      schema-locations: classpath:schema/01-identity.sql,classpath:schema/02-clinical.sql,classpath:schema/03-diagnosis-report.sql,classpath:schema/04-careplan-screening-payment.sql,classpath:schema/05-notify-integration-audit.sql,classpath:schema/99-comments.sql
+  data:
+    redis:
+      host: ${IMLD_REDIS_HOST:localhost}
+      port: ${IMLD_REDIS_PORT:6379}
+      database: ${IMLD_REDIS_DATABASE:0}
+      password: ${IMLD_REDIS_PASSWORD:}
+      timeout: ${IMLD_REDIS_TIMEOUT:2s}
+      connect-timeout: ${IMLD_REDIS_CONNECT_TIMEOUT:2s}
+      ssl:
+        enabled: ${IMLD_REDIS_SSL_ENABLED:false}
+  kafka:
+    bootstrap-servers: ${IMLD_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    client-id: ${IMLD_KAFKA_CLIENT_ID:imld-intelligence}
+    properties:
+      security.protocol: ${IMLD_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism: ${IMLD_KAFKA_SASL_MECHANISM:}
+      sasl.jaas.config: ${IMLD_KAFKA_SASL_JAAS_CONFIG:}
+      ssl.endpoint.identification.algorithm: ${IMLD_KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:https}
+      retries: ${IMLD_KAFKA_RETRIES:3}
+    producer:
+      acks: ${IMLD_KAFKA_PRODUCER_ACKS:all}
+      retries: ${IMLD_KAFKA_RETRIES:3}
+      properties:
+        enable.idempotence: ${IMLD_KAFKA_ENABLE_IDEMPOTENCE:true}
+    consumer:
+      group-id: ${IMLD_KAFKA_CONSUMER_GROUP:imld-intelligence-group}
+      auto-offset-reset: ${IMLD_KAFKA_AUTO_OFFSET_RESET:latest}
+      enable-auto-commit: ${IMLD_KAFKA_ENABLE_AUTO_COMMIT:false}
 
 mybatis:
   mapper-locations: classpath*:xenosoft/imldintelligence/module/**/internal/repository/*.xml
-  type-handlers-package: xenosoft.imldintelligence.shared.mybatis
+  type-handlers-package: xenosoft.imldintelligence.common.mybatis
   configuration:
     map-underscore-to-camel-case: true
 
@@ -26,6 +54,40 @@ imld:
   deployment:
     mode: ${IMLD_DEPLOYMENT_MODE:saas}
     tenant-mode: ${IMLD_TENANT_MODE:multi-tenant}
+  audit:
+    enabled: ${IMLD_AUDIT_ENABLED:true}
+    query-api-enabled: ${IMLD_AUDIT_QUERY_API_ENABLED:true}
+    fail-closed: ${IMLD_AUDIT_FAIL_CLOSED:true}
+    query-role-allowlist: ${IMLD_AUDIT_QUERY_ROLE_ALLOWLIST:SYSTEM_ADMIN,COMPLIANCE_AUDITOR}
+    default-page-size: ${IMLD_AUDIT_DEFAULT_PAGE_SIZE:20}
+    max-page-size: ${IMLD_AUDIT_MAX_PAGE_SIZE:200}
+    max-payload-bytes: ${IMLD_AUDIT_MAX_PAYLOAD_BYTES:8192}
+    masking-enabled: ${IMLD_AUDIT_MASKING_ENABLED:true}
+    masked-fields:
+      - idNo
+      - id_card
+      - mobile
+      - phone
+      - email
+      - address
+      - password
+      - token
+      - authorization
+      - patientName
+      - guardianName
+  security:
+    enabled: ${IMLD_SECURITY_ENABLED:false}
+    public-paths:
+      - /error
+      - /api/v1/auth/**
+      - /actuator/health
+      - /actuator/info
+    jwt:
+      issuer: ${IMLD_JWT_ISSUER:imld-intelligence}
+      secret: ${IMLD_JWT_SECRET:}
+      access-token-ttl: ${IMLD_JWT_ACCESS_TOKEN_TTL:15m}
+      refresh-token-ttl: ${IMLD_JWT_REFRESH_TOKEN_TTL:7d}
+      clock-skew: ${IMLD_JWT_CLOCK_SKEW:30s}
   cloud-bridge:
     enabled: ${IMLD_CLOUD_BRIDGE_ENABLED:false}
     scenario-allowlist:
@@ -61,3 +123,71 @@ imld:
     entitlement:
       enforce-support-window: ${IMLD_UPGRADE_ENFORCE_SUPPORT_WINDOW:true}
       allow-security-patch-after-expiry: ${IMLD_UPGRADE_ALLOW_SECURITY_PATCH_AFTER_EXPIRY:true}
+
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${IMLD_RESILIENCE_CB_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${IMLD_RESILIENCE_CB_MIN_CALLS:10}
+        permitted-number-of-calls-in-half-open-state: ${IMLD_RESILIENCE_CB_HALF_OPEN_CALLS:5}
+        wait-duration-in-open-state: ${IMLD_RESILIENCE_CB_WAIT_OPEN:30s}
+        failure-rate-threshold: ${IMLD_RESILIENCE_CB_FAILURE_RATE:50}
+        slow-call-rate-threshold: ${IMLD_RESILIENCE_CB_SLOW_CALL_RATE:70}
+        slow-call-duration-threshold: ${IMLD_RESILIENCE_CB_SLOW_CALL_DURATION:2s}
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.lang.Exception
+    instances:
+      cloudBridge:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: ${IMLD_RESILIENCE_TIME_LIMITER_TIMEOUT:3s}
+        cancel-running-future: true
+    instances:
+      cloudBridge:
+        base-config: default
+  retry:
+    configs:
+      default:
+        max-attempts: ${IMLD_RESILIENCE_RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${IMLD_RESILIENCE_RETRY_WAIT:500ms}
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: ${IMLD_RESILIENCE_RETRY_BACKOFF_MULTIPLIER:2}
+        exponential-max-wait-duration: ${IMLD_RESILIENCE_RETRY_MAX_WAIT:3s}
+        retry-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      cloudBridge:
+        base-config: default
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: ${IMLD_RESILIENCE_RL_LIMIT_FOR_PERIOD:100}
+        limit-refresh-period: ${IMLD_RESILIENCE_RL_REFRESH_PERIOD:1s}
+        timeout-duration: ${IMLD_RESILIENCE_RL_TIMEOUT:0}
+    instances:
+      cloudBridge:
+        base-config: default
+  bulkhead:
+    configs:
+      default:
+        max-concurrent-calls: ${IMLD_RESILIENCE_BH_MAX_CONCURRENT_CALLS:25}
+        max-wait-duration: ${IMLD_RESILIENCE_BH_MAX_WAIT:0}
+    instances:
+      cloudBridge:
+        base-config: default
+  thread-pool-bulkhead:
+    configs:
+      default:
+        core-thread-pool-size: ${IMLD_RESILIENCE_TPBH_CORE_POOL_SIZE:4}
+        max-thread-pool-size: ${IMLD_RESILIENCE_TPBH_MAX_POOL_SIZE:8}
+        queue-capacity: ${IMLD_RESILIENCE_TPBH_QUEUE_CAPACITY:32}
+    instances:
+      cloudBridge:
+        base-config: default

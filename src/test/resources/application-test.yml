@@ -2,10 +2,16 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:schema/domain-A.sql,classpath:schema/domain-B.sql,classpath:schema/domain-C.sql,classpath:schema/domain-D.sql,classpath:schema/index.sql
+      schema-locations: classpath:schema/01-identity.sql,classpath:schema/02-clinical.sql,classpath:schema/03-diagnosis-report.sql,classpath:schema/04-careplan-screening-payment.sql,classpath:schema/05-notify-integration-audit.sql,classpath:schema/99-comments.sql
 
 mybatis:
   mapper-locations: classpath*:xenosoft/imldintelligence/module/**/internal/repository/*.xml
-  type-handlers-package: xenosoft.imldintelligence.shared.mybatis
+  type-handlers-package: xenosoft.imldintelligence.common.mybatis
   configuration:
     map-underscore-to-camel-case: true
+
+imld:
+  security:
+    enabled: false
+    jwt:
+      secret: test-jwt-secret-key-for-unit-tests-only-123456

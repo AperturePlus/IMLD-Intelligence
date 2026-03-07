@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # Add PostgreSQL service
+    # Add dependent services required by current tests
     services:
       postgres:
         image: postgres:18
@@ -30,7 +30,18 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -52,6 +63,9 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
           SPRING_DATASOURCE_USERNAME: testuser
           SPRING_DATASOURCE_PASSWORD: testpass
+          SPRING_DATA_REDIS_HOST: localhost
+          SPRING_DATA_REDIS_PORT: 6379
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: localhost:9092
 
       - name: Upload test reports
         if: always()

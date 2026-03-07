@@ -1,5 +1,6 @@
 package xenosoft.imldintelligence.module.license.internal.service.impl;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.PublicKey;
@@ -116,7 +117,7 @@ public class LicenseCliService {
             }
             Files.copy(source, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             return target;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Failed to import license file", e);
         }
     }
@@ -144,7 +145,7 @@ public class LicenseCliService {
                 throw new IllegalStateException("Invalid signed envelope for " + artifactName + ": " + path);
             }
             return envelope;
-        } catch (Exception e) {
+        } catch (IOException | IllegalArgumentException | IllegalStateException e) {
             throw new IllegalStateException("Failed to read " + artifactName + " file: " + path, e);
         }
     }
