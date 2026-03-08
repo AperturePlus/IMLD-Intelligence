@@ -7,7 +7,7 @@ import xenosoft.imldintelligence.module.identity.internal.model.Role;
 /**
  * 认证服务接口，封装登录、令牌签发、刷新、校验与注销能力。
  */
-public interface IAuthService {
+public interface AuthService {
     /**
      * 根据角色信息生成认证令牌。
      *

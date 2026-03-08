@@ -16,7 +16,7 @@ import xenosoft.imldintelligence.common.RequireAnyRole;
 import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
 import xenosoft.imldintelligence.module.identity.internal.security.RoleAuthorityUtils;
-import xenosoft.imldintelligence.module.identity.internal.service.IPermissionService;
+import xenosoft.imldintelligence.module.identity.internal.service.PermissionService;
 
 import java.security.Principal;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 public class PermissionAspect {
-    private final IPermissionService permissionService;
+    private final PermissionService permissionService;
     private final CurrentUserSubjectProvider currentUserSubjectProvider;
 
     @Before("@annotation(checkPermission)")

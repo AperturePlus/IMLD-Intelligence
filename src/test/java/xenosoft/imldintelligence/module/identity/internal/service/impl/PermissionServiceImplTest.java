@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class PermissionSerivceTest {
+class PermissionServiceImplTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Mock
@@ -39,11 +39,11 @@ class PermissionSerivceTest {
     @Mock
     private AbacPolicyRepository abacPolicyRepository;
 
-    private PermissionSerivce permissionSerivce;
+    private PermissionServiceImpl permissionServiceImpl;
 
     @BeforeEach
     void setUp() {
-        permissionSerivce = new PermissionSerivce(userAccountRepository, userRoleRelRepository, roleRepository, abacPolicyRepository);
+        permissionServiceImpl = new PermissionServiceImpl(userAccountRepository, userRoleRelRepository, roleRepository, abacPolicyRepository);
     }
 
     @Test
@@ -52,7 +52,7 @@ class PermissionSerivceTest {
         when(roleRepository.findById(1L, 10L)).thenReturn(Optional.of(role(10L, "doctor")));
         when(roleRepository.findById(1L, 11L)).thenReturn(Optional.of(role(11L, "ROLE_case_manager")));
 
-        assertThat(permissionSerivce.getEffectiveRoleCodes(1L, 2L))
+        assertThat(permissionServiceImpl.getEffectiveRoleCodes(1L, 2L))
                 .containsExactlyInAnyOrder("DOCTOR", "CASE_MANAGER");
     }
 
@@ -62,7 +62,7 @@ class PermissionSerivceTest {
         when(userRoleRelRepository.listByUserId(1L, 2L)).thenReturn(List.of(userRoleRel(10L)));
         when(roleRepository.findById(1L, 10L)).thenReturn(Optional.of(role(10L, "doctor")));
 
-        UserSubject subject = permissionSerivce.loadSubject(1L, 2L);
+        UserSubject subject = permissionServiceImpl.loadSubject(1L, 2L);
 
         assertThat(subject).isEqualTo(new UserSubject(2L, 1L, "DOCTOR", "Oncology", java.util.Set.of("DOCTOR")));
     }
@@ -74,7 +74,7 @@ class PermissionSerivceTest {
         when(roleRepository.findById(1L, 99L)).thenReturn(Optional.of(role(99L, "SYSTEM_ADMIN")));
 
 
-        boolean allowed = permissionSerivce.isAllowed(1L, 2L, "PATIENT", "READ", Map.of("patientId", 1001L));
+        boolean allowed = permissionServiceImpl.isAllowed(1L, 2L, "PATIENT", "READ", Map.of("patientId", 1001L));
 
         assertThat(allowed).isTrue();
     }
@@ -97,7 +97,7 @@ class PermissionSerivceTest {
         allowPolicy.setActionExpr(OBJECT_MAPPER.readTree("{\"actions\":[\"READ\",\"UPDATE\"]}"));
         when(abacPolicyRepository.listByTenantId(1L)).thenReturn(List.of(allowPolicy));
 
-        boolean allowed = permissionSerivce.isAllowed(1L, 2L, "PATIENT", "READ", Map.of("ownerUserId", 2L));
+        boolean allowed = permissionServiceImpl.isAllowed(1L, 2L, "PATIENT", "READ", Map.of("ownerUserId", 2L));
 
         assertThat(allowed).isTrue();
     }
@@ -131,7 +131,7 @@ class PermissionSerivceTest {
         allowPolicy.setActionExpr(OBJECT_MAPPER.readTree("{\"action\":\"EXPORT\"}"));
         when(abacPolicyRepository.listByTenantId(1L)).thenReturn(List.of(allowPolicy, denyPolicy));
 
-        boolean allowed = permissionSerivce.isAllowed(1L, 2L, "PATIENT", "EXPORT", Map.of("ownerUserId", 2L));
+        boolean allowed = permissionServiceImpl.isAllowed(1L, 2L, "PATIENT", "EXPORT", Map.of("ownerUserId", 2L));
 
         assertThat(allowed).isFalse();
     }

@@ -16,7 +16,7 @@ import xenosoft.imldintelligence.common.CheckPermission;
 import xenosoft.imldintelligence.common.RequireAnyRole;
 import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
-import xenosoft.imldintelligence.module.identity.internal.service.IPermissionService;
+import xenosoft.imldintelligence.module.identity.internal.service.PermissionService;
 
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 class PermissionAspectTest {
 
     @Mock
-    private IPermissionService permissionService;
+    private PermissionService permissionService;
 
     private ProtectedService protectedService;
 

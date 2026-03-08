@@ -4,13 +4,13 @@ import org.springframework.stereotype.Service;
 import xenosoft.imldintelligence.module.identity.internal.dto.AuthToken;
 import xenosoft.imldintelligence.module.identity.internal.dto.LoginRequest;
 import xenosoft.imldintelligence.module.identity.internal.model.Role;
-import xenosoft.imldintelligence.module.identity.internal.service.IAuthService;
+import xenosoft.imldintelligence.module.identity.internal.service.AuthService;
 
 /**
  * 认证服务实现类，负责登录、令牌签发、刷新、校验与退出处理。
  */
 @Service
-public class AuthServiceImpl implements IAuthService {
+public class AuthServiceImpl implements AuthService {
 
     /**
      * {@inheritDoc}

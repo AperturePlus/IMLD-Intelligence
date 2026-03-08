@@ -13,7 +13,7 @@ import xenosoft.imldintelligence.module.identity.internal.repository.RoleReposit
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.UserRoleRelRepository;
 import xenosoft.imldintelligence.module.identity.internal.security.RoleAuthorityUtils;
-import xenosoft.imldintelligence.module.identity.internal.service.IPermissionService;
+import xenosoft.imldintelligence.module.identity.internal.service.PermissionService;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -30,7 +30,7 @@ import java.util.Set;
  */
 @Service
 @RequiredArgsConstructor
-public class PermissionSerivce implements IPermissionService {
+public class PermissionServiceImpl implements PermissionService {
     private static final Set<String> SUPER_ROLES = Set.of("SYSTEM_ADMIN");
     private static final int DEFAULT_POLICY_PRIORITY = 100;
 

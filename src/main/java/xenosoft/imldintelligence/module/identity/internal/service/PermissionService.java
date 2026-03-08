@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * 权限服务接口，提供 RBAC 与 ABAC 组合授权判定能力。
  */
-public interface IPermissionService {
+public interface PermissionService {
 
     /**
      * 判断用户是否被允许对指定资源执行指定动作。
