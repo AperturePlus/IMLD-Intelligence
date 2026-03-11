@@ -114,3 +114,38 @@
 - 先按模块优先级逐个落控制器实现，并让控制器实现这里定义的接口。
 - 写实现时优先复用 `Query/Request/Response/Shared` 分类，不要重新创建语义重复的 DTO。
 - 对 `identity`、`clinical`、`diagnoses`、`integration` 的实现补齐越权、脱敏、重放与出域审计测试。
+
+## Controller Contract Layer
+
+为避免后续实现阶段出现“直接新建控制器、绕过既有 HTTP 契约”的漂移，本轮新增了显式的 `*ControllerContract` 接口层。
+职责划分如下：
+
+- `*Api`：定义 HTTP 方法、路径、请求头、参数与返回类型，是协议级契约。
+- `*ControllerContract`：定义控制器实现应当承接的接口层，后续具体控制器类应实现这一层。
+- `*ApiDtos`：定义该模块的 DTO 分类目录。
+
+当前已补齐 controller contract 的模块包括：
+
+- `identity`
+- `clinical`
+- `diagnoses`
+- `report`
+- `screening`
+- `careplan`
+- `payment`
+- `notify`
+- `integration`
+- `license`
+
+`audit` 模块目前已有运行中的具体控制器，因此暂时保持现状，继续以既有控制器承接查询能力。
+
+## Global Error Handling
+
+全局异常处理由 `GlobalExceptionHandler` 统一承接，主要规则如下：
+
+- 参数校验失败、绑定失败、请求体解析失败统一返回 `400`。
+- 鉴权拒绝统一返回 `403`。
+- 显式抛出的 `ResponseStatusException` 保留原始状态码，并转为统一错误响应体。
+- 未分类异常统一返回 `500`，避免直接向外暴露内部异常细节。
+
+统一错误体继续复用 `ApiResponse<Void>`，便于前端与网关做一致处理。
