@@ -34,6 +34,22 @@ public interface IdentityApi {
     );
 
     /**
+     * 刷新令牌。
+     */
+    @PostMapping("/auth/refresh")
+    ApiResponse<IdentityApiDtos.Response.AuthSessionResponse> refreshToken(
+            @Valid @RequestBody IdentityApiDtos.Request.RefreshTokenCommand request
+    );
+
+    /**
+     * 退出登录。
+     */
+    @PostMapping("/auth/logout")
+    ApiResponse<Void> logout(
+            @Valid @RequestBody IdentityApiDtos.Request.LogoutCommand request
+    );
+
+    /**
      * 分页查询患者。
      */
     @GetMapping("/patients")

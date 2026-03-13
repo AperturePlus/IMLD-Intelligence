@@ -140,6 +140,57 @@ public class JwtUtil {
     }
 
     /**
+     * 从令牌中提取 JTI（JWT ID）。
+     *
+     * @param token 待解析的令牌
+     * @return JTI 字符串，解析失败时返回 {@code null}
+     */
+    public String extractJti(String token) {
+        try {
+            properties.validateJwtConfiguration();
+            Claims claims = Jwts.parser()
+                    .verifyWith(signingKey())
+                    .requireIssuer(properties.getJwt().getIssuer())
+                    .clock(() -> Date.from(Instant.now(clock)))
+                    .clockSkewSeconds(properties.getJwt().getClockSkew().toSeconds())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.getId();
+        } catch (JwtException | IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * 从令牌中提取剩余有效期。
+     *
+     * @param token 待解析的令牌
+     * @return 剩余有效期，解析失败或已过期时返回 {@code Duration.ZERO}
+     */
+    public Duration getRemainingTtl(String token) {
+        try {
+            properties.validateJwtConfiguration();
+            Claims claims = Jwts.parser()
+                    .verifyWith(signingKey())
+                    .requireIssuer(properties.getJwt().getIssuer())
+                    .clock(() -> Date.from(Instant.now(clock)))
+                    .clockSkewSeconds(properties.getJwt().getClockSkew().toSeconds())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            Date expiration = claims.getExpiration();
+            if (expiration == null) {
+                return Duration.ZERO;
+            }
+            Duration remaining = Duration.between(Instant.now(clock), expiration.toInstant());
+            return remaining.isNegative() ? Duration.ZERO : remaining;
+        } catch (JwtException | IllegalArgumentException ex) {
+            return Duration.ZERO;
+        }
+    }
+
+    /**
      * 返回访问令牌的有效期秒数。
      *
      * @return 访问令牌默认有效期对应的秒数

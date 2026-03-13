@@ -80,8 +80,10 @@ imld:
     public-paths:
       - /error
       - /api/v1/auth/**
+      - /api/v1/identity/auth/**
       - /actuator/health
       - /actuator/info
+    data-encryption-key: ${IMLD_DATA_ENCRYPTION_KEY:}
     jwt:
       issuer: ${IMLD_JWT_ISSUER:imld-intelligence}
       secret: ${IMLD_JWT_SECRET:}

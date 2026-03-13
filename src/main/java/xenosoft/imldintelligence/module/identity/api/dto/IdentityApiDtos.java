@@ -84,6 +84,24 @@ public final class IdentityApiDtos {
         }
 
         /**
+         * 刷新令牌请求。
+         */
+        public record RefreshTokenCommand(
+                @NotBlank(message = "refreshToken must not be blank")
+                String refreshToken
+        ) {
+        }
+
+        /**
+         * 退出登录请求。
+         */
+        public record LogoutCommand(
+                @NotBlank(message = "refreshToken must not be blank")
+                String refreshToken
+        ) {
+        }
+
+        /**
          * 新增或补录患者。
          *
          * <p>明文字段只用于边界层接收，后续实现必须完成加密与脱敏。</p>
