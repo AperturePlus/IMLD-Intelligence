@@ -117,4 +117,32 @@
           AND id = #{id}
     </update>
 
+    <sql id="conditionWhere">
+        <where>
+            tenant_id = #{tenantId}
+            <if test="patientId != null">
+                AND patient_id = #{patientId}
+            </if>
+            <if test="consentType != null and consentType != ''">
+                AND consent_type = #{consentType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM consent_record
+        <include refid="conditionWhere"/>
+    </select>
+
+    <select id="listByCondition" resultMap="ConsentRecordResultMap">
+        SELECT <include refid="BaseColumns"/>
+        FROM consent_record
+        <include refid="conditionWhere"/>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
 </mapper>

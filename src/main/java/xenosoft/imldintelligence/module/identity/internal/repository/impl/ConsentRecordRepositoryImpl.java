@@ -50,6 +50,17 @@ public class ConsentRecordRepositoryImpl implements ConsentRecordRepository {
         return consentRecordMapper.listByTocUserId(tenantId, tocUserId);
     }
 
+    @Override
+    public long countByCondition(Long tenantId, Long patientId, String consentType, String status) {
+        return consentRecordMapper.countByCondition(tenantId, patientId, consentType, status);
+    }
+
+    @Override
+    public List<ConsentRecord> listByCondition(Long tenantId, Long patientId, String consentType,
+                                                String status, long offset, int limit) {
+        return consentRecordMapper.listByCondition(tenantId, patientId, consentType, status, offset, limit);
+    }
+
     /**
      * {@inheritDoc}
      */

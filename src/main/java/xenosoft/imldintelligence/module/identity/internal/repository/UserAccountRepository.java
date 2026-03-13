@@ -44,6 +44,12 @@ public interface UserAccountRepository {
      */
     List<UserAccount> listByTenantId(Long tenantId);
 
+    long countByCondition(Long tenantId, String usernameKeyword, String userType,
+                          String deptName, String status);
+
+    List<UserAccount> listByCondition(Long tenantId, String usernameKeyword, String userType,
+                                       String deptName, String status, long offset, int limit);
+
     /**
      * 新增用户账号。
      *

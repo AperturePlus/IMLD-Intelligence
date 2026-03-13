@@ -119,4 +119,35 @@
           AND patient_no = #{patientNo}
     </update>
 
+    <sql id="conditionWhere">
+        <where>
+            tenant_id = #{tenantId}
+            <if test="patientNo != null and patientNo != ''">
+                AND patient_no = #{patientNo}
+            </if>
+            <if test="patientNameKeyword != null and patientNameKeyword != ''">
+                AND patient_name LIKE '%' || #{patientNameKeyword} || '%'
+            </if>
+            <if test="patientType != null and patientType != ''">
+                AND patient_type = #{patientType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM patient
+        <include refid="conditionWhere"/>
+    </select>
+
+    <select id="listByCondition" resultMap="PatientResultMap">
+        SELECT <include refid="BaseColumns"/>
+        FROM patient
+        <include refid="conditionWhere"/>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
 </mapper>

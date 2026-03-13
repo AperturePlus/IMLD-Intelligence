@@ -42,6 +42,18 @@ public class PatientRepositoryImpl implements PatientRepository {
         return patientMapper.listByTenantId(tenantId);
     }
 
+    @Override
+    public long countByCondition(Long tenantId, String patientNo, String patientNameKeyword,
+                                  String patientType, String status) {
+        return patientMapper.countByCondition(tenantId, patientNo, patientNameKeyword, patientType, status);
+    }
+
+    @Override
+    public List<Patient> listByCondition(Long tenantId, String patientNo, String patientNameKeyword,
+                                          String patientType, String status, long offset, int limit) {
+        return patientMapper.listByCondition(tenantId, patientNo, patientNameKeyword, patientType, status, offset, limit);
+    }
+
     /**
      * {@inheritDoc}
      */

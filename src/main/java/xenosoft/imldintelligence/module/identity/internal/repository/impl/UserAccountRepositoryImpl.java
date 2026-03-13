@@ -50,6 +50,18 @@ public class UserAccountRepositoryImpl implements UserAccountRepository {
         return userAccountMapper.listByTenantId(tenantId);
     }
 
+    @Override
+    public long countByCondition(Long tenantId, String usernameKeyword, String userType,
+                                  String deptName, String status) {
+        return userAccountMapper.countByCondition(tenantId, usernameKeyword, userType, deptName, status);
+    }
+
+    @Override
+    public List<UserAccount> listByCondition(Long tenantId, String usernameKeyword, String userType,
+                                              String deptName, String status, long offset, int limit) {
+        return userAccountMapper.listByCondition(tenantId, usernameKeyword, userType, deptName, status, offset, limit);
+    }
+
     /**
      * {@inheritDoc}
      */

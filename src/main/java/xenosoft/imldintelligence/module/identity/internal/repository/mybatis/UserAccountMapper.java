@@ -19,6 +19,20 @@ public interface UserAccountMapper {
 
     List<UserAccount> listByTenantId(@Param("tenantId") Long tenantId);
 
+    long countByCondition(@Param("tenantId") Long tenantId,
+                          @Param("usernameKeyword") String usernameKeyword,
+                          @Param("userType") String userType,
+                          @Param("deptName") String deptName,
+                          @Param("status") String status);
+
+    List<UserAccount> listByCondition(@Param("tenantId") Long tenantId,
+                                      @Param("usernameKeyword") String usernameKeyword,
+                                      @Param("userType") String userType,
+                                      @Param("deptName") String deptName,
+                                      @Param("status") String status,
+                                      @Param("offset") long offset,
+                                      @Param("limit") int limit);
+
     int insert(UserAccount userAccount);
 
     int update(UserAccount userAccount);

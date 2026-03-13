@@ -19,6 +19,18 @@ public interface ConsentRecordMapper {
 
     List<ConsentRecord> listByTocUserId(@Param("tenantId") Long tenantId, @Param("tocUserId") Long tocUserId);
 
+    long countByCondition(@Param("tenantId") Long tenantId,
+                          @Param("patientId") Long patientId,
+                          @Param("consentType") String consentType,
+                          @Param("status") String status);
+
+    List<ConsentRecord> listByCondition(@Param("tenantId") Long tenantId,
+                                         @Param("patientId") Long patientId,
+                                         @Param("consentType") String consentType,
+                                         @Param("status") String status,
+                                         @Param("offset") long offset,
+                                         @Param("limit") int limit);
+
     int insert(ConsentRecord consentRecord);
 
     int update(ConsentRecord consentRecord);

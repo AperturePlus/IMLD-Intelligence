@@ -124,4 +124,36 @@
           AND id = #{id}
     </update>
 
+    <sql id="conditionWhere">
+        <where>
+            tenant_id = #{tenantId}
+            <if test="usernameKeyword != null and usernameKeyword != ''">
+                AND (username LIKE '%' || #{usernameKeyword} || '%'
+                  OR display_name LIKE '%' || #{usernameKeyword} || '%')
+            </if>
+            <if test="userType != null and userType != ''">
+                AND user_type = #{userType}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND dept_name = #{deptName}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM user_account
+        <include refid="conditionWhere"/>
+    </select>
+
+    <select id="listByCondition" resultMap="UserAccountResultMap">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_account
+        <include refid="conditionWhere"/>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
 </mapper>

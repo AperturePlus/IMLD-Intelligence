@@ -17,6 +17,20 @@ public interface PatientMapper {
 
     List<Patient> listByTenantId(@Param("tenantId") Long tenantId);
 
+    long countByCondition(@Param("tenantId") Long tenantId,
+                          @Param("patientNo") String patientNo,
+                          @Param("patientNameKeyword") String patientNameKeyword,
+                          @Param("patientType") String patientType,
+                          @Param("status") String status);
+
+    List<Patient> listByCondition(@Param("tenantId") Long tenantId,
+                                   @Param("patientNo") String patientNo,
+                                   @Param("patientNameKeyword") String patientNameKeyword,
+                                   @Param("patientType") String patientType,
+                                   @Param("status") String status,
+                                   @Param("offset") long offset,
+                                   @Param("limit") int limit);
+
     int insert(Patient patient);
 
     int update(Patient patient);
