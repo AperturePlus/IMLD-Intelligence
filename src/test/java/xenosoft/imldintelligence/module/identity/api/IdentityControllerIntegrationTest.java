@@ -3,7 +3,7 @@ package xenosoft.imldintelligence.module.identity.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -226,7 +226,7 @@ class IdentityControllerIntegrationTest {
             DataSourceAutoConfiguration.class,
             DataSourceTransactionManagerAutoConfiguration.class,
             JdbcTemplateAutoConfiguration.class,
-            MybatisAutoConfiguration.class,
+            MybatisPlusAutoConfiguration.class,
             RedisAutoConfiguration.class,
             RedisReactiveAutoConfiguration.class,
             RedisRepositoriesAutoConfiguration.class,

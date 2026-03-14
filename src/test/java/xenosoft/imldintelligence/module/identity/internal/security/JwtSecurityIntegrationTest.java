@@ -1,7 +1,7 @@
 package xenosoft.imldintelligence.module.identity.internal.security;
 
 import org.junit.jupiter.api.Test;
-import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -103,7 +103,7 @@ class JwtSecurityIntegrationTest {
             DataSourceAutoConfiguration.class,
             DataSourceTransactionManagerAutoConfiguration.class,
             JdbcTemplateAutoConfiguration.class,
-            MybatisAutoConfiguration.class,
+            MybatisPlusAutoConfiguration.class,
             RedisAutoConfiguration.class,
             RedisReactiveAutoConfiguration.class,
             RedisRepositoriesAutoConfiguration.class,
