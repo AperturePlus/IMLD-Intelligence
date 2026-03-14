@@ -17,7 +17,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import xenosoft.imldintelligence.module.audit.internal.config.AuditProperties;
 
 /**
- * 审计载荷脱敏器，用于在审计数据落库前清洗敏感内容。
+ * Sanitizes audit payloads before persistence.
+ *
+ * <p>The sanitizer applies two protection steps in order:</p>
+ * <p>1. Mask configured sensitive fields recursively in JSON objects and arrays.</p>
+ * <p>2. Enforce payload size limits by replacing oversized content with truncation metadata.</p>
  */
 @Component
 public class AuditPayloadSanitizer {
@@ -31,6 +35,9 @@ public class AuditPayloadSanitizer {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Returns a sanitized payload that is safe for audit storage.
+     */
     public JsonNode sanitize(JsonNode payload) {
         if (payload == null || payload.isNull()) {
             return payload;
@@ -42,6 +49,7 @@ public class AuditPayloadSanitizer {
             return sanitized;
         }
 
+        // Store bounded metadata when payload content exceeds the configured audit size budget.
         ObjectNode truncated = objectMapper.createObjectNode();
         truncated.put("_truncated", true);
         truncated.put("_originalSizeBytes", rawBytes.length);
@@ -50,6 +58,9 @@ public class AuditPayloadSanitizer {
         return truncated;
     }
 
+    /**
+     * Builds a normalized lookup set and applies field-level masking recursively.
+     */
     private JsonNode maskSensitiveFields(JsonNode source) {
         Set<String> normalizedMaskedFields = new HashSet<>();
         for (String field : properties.getMaskedFields()) {
@@ -58,6 +69,9 @@ public class AuditPayloadSanitizer {
         return maskNode(source, normalizedMaskedFields);
     }
 
+    /**
+     * Traverses object and array nodes recursively and masks configured field names.
+     */
     private JsonNode maskNode(JsonNode node, Set<String> normalizedMaskedFields) {
         if (node == null || node.isNull()) {
             return node;
@@ -88,6 +102,9 @@ public class AuditPayloadSanitizer {
         return node.deepCopy();
     }
 
+    /**
+     * Normalizes field names so configuration can match snake_case, kebab-case, and camelCase.
+     */
     private String normalizeFieldName(String fieldName) {
         if (fieldName == null) {
             return "";

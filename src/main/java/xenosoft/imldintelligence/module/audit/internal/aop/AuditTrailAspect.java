@@ -18,7 +18,10 @@ import xenosoft.imldintelligence.module.audit.internal.service.command.Sensitive
 import java.lang.reflect.Method;
 
 /**
- * 审计切面，拦截审计相关注解并写入审计日志。
+ * Intercepts audit annotations and persists audit events around business method execution.
+ *
+ * <p>The aspect intentionally captures both successful and failed executions so security-relevant
+ * traces are preserved even when business logic throws.</p>
  */
 @Aspect
 @Component
@@ -32,6 +35,9 @@ public class AuditTrailAspect {
         this.auditTrailService = auditTrailService;
     }
 
+    /**
+     * Records operation-level audit logs declared with {@link AuditedOperation}.
+     */
     @Around("@annotation(auditedOperation)")
     public Object aroundAuditedOperation(ProceedingJoinPoint joinPoint, AuditedOperation auditedOperation) throws Throwable {
         Object result = null;
@@ -69,6 +75,9 @@ public class AuditTrailAspect {
         return result;
     }
 
+    /**
+     * Records sensitive-data access logs declared with {@link SensitiveAccessed}.
+     */
     @Around("@annotation(sensitiveAccessed)")
     public Object aroundSensitiveAccess(ProceedingJoinPoint joinPoint, SensitiveAccessed sensitiveAccessed) throws Throwable {
         Object result = null;
@@ -106,6 +115,9 @@ public class AuditTrailAspect {
         return result;
     }
 
+    /**
+     * Evaluates a SpEL expression against method arguments and execution result/error variables.
+     */
     private String evaluateExpression(String expression, Method method, Object[] args, Object result, Throwable error) {
         if (expression == null || expression.isBlank()) {
             return null;
@@ -125,6 +137,9 @@ public class AuditTrailAspect {
         return value == null ? null : String.valueOf(value);
     }
 
+    /**
+     * Resolves the concrete method on the target class so parameter names and annotations are stable.
+     */
     private Method resolveMethod(ProceedingJoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
