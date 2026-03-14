@@ -15,3 +15,8 @@ Design notes:
 - Indexes are colocated with the tables they serve so schema ownership is visible in one file.
 - Tenant-scoped support tables now keep tenant-aware foreign keys and tenant-leading indexes where cross-tenant leakage risk was highest.
 
+CRUD optimization notes:
+
+- Keep repetitive cross-table read models (especially user/role/permission aggregation) in versioned SQL views, then let MyBatis mappers query the view with tenant filters.
+- For list APIs that currently do `COUNT(*)` plus paged `SELECT`, prefer a window-function variant (for example `COUNT(*) OVER()`) when profile testing proves it reduces duplicated scans.
+- Use explicit, auditable triggers only for mechanical invariants (such as consistently updating `updated_at`); keep authorization and privacy policies in application services for better observability and rollback control.
