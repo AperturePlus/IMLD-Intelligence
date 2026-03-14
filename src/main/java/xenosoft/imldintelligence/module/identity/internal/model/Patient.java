@@ -1,12 +1,17 @@
 package xenosoft.imldintelligence.module.identity.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Data
+@TableName("patient")
 public class Patient {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private String patientNo;          // 系统内患者编号

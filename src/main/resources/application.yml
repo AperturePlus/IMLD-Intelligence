@@ -49,6 +49,11 @@ mybatis:
   type-handlers-package: xenosoft.imldintelligence.common.mybatis
   configuration:
     map-underscore-to-camel-case: true
+mybatis-plus:
+  mapper-locations: classpath*:xenosoft/imldintelligence/module/**/internal/repository/*.xml
+  type-handlers-package: xenosoft.imldintelligence.common.mybatis
+  configuration:
+    map-underscore-to-camel-case: true
 
 imld:
   deployment:

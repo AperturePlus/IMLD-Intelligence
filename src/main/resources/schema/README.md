@@ -14,6 +14,7 @@ Design notes:
 - Views stay with identity because they expose authorization state.
 - Indexes are colocated with the tables they serve so schema ownership is visible in one file.
 - Tenant-scoped support tables now keep tenant-aware foreign keys and tenant-leading indexes where cross-tenant leakage risk was highest.
+- `01-identity.sql` now includes a `patient` update trigger (`trg_patient_set_updated_at`) to centralize `updated_at` maintenance.
 
 CRUD optimization notes:
 
