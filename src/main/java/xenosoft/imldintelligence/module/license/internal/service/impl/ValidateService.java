@@ -129,6 +129,9 @@ public class ValidateService {
         );
     }
 
+    /**
+     * Loads and verifies the configured release manifest before applying entitlement checks.
+     */
     private void validateUpgradeManifestOrThrow(LicenseInfo licenseInfo, PublicKey publicKey) {
         ReleaseManifest releaseManifest = readSignedReleaseManifest(
                 requireExistingPath(upgradeProperties.getManifestFilePath(), "Upgrade manifest file is configured but not found"),
@@ -137,6 +140,9 @@ public class ValidateService {
         validateUpgradeEntitlementOrThrow(licenseInfo, releaseManifest);
     }
 
+    /**
+     * Reads a signed release manifest envelope and validates its RSA signature.
+     */
     private ReleaseManifest readSignedReleaseManifest(Path manifestPath, PublicKey publicKey) {
         LicenseEnvelope manifestEnvelope = readSignedEnvelope(manifestPath, "release manifest");
         String canonicalPayload = canonicalize(manifestEnvelope.getPayload());
@@ -150,6 +156,9 @@ public class ValidateService {
         }
     }
 
+    /**
+     * Ensures the runtime deployment mode is exactly the mode granted by the license payload.
+     */
     private void validateDeploymentMode(LicenseInfo licenseInfo) {
         String licenseMode = normalize(licenseInfo.getDeploymentMode());
         String runtimeMode = deploymentProperties.normalizedMode();
@@ -160,6 +169,9 @@ public class ValidateService {
         }
     }
 
+    /**
+     * Verifies activation code hash when private deployment requires an operator-provided code.
+     */
     private void validateActivationCode(LicenseInfo licenseInfo, LicenseProperties.PrivateEdition privateEdition) {
         if (!privateEdition.isActivationRequired()) {
             return;
@@ -176,6 +188,9 @@ public class ValidateService {
         }
     }
 
+    /**
+     * Enforces machine-binding by comparing the local fingerprint digest with licensed digest.
+     */
     private void validateMachineBinding(LicenseInfo licenseInfo, LicenseProperties.PrivateEdition privateEdition) {
         if (!privateEdition.isMachineBindingEnabled()) {
             return;
@@ -190,6 +205,9 @@ public class ValidateService {
         }
     }
 
+    /**
+     * Converts verified JSON payload into a strongly typed license model.
+     */
     private LicenseInfo toLicenseInfo(JsonNode payload) {
         try {
             return objectMapper.treeToValue(payload, LicenseInfo.class);
@@ -198,6 +216,9 @@ public class ValidateService {
         }
     }
 
+    /**
+     * Reads a signed envelope from disk and validates the required envelope structure.
+     */
     private LicenseEnvelope readSignedEnvelope(Path path, String artifactName) {
         try {
             JsonNode root = objectMapper.readTree(Files.readString(path));
@@ -214,6 +235,9 @@ public class ValidateService {
         }
     }
 
+    /**
+     * Ensures a configured file path exists before signature verification starts.
+     */
     private Path requireExistingPath(String value, String message) {
         if (!hasText(value)) {
             throw new IllegalStateException(message);
@@ -225,6 +249,9 @@ public class ValidateService {
         return path;
     }
 
+    /**
+     * Generates canonical JSON used as signature input to avoid map/property ordering drift.
+     */
     private String canonicalize(JsonNode payload) {
         try {
             return objectMapper.writeValueAsString(payload);

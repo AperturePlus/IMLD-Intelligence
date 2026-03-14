@@ -13,7 +13,11 @@ import java.util.List;
 import lombok.Getter;
 
 /**
- * 设备指纹模型，用于生成并表达当前节点的机器指纹信息。
+ * Represents a lightweight machine fingerprint used for offline license binding.
+ *
+ * <p>The fingerprint intentionally combines stable and broadly available runtime signals instead of
+ * hardware-vendor specific identifiers so private deployments can validate licenses without extra
+ * native dependencies.</p>
  */
 @Getter
 public class Fingerprint {
@@ -22,19 +26,19 @@ public class Fingerprint {
     private final String hdId;
     private final String osInfo;
 
-    public Fingerprint(){
+    public Fingerprint() {
         this.cpuId = getProcessorInfo();
         this.macAddr = getMacAddress();
         this.hdId = getComputerName();
         this.osInfo = getOsInfo();
-
     }
 
+    /**
+     * Collects physical MAC addresses and selects the lexicographically smallest value for stability.
+     */
     private String getMacAddress() {
         try {
-            //StringBuilder sb = new StringBuilder();
             Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
-
             List<String> macAddresses = new ArrayList<>();
             while (networks.hasMoreElements()) {
                 NetworkInterface network = networks.nextElement();
@@ -49,23 +53,20 @@ public class Fingerprint {
                 }
             }
 
-            // 排序后取第一个，确保一致性
             if (!macAddresses.isEmpty()) {
                 Collections.sort(macAddresses);
                 return macAddresses.getFirst();
             }
-
             return "UNKNOWN_MAC";
-
         } catch (SocketException e) {
             return "UNKNOWN_MAC";
         }
     }
 
     private String getOsInfo() {
-        return System.getProperty("os.name") +
-                System.getProperty("os.version") +
-                System.getProperty("os.arch");
+        return System.getProperty("os.name")
+                + System.getProperty("os.version")
+                + System.getProperty("os.arch");
     }
 
     private String getProcessorInfo() {
@@ -92,16 +93,20 @@ public class Fingerprint {
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
                 hexString.append(hex);
             }
             return hexString.toString().toUpperCase();
-
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 Hashing Failed", e);
         }
     }
 
+    /**
+     * Returns the final machine binding digest used in license validation.
+     */
     public String getFingerprintHash() {
         String combined = cpuId + macAddr + hdId + osInfo;
         return hashSHA256(combined);
