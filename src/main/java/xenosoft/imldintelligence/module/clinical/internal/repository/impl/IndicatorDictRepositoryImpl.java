@@ -48,6 +48,8 @@ public class IndicatorDictRepositoryImpl implements IndicatorDictRepository {
 
     @Override
     public Boolean deleteByCode(String code) {
-        return indicatorDictMapper.deleteById(code) > 0;
+        return indicatorDictMapper.update(null, new LambdaUpdateWrapper<IndicatorDict>()
+                .eq(IndicatorDict::getCode, code)
+                .set(IndicatorDict::getStatus, "INACTIVE")) > 0;
     }
 }

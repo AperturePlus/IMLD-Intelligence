@@ -57,8 +57,9 @@ public class ReportTemplateRepositoryImpl implements ReportTemplateRepository {
 
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return reportTemplateMapper.delete(new LambdaQueryWrapper<ReportTemplate>()
+        return reportTemplateMapper.update(null, new LambdaUpdateWrapper<ReportTemplate>()
                 .eq(ReportTemplate::getTenantId, tenantId)
-                .eq(ReportTemplate::getId, id)) > 0;
+                .eq(ReportTemplate::getId, id)
+                .set(ReportTemplate::getStatus, "INACTIVE")) > 0;
     }
 }

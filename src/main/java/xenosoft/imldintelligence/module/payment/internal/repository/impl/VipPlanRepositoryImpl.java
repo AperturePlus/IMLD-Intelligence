@@ -56,8 +56,9 @@ public class VipPlanRepositoryImpl implements VipPlanRepository {
 
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return vipPlanMapper.delete(new LambdaQueryWrapper<VipPlan>()
+        return vipPlanMapper.update(null, new LambdaUpdateWrapper<VipPlan>()
                 .eq(VipPlan::getTenantId, tenantId)
-                .eq(VipPlan::getId, id)) > 0;
+                .eq(VipPlan::getId, id)
+                .set(VipPlan::getStatus, "INACTIVE")) > 0;
     }
 }

@@ -62,8 +62,9 @@ public class IndicatorMappingRepositoryImpl implements IndicatorMappingRepositor
 
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return indicatorMappingMapper.delete(new LambdaQueryWrapper<IndicatorMapping>()
+        return indicatorMappingMapper.update(null, new LambdaUpdateWrapper<IndicatorMapping>()
                 .eq(IndicatorMapping::getTenantId, tenantId)
-                .eq(IndicatorMapping::getId, id)) > 0;
+                .eq(IndicatorMapping::getId, id)
+                .set(IndicatorMapping::getStatus, "INACTIVE")) > 0;
     }
 }
