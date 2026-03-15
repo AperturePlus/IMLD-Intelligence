@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.payment.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.payment.internal.model.VipPlan;
@@ -10,60 +12,53 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * VIP套餐仓储实现类，基于 MyBatis Mapper 完成VIP套餐的数据持久化。
+ * VIP套餐仓储实现类，基于 MyBatis-Plus 完成VIP套餐的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
 public class VipPlanRepositoryImpl implements VipPlanRepository {
     private final VipPlanMapper vipPlanMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<VipPlan> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(vipPlanMapper.findById(tenantId, id));
+        return Optional.ofNullable(vipPlanMapper.selectOne(new LambdaQueryWrapper<VipPlan>()
+                .eq(VipPlan::getTenantId, tenantId)
+                .eq(VipPlan::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<VipPlan> findByPlanCode(Long tenantId, String planCode) {
-        return Optional.ofNullable(vipPlanMapper.findByPlanCode(tenantId, planCode));
+        return Optional.ofNullable(vipPlanMapper.selectOne(new LambdaQueryWrapper<VipPlan>()
+                .eq(VipPlan::getTenantId, tenantId)
+                .eq(VipPlan::getPlanCode, planCode)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<VipPlan> listByTenantId(Long tenantId) {
-        return vipPlanMapper.listByTenantId(tenantId);
+        return vipPlanMapper.selectList(new LambdaQueryWrapper<VipPlan>()
+                .eq(VipPlan::getTenantId, tenantId)
+                .orderByDesc(VipPlan::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public VipPlan save(VipPlan vipPlan) {
         vipPlanMapper.insert(vipPlan);
         return vipPlan;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public VipPlan update(VipPlan vipPlan) {
-        vipPlanMapper.update(vipPlan);
+        vipPlanMapper.update(vipPlan, new LambdaUpdateWrapper<VipPlan>()
+                .eq(VipPlan::getTenantId, vipPlan.getTenantId())
+                .eq(VipPlan::getId, vipPlan.getId()));
         return vipPlan;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return vipPlanMapper.deleteById(tenantId, id) > 0;
+        return vipPlanMapper.update(null, new LambdaUpdateWrapper<VipPlan>()
+                .eq(VipPlan::getTenantId, tenantId)
+                .eq(VipPlan::getId, id)
+                .set(VipPlan::getStatus, "INACTIVE")) > 0;
     }
 }

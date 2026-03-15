@@ -1,27 +1,12 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.clinical.internal.model.LabResult;
 
-import java.util.List;
-
 /**
- * 检验结果 MyBatis Mapper，定义检验结果的数据读写映射。
+ * LabResult MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface LabResultMapper {
-    LabResult findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    List<LabResult> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<LabResult> listByPatientId(@Param("tenantId") Long tenantId, @Param("patientId") Long patientId);
-
-    List<LabResult> listByEncounterId(@Param("tenantId") Long tenantId, @Param("encounterId") Long encounterId);
-
-    int insert(LabResult labResult);
-
-    int update(LabResult labResult);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface LabResultMapper extends BaseMapper<LabResult> {
 }

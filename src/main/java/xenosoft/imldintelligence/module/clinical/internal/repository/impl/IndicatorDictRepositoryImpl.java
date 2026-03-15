@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.clinical.internal.model.IndicatorDict;
@@ -9,61 +11,45 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.mybatis.Ind
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 指标字典仓储实现类，基于 MyBatis Mapper 完成指标字典的数据持久化。
- */
 @Repository
 @RequiredArgsConstructor
 public class IndicatorDictRepositoryImpl implements IndicatorDictRepository {
     private final IndicatorDictMapper indicatorDictMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<IndicatorDict> findByCode(String code) {
-        return Optional.ofNullable(indicatorDictMapper.findByCode(code));
+        return Optional.ofNullable(indicatorDictMapper.selectById(code));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<IndicatorDict> listAll() {
-        return indicatorDictMapper.listAll();
+        return indicatorDictMapper.selectList(new LambdaQueryWrapper<IndicatorDict>().orderByDesc(IndicatorDict::getCode));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<IndicatorDict> listByStatus(String status) {
-        return indicatorDictMapper.listByStatus(status);
+        return indicatorDictMapper.selectList(new LambdaQueryWrapper<IndicatorDict>()
+                .eq(IndicatorDict::getStatus, status)
+                .orderByDesc(IndicatorDict::getCode));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IndicatorDict save(IndicatorDict indicatorDict) {
         indicatorDictMapper.insert(indicatorDict);
         return indicatorDict;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IndicatorDict update(IndicatorDict indicatorDict) {
-        indicatorDictMapper.update(indicatorDict);
+        indicatorDictMapper.update(indicatorDict, new LambdaUpdateWrapper<IndicatorDict>()
+                .eq(IndicatorDict::getCode, indicatorDict.getCode()));
         return indicatorDict;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteByCode(String code) {
-        return indicatorDictMapper.deleteByCode(code) > 0;
+        return indicatorDictMapper.update(null, new LambdaUpdateWrapper<IndicatorDict>()
+                .eq(IndicatorDict::getCode, code)
+                .set(IndicatorDict::getStatus, "INACTIVE")) > 0;
     }
 }

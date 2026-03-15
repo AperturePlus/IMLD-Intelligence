@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.clinical.internal.model.GeneticReport;
@@ -9,69 +11,59 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.mybatis.Gen
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 基因报告仓储实现类，基于 MyBatis Mapper 完成基因报告的数据持久化。
- */
 @Repository
 @RequiredArgsConstructor
 public class GeneticReportRepositoryImpl implements GeneticReportRepository {
     private final GeneticReportMapper geneticReportMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<GeneticReport> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(geneticReportMapper.findById(tenantId, id));
+        return Optional.ofNullable(geneticReportMapper.selectOne(new LambdaQueryWrapper<GeneticReport>()
+                .eq(GeneticReport::getTenantId, tenantId)
+                .eq(GeneticReport::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<GeneticReport> listByTenantId(Long tenantId) {
-        return geneticReportMapper.listByTenantId(tenantId);
+        return geneticReportMapper.selectList(new LambdaQueryWrapper<GeneticReport>()
+                .eq(GeneticReport::getTenantId, tenantId)
+                .orderByDesc(GeneticReport::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<GeneticReport> listByPatientId(Long tenantId, Long patientId) {
-        return geneticReportMapper.listByPatientId(tenantId, patientId);
+        return geneticReportMapper.selectList(new LambdaQueryWrapper<GeneticReport>()
+                .eq(GeneticReport::getTenantId, tenantId)
+                .eq(GeneticReport::getPatientId, patientId)
+                .orderByDesc(GeneticReport::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<GeneticReport> listByEncounterId(Long tenantId, Long encounterId) {
-        return geneticReportMapper.listByEncounterId(tenantId, encounterId);
+        return geneticReportMapper.selectList(new LambdaQueryWrapper<GeneticReport>()
+                .eq(GeneticReport::getTenantId, tenantId)
+                .eq(GeneticReport::getEncounterId, encounterId)
+                .orderByDesc(GeneticReport::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public GeneticReport save(GeneticReport geneticReport) {
         geneticReportMapper.insert(geneticReport);
         return geneticReport;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public GeneticReport update(GeneticReport geneticReport) {
-        geneticReportMapper.update(geneticReport);
+        geneticReportMapper.update(geneticReport, new LambdaUpdateWrapper<GeneticReport>()
+                .eq(GeneticReport::getTenantId, geneticReport.getTenantId())
+                .eq(GeneticReport::getId, geneticReport.getId()));
         return geneticReport;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return geneticReportMapper.deleteById(tenantId, id) > 0;
+        return geneticReportMapper.delete(new LambdaQueryWrapper<GeneticReport>()
+                .eq(GeneticReport::getTenantId, tenantId)
+                .eq(GeneticReport::getId, id)) > 0;
     }
 }

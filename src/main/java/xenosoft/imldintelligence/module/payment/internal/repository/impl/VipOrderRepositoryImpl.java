@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.payment.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.payment.internal.model.VipOrder;
@@ -10,68 +12,60 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * VIP订单仓储实现类，基于 MyBatis Mapper 完成VIP订单的数据持久化。
+ * VIP订单仓储实现类，基于 MyBatis-Plus 完成VIP订单的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
 public class VipOrderRepositoryImpl implements VipOrderRepository {
     private final VipOrderMapper vipOrderMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<VipOrder> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(vipOrderMapper.findById(tenantId, id));
+        return Optional.ofNullable(vipOrderMapper.selectOne(new LambdaQueryWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .eq(VipOrder::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<VipOrder> findByOrderNo(Long tenantId, String orderNo) {
-        return Optional.ofNullable(vipOrderMapper.findByOrderNo(tenantId, orderNo));
+        return Optional.ofNullable(vipOrderMapper.selectOne(new LambdaQueryWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .eq(VipOrder::getOrderNo, orderNo)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<VipOrder> listByTenantId(Long tenantId) {
-        return vipOrderMapper.listByTenantId(tenantId);
+        return vipOrderMapper.selectList(new LambdaQueryWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .orderByDesc(VipOrder::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<VipOrder> listByTocUserId(Long tenantId, Long tocUserId) {
-        return vipOrderMapper.listByTocUserId(tenantId, tocUserId);
+        return vipOrderMapper.selectList(new LambdaQueryWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .eq(VipOrder::getTocUserId, tocUserId)
+                .orderByDesc(VipOrder::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public VipOrder save(VipOrder vipOrder) {
         vipOrderMapper.insert(vipOrder);
         return vipOrder;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public VipOrder update(VipOrder vipOrder) {
-        vipOrderMapper.update(vipOrder);
+        vipOrderMapper.update(vipOrder, new LambdaUpdateWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, vipOrder.getTenantId())
+                .eq(VipOrder::getId, vipOrder.getId()));
         return vipOrder;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return vipOrderMapper.deleteById(tenantId, id) > 0;
+        return vipOrderMapper.delete(new LambdaQueryWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .eq(VipOrder::getId, id)) > 0;
     }
 }

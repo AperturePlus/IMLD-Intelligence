@@ -1,25 +1,12 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.clinical.internal.model.IndicatorDict;
 
-import java.util.List;
-
 /**
- * 指标字典 MyBatis Mapper，定义指标字典的数据读写映射。
+ * IndicatorDict MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface IndicatorDictMapper {
-    IndicatorDict findByCode(@Param("code") String code);
-
-    List<IndicatorDict> listAll();
-
-    List<IndicatorDict> listByStatus(@Param("status") String status);
-
-    int insert(IndicatorDict indicatorDict);
-
-    int update(IndicatorDict indicatorDict);
-
-    int deleteByCode(@Param("code") String code);
+public interface IndicatorDictMapper extends BaseMapper<IndicatorDict> {
 }

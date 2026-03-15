@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.clinical.internal.model.GeneticVariant;
@@ -9,61 +11,51 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.mybatis.Gen
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 基因变异仓储实现类，基于 MyBatis Mapper 完成基因变异的数据持久化。
- */
 @Repository
 @RequiredArgsConstructor
 public class GeneticVariantRepositoryImpl implements GeneticVariantRepository {
     private final GeneticVariantMapper geneticVariantMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<GeneticVariant> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(geneticVariantMapper.findById(tenantId, id));
+        return Optional.ofNullable(geneticVariantMapper.selectOne(new LambdaQueryWrapper<GeneticVariant>()
+                .eq(GeneticVariant::getTenantId, tenantId)
+                .eq(GeneticVariant::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<GeneticVariant> listByTenantId(Long tenantId) {
-        return geneticVariantMapper.listByTenantId(tenantId);
+        return geneticVariantMapper.selectList(new LambdaQueryWrapper<GeneticVariant>()
+                .eq(GeneticVariant::getTenantId, tenantId)
+                .orderByDesc(GeneticVariant::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<GeneticVariant> listByReportId(Long tenantId, Long reportId) {
-        return geneticVariantMapper.listByReportId(tenantId, reportId);
+        return geneticVariantMapper.selectList(new LambdaQueryWrapper<GeneticVariant>()
+                .eq(GeneticVariant::getTenantId, tenantId)
+                .eq(GeneticVariant::getReportId, reportId)
+                .orderByDesc(GeneticVariant::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public GeneticVariant save(GeneticVariant geneticVariant) {
         geneticVariantMapper.insert(geneticVariant);
         return geneticVariant;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public GeneticVariant update(GeneticVariant geneticVariant) {
-        geneticVariantMapper.update(geneticVariant);
+        geneticVariantMapper.update(geneticVariant, new LambdaUpdateWrapper<GeneticVariant>()
+                .eq(GeneticVariant::getTenantId, geneticVariant.getTenantId())
+                .eq(GeneticVariant::getId, geneticVariant.getId()));
         return geneticVariant;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return geneticVariantMapper.deleteById(tenantId, id) > 0;
+        return geneticVariantMapper.delete(new LambdaQueryWrapper<GeneticVariant>()
+                .eq(GeneticVariant::getTenantId, tenantId)
+                .eq(GeneticVariant::getId, id)) > 0;
     }
 }
