@@ -1,16 +1,18 @@
 package xenosoft.imldintelligence.module.diagnoses.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisResult;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisResultRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.mybatis.DiagnosisResultMapper;
-import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisResult;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 诊断结果仓储实现类，基于 MyBatis Mapper 完成诊断结果的数据持久化。
+ * 诊断结果仓储实现类，基于 MyBatis-Plus 完成诊断结果的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
@@ -22,7 +24,9 @@ public class DiagnosisResultRepositoryImpl implements DiagnosisResultRepository 
      */
     @Override
     public Optional<DiagnosisResult> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(diagnosisResultMapper.findById(tenantId, id));
+        return Optional.ofNullable(diagnosisResultMapper.selectOne(new LambdaQueryWrapper<DiagnosisResult>()
+                .eq(DiagnosisResult::getTenantId, tenantId)
+                .eq(DiagnosisResult::getId, id)));
     }
 
     /**
@@ -30,7 +34,9 @@ public class DiagnosisResultRepositoryImpl implements DiagnosisResultRepository 
      */
     @Override
     public List<DiagnosisResult> listByTenantId(Long tenantId) {
-        return diagnosisResultMapper.listByTenantId(tenantId);
+        return diagnosisResultMapper.selectList(new LambdaQueryWrapper<DiagnosisResult>()
+                .eq(DiagnosisResult::getTenantId, tenantId)
+                .orderByDesc(DiagnosisResult::getId));
     }
 
     /**
@@ -38,7 +44,11 @@ public class DiagnosisResultRepositoryImpl implements DiagnosisResultRepository 
      */
     @Override
     public List<DiagnosisResult> listBySessionId(Long tenantId, Long sessionId) {
-        return diagnosisResultMapper.listBySessionId(tenantId, sessionId);
+        return diagnosisResultMapper.selectList(new LambdaQueryWrapper<DiagnosisResult>()
+                .eq(DiagnosisResult::getTenantId, tenantId)
+                .eq(DiagnosisResult::getSessionId, sessionId)
+                .orderByAsc(DiagnosisResult::getRankNo)
+                .orderByDesc(DiagnosisResult::getId));
     }
 
     /**
@@ -55,7 +65,9 @@ public class DiagnosisResultRepositoryImpl implements DiagnosisResultRepository 
      */
     @Override
     public DiagnosisResult update(DiagnosisResult diagnosisResult) {
-        diagnosisResultMapper.update(diagnosisResult);
+        diagnosisResultMapper.update(diagnosisResult, new LambdaUpdateWrapper<DiagnosisResult>()
+                .eq(DiagnosisResult::getTenantId, diagnosisResult.getTenantId())
+                .eq(DiagnosisResult::getId, diagnosisResult.getId()));
         return diagnosisResult;
     }
 
@@ -64,6 +76,8 @@ public class DiagnosisResultRepositoryImpl implements DiagnosisResultRepository 
      */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return diagnosisResultMapper.deleteById(tenantId, id) > 0;
+        return diagnosisResultMapper.delete(new LambdaQueryWrapper<DiagnosisResult>()
+                .eq(DiagnosisResult::getTenantId, tenantId)
+                .eq(DiagnosisResult::getId, id)) > 0;
     }
 }

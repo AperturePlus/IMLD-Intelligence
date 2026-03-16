@@ -1,7 +1,13 @@
 package xenosoft.imldintelligence.common.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 @lombok.Data
+@TableName("model_invocation_log")
 public class ModelInvocationLog {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long sessionId;

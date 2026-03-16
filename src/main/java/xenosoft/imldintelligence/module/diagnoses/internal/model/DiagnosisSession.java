@@ -1,9 +1,16 @@
 package xenosoft.imldintelligence.module.diagnoses.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
 
 @lombok.Data
+@TableName(value = "diagnosis_session", autoResultMap = true)
 public class DiagnosisSession {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long patientId;
@@ -11,6 +18,7 @@ public class DiagnosisSession {
     private Long doctorId;
     private String triggeredBy;
     private Long modelRegistryId;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode inputSnapshot;
     private String status;
     private java.time.OffsetDateTime startedAt;

@@ -1,25 +1,12 @@
 package xenosoft.imldintelligence.module.careplan.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.careplan.internal.model.CarePlan;
 
-import java.util.List;
-
 /**
- * 护理计划 MyBatis Mapper，定义护理计划的数据读写映射。
+ * 护理计划 MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface CarePlanMapper {
-    CarePlan findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    List<CarePlan> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<CarePlan> listByPatientId(@Param("tenantId") Long tenantId, @Param("patientId") Long patientId);
-
-    int insert(CarePlan carePlan);
-
-    int update(CarePlan carePlan);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface CarePlanMapper extends BaseMapper<CarePlan> {
 }

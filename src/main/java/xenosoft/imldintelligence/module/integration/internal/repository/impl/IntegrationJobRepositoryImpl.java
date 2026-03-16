@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.integration.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.integration.internal.model.IntegrationJob;
@@ -10,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 集成任务仓储实现类，基于 MyBatis Mapper 完成集成任务的数据持久化。
+ * 集成任务仓储实现类，基于 MyBatis-Plus 完成集成任务的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
@@ -22,7 +24,9 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
      */
     @Override
     public Optional<IntegrationJob> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(integrationJobMapper.findById(tenantId, id));
+        return Optional.ofNullable(integrationJobMapper.selectOne(new LambdaQueryWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, tenantId)
+                .eq(IntegrationJob::getId, id)));
     }
 
     /**
@@ -30,7 +34,9 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
      */
     @Override
     public Optional<IntegrationJob> findByJobNo(Long tenantId, String jobNo) {
-        return Optional.ofNullable(integrationJobMapper.findByJobNo(tenantId, jobNo));
+        return Optional.ofNullable(integrationJobMapper.selectOne(new LambdaQueryWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, tenantId)
+                .eq(IntegrationJob::getJobNo, jobNo)));
     }
 
     /**
@@ -38,7 +44,9 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
      */
     @Override
     public List<IntegrationJob> listByTenantId(Long tenantId) {
-        return integrationJobMapper.listByTenantId(tenantId);
+        return integrationJobMapper.selectList(new LambdaQueryWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, tenantId)
+                .orderByDesc(IntegrationJob::getId));
     }
 
     /**
@@ -46,7 +54,10 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
      */
     @Override
     public List<IntegrationJob> listBySourceSystem(Long tenantId, String sourceSystem) {
-        return integrationJobMapper.listBySourceSystem(tenantId, sourceSystem);
+        return integrationJobMapper.selectList(new LambdaQueryWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, tenantId)
+                .eq(IntegrationJob::getSourceSystem, sourceSystem)
+                .orderByDesc(IntegrationJob::getId));
     }
 
     /**
@@ -63,7 +74,9 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
      */
     @Override
     public IntegrationJob update(IntegrationJob integrationJob) {
-        integrationJobMapper.update(integrationJob);
+        integrationJobMapper.update(integrationJob, new LambdaUpdateWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, integrationJob.getTenantId())
+                .eq(IntegrationJob::getId, integrationJob.getId()));
         return integrationJob;
     }
 
@@ -72,6 +85,8 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
      */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return integrationJobMapper.deleteById(tenantId, id) > 0;
+        return integrationJobMapper.delete(new LambdaQueryWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, tenantId)
+                .eq(IntegrationJob::getId, id)) > 0;
     }
 }

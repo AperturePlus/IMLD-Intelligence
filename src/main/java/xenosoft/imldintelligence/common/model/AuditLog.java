@@ -1,8 +1,16 @@
 package xenosoft.imldintelligence.common.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
+
 @lombok.Data
+@TableName(value = "audit_log", autoResultMap = true)
 public class AuditLog {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long userId;
@@ -10,7 +18,9 @@ public class AuditLog {
     private String action;
     private String resourceType;
     private String resourceId;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode beforeData;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode afterData;
     private String ipAddress;
     private String deviceInfo;

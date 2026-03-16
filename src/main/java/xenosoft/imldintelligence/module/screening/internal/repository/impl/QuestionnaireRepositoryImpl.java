@@ -1,16 +1,18 @@
 package xenosoft.imldintelligence.module.screening.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xenosoft.imldintelligence.module.screening.internal.model.Questionnaire;
 import xenosoft.imldintelligence.module.screening.internal.repository.QuestionnaireRepository;
 import xenosoft.imldintelligence.module.screening.internal.repository.mybatis.QuestionnaireMapper;
-import xenosoft.imldintelligence.module.screening.internal.model.Questionnaire;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 问卷仓储实现类，基于 MyBatis Mapper 完成问卷的数据持久化。
+ * 问卷仓储实现类，基于 MyBatis-Plus 完成问卷的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
@@ -22,7 +24,9 @@ public class QuestionnaireRepositoryImpl implements QuestionnaireRepository {
      */
     @Override
     public Optional<Questionnaire> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(questionnaireMapper.findById(tenantId, id));
+        return Optional.ofNullable(questionnaireMapper.selectOne(new LambdaQueryWrapper<Questionnaire>()
+                .eq(Questionnaire::getTenantId, tenantId)
+                .eq(Questionnaire::getId, id)));
     }
 
     /**
@@ -30,7 +34,10 @@ public class QuestionnaireRepositoryImpl implements QuestionnaireRepository {
      */
     @Override
     public Optional<Questionnaire> findByQuestionnaireCodeAndVersionNo(Long tenantId, String questionnaireCode, Integer versionNo) {
-        return Optional.ofNullable(questionnaireMapper.findByQuestionnaireCodeAndVersionNo(tenantId, questionnaireCode, versionNo));
+        return Optional.ofNullable(questionnaireMapper.selectOne(new LambdaQueryWrapper<Questionnaire>()
+                .eq(Questionnaire::getTenantId, tenantId)
+                .eq(Questionnaire::getQuestionnaireCode, questionnaireCode)
+                .eq(Questionnaire::getVersionNo, versionNo)));
     }
 
     /**
@@ -38,7 +45,9 @@ public class QuestionnaireRepositoryImpl implements QuestionnaireRepository {
      */
     @Override
     public List<Questionnaire> listByTenantId(Long tenantId) {
-        return questionnaireMapper.listByTenantId(tenantId);
+        return questionnaireMapper.selectList(new LambdaQueryWrapper<Questionnaire>()
+                .eq(Questionnaire::getTenantId, tenantId)
+                .orderByDesc(Questionnaire::getId));
     }
 
     /**
@@ -55,7 +64,9 @@ public class QuestionnaireRepositoryImpl implements QuestionnaireRepository {
      */
     @Override
     public Questionnaire update(Questionnaire questionnaire) {
-        questionnaireMapper.update(questionnaire);
+        questionnaireMapper.update(questionnaire, new LambdaUpdateWrapper<Questionnaire>()
+                .eq(Questionnaire::getTenantId, questionnaire.getTenantId())
+                .eq(Questionnaire::getId, questionnaire.getId()));
         return questionnaire;
     }
 
@@ -64,6 +75,9 @@ public class QuestionnaireRepositoryImpl implements QuestionnaireRepository {
      */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return questionnaireMapper.deleteById(tenantId, id) > 0;
+        return questionnaireMapper.update(null, new LambdaUpdateWrapper<Questionnaire>()
+                .eq(Questionnaire::getTenantId, tenantId)
+                .eq(Questionnaire::getId, id)
+                .set(Questionnaire::getStatus, "INACTIVE")) > 0;
     }
 }

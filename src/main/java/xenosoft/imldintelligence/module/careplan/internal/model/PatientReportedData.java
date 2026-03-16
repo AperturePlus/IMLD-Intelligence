@@ -1,8 +1,16 @@
 package xenosoft.imldintelligence.module.careplan.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
+
 @lombok.Data
+@TableName(value = "patient_reported_data", autoResultMap = true)
 public class PatientReportedData {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long patientId;
@@ -11,6 +19,7 @@ public class PatientReportedData {
     private Double valueNumeric;
     private String valueText;
     private String source;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode deviceInfo;
     private java.time.OffsetDateTime recordedAt;
     private java.time.OffsetDateTime createdAt;

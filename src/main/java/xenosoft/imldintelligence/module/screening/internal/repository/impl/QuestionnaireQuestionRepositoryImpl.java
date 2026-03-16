@@ -1,16 +1,18 @@
 package xenosoft.imldintelligence.module.screening.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xenosoft.imldintelligence.module.screening.internal.model.QuestionnaireQuestion;
 import xenosoft.imldintelligence.module.screening.internal.repository.QuestionnaireQuestionRepository;
 import xenosoft.imldintelligence.module.screening.internal.repository.mybatis.QuestionnaireQuestionMapper;
-import xenosoft.imldintelligence.module.screening.internal.model.QuestionnaireQuestion;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 问卷题目仓储实现类，基于 MyBatis Mapper 完成问卷题目的数据持久化。
+ * 问卷题目仓储实现类，基于 MyBatis-Plus 完成问卷题目的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
@@ -22,7 +24,9 @@ public class QuestionnaireQuestionRepositoryImpl implements QuestionnaireQuestio
      */
     @Override
     public Optional<QuestionnaireQuestion> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(questionnaireQuestionMapper.findById(tenantId, id));
+        return Optional.ofNullable(questionnaireQuestionMapper.selectOne(new LambdaQueryWrapper<QuestionnaireQuestion>()
+                .eq(QuestionnaireQuestion::getTenantId, tenantId)
+                .eq(QuestionnaireQuestion::getId, id)));
     }
 
     /**
@@ -30,7 +34,10 @@ public class QuestionnaireQuestionRepositoryImpl implements QuestionnaireQuestio
      */
     @Override
     public Optional<QuestionnaireQuestion> findByQuestionnaireIdAndQuestionNo(Long tenantId, Long questionnaireId, String questionNo) {
-        return Optional.ofNullable(questionnaireQuestionMapper.findByQuestionnaireIdAndQuestionNo(tenantId, questionnaireId, questionNo));
+        return Optional.ofNullable(questionnaireQuestionMapper.selectOne(new LambdaQueryWrapper<QuestionnaireQuestion>()
+                .eq(QuestionnaireQuestion::getTenantId, tenantId)
+                .eq(QuestionnaireQuestion::getQuestionnaireId, questionnaireId)
+                .eq(QuestionnaireQuestion::getQuestionNo, questionNo)));
     }
 
     /**
@@ -38,7 +45,9 @@ public class QuestionnaireQuestionRepositoryImpl implements QuestionnaireQuestio
      */
     @Override
     public List<QuestionnaireQuestion> listByTenantId(Long tenantId) {
-        return questionnaireQuestionMapper.listByTenantId(tenantId);
+        return questionnaireQuestionMapper.selectList(new LambdaQueryWrapper<QuestionnaireQuestion>()
+                .eq(QuestionnaireQuestion::getTenantId, tenantId)
+                .orderByDesc(QuestionnaireQuestion::getId));
     }
 
     /**
@@ -46,7 +55,11 @@ public class QuestionnaireQuestionRepositoryImpl implements QuestionnaireQuestio
      */
     @Override
     public List<QuestionnaireQuestion> listByQuestionnaireId(Long tenantId, Long questionnaireId) {
-        return questionnaireQuestionMapper.listByQuestionnaireId(tenantId, questionnaireId);
+        return questionnaireQuestionMapper.selectList(new LambdaQueryWrapper<QuestionnaireQuestion>()
+                .eq(QuestionnaireQuestion::getTenantId, tenantId)
+                .eq(QuestionnaireQuestion::getQuestionnaireId, questionnaireId)
+                .orderByAsc(QuestionnaireQuestion::getSortOrder)
+                .orderByDesc(QuestionnaireQuestion::getId));
     }
 
     /**
@@ -63,7 +76,9 @@ public class QuestionnaireQuestionRepositoryImpl implements QuestionnaireQuestio
      */
     @Override
     public QuestionnaireQuestion update(QuestionnaireQuestion questionnaireQuestion) {
-        questionnaireQuestionMapper.update(questionnaireQuestion);
+        questionnaireQuestionMapper.update(questionnaireQuestion, new LambdaUpdateWrapper<QuestionnaireQuestion>()
+                .eq(QuestionnaireQuestion::getTenantId, questionnaireQuestion.getTenantId())
+                .eq(QuestionnaireQuestion::getId, questionnaireQuestion.getId()));
         return questionnaireQuestion;
     }
 
@@ -72,6 +87,8 @@ public class QuestionnaireQuestionRepositoryImpl implements QuestionnaireQuestio
      */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return questionnaireQuestionMapper.deleteById(tenantId, id) > 0;
+        return questionnaireQuestionMapper.delete(new LambdaQueryWrapper<QuestionnaireQuestion>()
+                .eq(QuestionnaireQuestion::getTenantId, tenantId)
+                .eq(QuestionnaireQuestion::getId, id)) > 0;
     }
 }
