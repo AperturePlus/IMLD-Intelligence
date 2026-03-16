@@ -8,7 +8,6 @@ import xenosoft.imldintelligence.module.identity.internal.repository.mybatis.Ten
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +48,7 @@ public class TenantRepositoryImpl implements TenantRepository {
                 .set(Tenant::getTenantCode, tenant.getTenantCode())
                 .set(Tenant::getTenantName, tenant.getTenantName())
                 .set(Tenant::getDeployMode, tenant.getDeployMode())
-                .set(Tenant::getStatus, tenant.getStatus())
-                .set(Tenant::getUpdatedAt, OffsetDateTime.now()));
+                .set(Tenant::getStatus, tenant.getStatus()));
         return tenant;
     }
 
@@ -58,7 +56,6 @@ public class TenantRepositoryImpl implements TenantRepository {
     public Boolean deleteById(Long id) {
         return tenantMapper.update(null, new LambdaUpdateWrapper<Tenant>()
                 .eq(Tenant::getId, id)
-                .set(Tenant::getStatus, "INACTIVE")
-                .set(Tenant::getUpdatedAt, OffsetDateTime.now())) > 0;
+                .set(Tenant::getStatus, "INACTIVE")) > 0;
     }
 }
