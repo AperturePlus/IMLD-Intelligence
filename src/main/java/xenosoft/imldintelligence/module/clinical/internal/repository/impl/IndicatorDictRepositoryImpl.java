@@ -23,14 +23,14 @@ public class IndicatorDictRepositoryImpl implements IndicatorDictRepository {
 
     @Override
     public List<IndicatorDict> listAll() {
-        return indicatorDictMapper.selectList(new LambdaQueryWrapper<IndicatorDict>().orderByDesc(IndicatorDict::getCode));
+        return indicatorDictMapper.selectList(new LambdaQueryWrapper<IndicatorDict>().orderByAsc(IndicatorDict::getCode));
     }
 
     @Override
     public List<IndicatorDict> listByStatus(String status) {
         return indicatorDictMapper.selectList(new LambdaQueryWrapper<IndicatorDict>()
                 .eq(IndicatorDict::getStatus, status)
-                .orderByDesc(IndicatorDict::getCode));
+                .orderByAsc(IndicatorDict::getCode));
     }
 
     @Override
