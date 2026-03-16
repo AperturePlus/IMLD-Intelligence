@@ -8,7 +8,11 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    NEW.updated_at = now();
+    -- Only auto-set updated_at when the application did not explicitly change it.
+    -- This preserves intentional timestamps from backfills or app-layer assignments.
+    IF NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at THEN
+        NEW.updated_at = now();
+    END IF;
     RETURN NEW;
 END;
 $$;
