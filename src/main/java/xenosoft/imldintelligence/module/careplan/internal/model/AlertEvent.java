@@ -1,13 +1,22 @@
 package xenosoft.imldintelligence.module.careplan.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
+
 @lombok.Data
+@TableName(value = "alert_event", autoResultMap = true)
 public class AlertEvent{
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long patientId;
     private Long carePlanId;
     private String triggerType;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode triggerDetail;
     private String severity;
     private String status;

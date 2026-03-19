@@ -1,25 +1,12 @@
 package xenosoft.imldintelligence.module.notify.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.notify.internal.model.NotificationDelivery;
 
-import java.util.List;
-
 /**
- * 通知投递记录 MyBatis Mapper，定义通知投递记录的数据读写映射。
+ * 通知投递记录 MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface NotificationDeliveryMapper {
-    NotificationDelivery findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    List<NotificationDelivery> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<NotificationDelivery> listByMessageId(@Param("tenantId") Long tenantId, @Param("messageId") Long messageId);
-
-    int insert(NotificationDelivery notificationDelivery);
-
-    int update(NotificationDelivery notificationDelivery);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface NotificationDeliveryMapper extends BaseMapper<NotificationDelivery> {
 }

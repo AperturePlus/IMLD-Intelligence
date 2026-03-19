@@ -1,29 +1,12 @@
 package xenosoft.imldintelligence.module.screening.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.screening.internal.model.QuestionnaireQuestion;
 
-import java.util.List;
-
 /**
- * 问卷题目 MyBatis Mapper，定义问卷题目的数据读写映射。
+ * 问卷题目 MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface QuestionnaireQuestionMapper {
-    QuestionnaireQuestion findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    QuestionnaireQuestion findByQuestionnaireIdAndQuestionNo(@Param("tenantId") Long tenantId,
-                                                             @Param("questionnaireId") Long questionnaireId,
-                                                             @Param("questionNo") String questionNo);
-
-    List<QuestionnaireQuestion> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<QuestionnaireQuestion> listByQuestionnaireId(@Param("tenantId") Long tenantId, @Param("questionnaireId") Long questionnaireId);
-
-    int insert(QuestionnaireQuestion questionnaireQuestion);
-
-    int update(QuestionnaireQuestion questionnaireQuestion);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface QuestionnaireQuestionMapper extends BaseMapper<QuestionnaireQuestion> {
 }

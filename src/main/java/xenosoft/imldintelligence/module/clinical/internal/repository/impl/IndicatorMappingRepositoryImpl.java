@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.clinical.internal.model.IndicatorMapping;
@@ -9,69 +11,60 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.mybatis.Ind
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 指标映射仓储实现类，基于 MyBatis Mapper 完成指标映射的数据持久化。
- */
 @Repository
 @RequiredArgsConstructor
 public class IndicatorMappingRepositoryImpl implements IndicatorMappingRepository {
     private final IndicatorMappingMapper indicatorMappingMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<IndicatorMapping> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(indicatorMappingMapper.findById(tenantId, id));
+        return Optional.ofNullable(indicatorMappingMapper.selectOne(new LambdaQueryWrapper<IndicatorMapping>()
+                .eq(IndicatorMapping::getTenantId, tenantId)
+                .eq(IndicatorMapping::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<IndicatorMapping> findBySourceSystemAndSourceCode(Long tenantId, String sourceSystem, String sourceCode) {
-        return Optional.ofNullable(indicatorMappingMapper.findBySourceSystemAndSourceCode(tenantId, sourceSystem, sourceCode));
+        return Optional.ofNullable(indicatorMappingMapper.selectOne(new LambdaQueryWrapper<IndicatorMapping>()
+                .eq(IndicatorMapping::getTenantId, tenantId)
+                .eq(IndicatorMapping::getSourceSystem, sourceSystem)
+                .eq(IndicatorMapping::getSourceCode, sourceCode)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<IndicatorMapping> listByTenantId(Long tenantId) {
-        return indicatorMappingMapper.listByTenantId(tenantId);
+        return indicatorMappingMapper.selectList(new LambdaQueryWrapper<IndicatorMapping>()
+                .eq(IndicatorMapping::getTenantId, tenantId)
+                .orderByDesc(IndicatorMapping::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<IndicatorMapping> listByTargetIndicatorCode(Long tenantId, String targetIndicatorCode) {
-        return indicatorMappingMapper.listByTargetIndicatorCode(tenantId, targetIndicatorCode);
+        return indicatorMappingMapper.selectList(new LambdaQueryWrapper<IndicatorMapping>()
+                .eq(IndicatorMapping::getTenantId, tenantId)
+                .eq(IndicatorMapping::getTargetIndicatorCode, targetIndicatorCode)
+                .orderByDesc(IndicatorMapping::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IndicatorMapping save(IndicatorMapping indicatorMapping) {
         indicatorMappingMapper.insert(indicatorMapping);
         return indicatorMapping;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IndicatorMapping update(IndicatorMapping indicatorMapping) {
-        indicatorMappingMapper.update(indicatorMapping);
+        indicatorMappingMapper.update(indicatorMapping, new LambdaUpdateWrapper<IndicatorMapping>()
+                .eq(IndicatorMapping::getTenantId, indicatorMapping.getTenantId())
+                .eq(IndicatorMapping::getId, indicatorMapping.getId()));
         return indicatorMapping;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return indicatorMappingMapper.deleteById(tenantId, id) > 0;
+        return indicatorMappingMapper.update(null, new LambdaUpdateWrapper<IndicatorMapping>()
+                .eq(IndicatorMapping::getTenantId, tenantId)
+                .eq(IndicatorMapping::getId, id)
+                .set(IndicatorMapping::getStatus, "INACTIVE")) > 0;
     }
 }

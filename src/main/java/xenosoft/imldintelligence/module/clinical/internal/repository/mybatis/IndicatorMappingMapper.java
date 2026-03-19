@@ -1,30 +1,12 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.clinical.internal.model.IndicatorMapping;
 
-import java.util.List;
-
 /**
- * 指标映射 MyBatis Mapper，定义指标映射的数据读写映射。
+ * IndicatorMapping MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface IndicatorMappingMapper {
-    IndicatorMapping findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    IndicatorMapping findBySourceSystemAndSourceCode(@Param("tenantId") Long tenantId,
-                                                     @Param("sourceSystem") String sourceSystem,
-                                                     @Param("sourceCode") String sourceCode);
-
-    List<IndicatorMapping> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<IndicatorMapping> listByTargetIndicatorCode(@Param("tenantId") Long tenantId,
-                                                     @Param("targetIndicatorCode") String targetIndicatorCode);
-
-    int insert(IndicatorMapping indicatorMapping);
-
-    int update(IndicatorMapping indicatorMapping);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface IndicatorMappingMapper extends BaseMapper<IndicatorMapping> {
 }

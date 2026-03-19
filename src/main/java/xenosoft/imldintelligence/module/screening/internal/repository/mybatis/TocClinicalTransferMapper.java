@@ -1,27 +1,12 @@
 package xenosoft.imldintelligence.module.screening.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.screening.internal.model.TocClinicalTransfer;
 
-import java.util.List;
-
 /**
- * TOC临床转化 MyBatis Mapper，定义TOC临床转化的数据读写映射。
+ * TOC临床转化 MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface TocClinicalTransferMapper {
-    TocClinicalTransfer findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    List<TocClinicalTransfer> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<TocClinicalTransfer> listByResponseId(@Param("tenantId") Long tenantId, @Param("responseId") Long responseId);
-
-    List<TocClinicalTransfer> listByPatientId(@Param("tenantId") Long tenantId, @Param("patientId") Long patientId);
-
-    int insert(TocClinicalTransfer tocClinicalTransfer);
-
-    int update(TocClinicalTransfer tocClinicalTransfer);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface TocClinicalTransferMapper extends BaseMapper<TocClinicalTransfer> {
 }

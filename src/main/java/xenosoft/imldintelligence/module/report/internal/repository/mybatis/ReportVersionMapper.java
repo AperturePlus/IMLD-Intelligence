@@ -1,27 +1,12 @@
 package xenosoft.imldintelligence.module.report.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.report.internal.model.ReportVersion;
 
-import java.util.List;
-
 /**
- * 报告版本 MyBatis Mapper，定义报告版本的数据读写映射。
+ * ReportVersion MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface ReportVersionMapper {
-    ReportVersion findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    ReportVersion findByReportIdAndVersionNum(@Param("tenantId") Long tenantId,
-                                              @Param("reportId") Long reportId,
-                                              @Param("versionNum") Integer versionNum);
-
-    List<ReportVersion> listByReportId(@Param("tenantId") Long tenantId, @Param("reportId") Long reportId);
-
-    int insert(ReportVersion reportVersion);
-
-    int update(ReportVersion reportVersion);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface ReportVersionMapper extends BaseMapper<ReportVersion> {
 }

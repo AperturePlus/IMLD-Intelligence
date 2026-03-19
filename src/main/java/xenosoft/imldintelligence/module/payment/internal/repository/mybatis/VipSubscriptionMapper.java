@@ -1,27 +1,12 @@
 package xenosoft.imldintelligence.module.payment.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.payment.internal.model.VipSubscription;
 
-import java.util.List;
-
 /**
- * VIP订阅 MyBatis Mapper，定义VIP订阅的数据读写映射。
+ * VipSubscription MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface VipSubscriptionMapper {
-    VipSubscription findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    List<VipSubscription> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<VipSubscription> listByTocUserId(@Param("tenantId") Long tenantId, @Param("tocUserId") Long tocUserId);
-
-    List<VipSubscription> listByOrderId(@Param("tenantId") Long tenantId, @Param("orderId") Long orderId);
-
-    int insert(VipSubscription vipSubscription);
-
-    int update(VipSubscription vipSubscription);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface VipSubscriptionMapper extends BaseMapper<VipSubscription> {
 }

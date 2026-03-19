@@ -1,16 +1,18 @@
 package xenosoft.imldintelligence.module.careplan.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xenosoft.imldintelligence.module.careplan.internal.model.AlertAction;
 import xenosoft.imldintelligence.module.careplan.internal.repository.AlertActionRepository;
 import xenosoft.imldintelligence.module.careplan.internal.repository.mybatis.AlertActionMapper;
-import xenosoft.imldintelligence.module.careplan.internal.model.AlertAction;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 预警动作仓储实现类，基于 MyBatis Mapper 完成预警动作的数据持久化。
+ * 预警动作仓储实现类，基于 MyBatis-Plus 完成预警动作的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
@@ -22,7 +24,9 @@ public class AlertActionRepositoryImpl implements AlertActionRepository {
      */
     @Override
     public Optional<AlertAction> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(alertActionMapper.findById(tenantId, id));
+        return Optional.ofNullable(alertActionMapper.selectOne(new LambdaQueryWrapper<AlertAction>()
+                .eq(AlertAction::getTenantId, tenantId)
+                .eq(AlertAction::getId, id)));
     }
 
     /**
@@ -30,7 +34,9 @@ public class AlertActionRepositoryImpl implements AlertActionRepository {
      */
     @Override
     public List<AlertAction> listByTenantId(Long tenantId) {
-        return alertActionMapper.listByTenantId(tenantId);
+        return alertActionMapper.selectList(new LambdaQueryWrapper<AlertAction>()
+                .eq(AlertAction::getTenantId, tenantId)
+                .orderByDesc(AlertAction::getId));
     }
 
     /**
@@ -38,7 +44,10 @@ public class AlertActionRepositoryImpl implements AlertActionRepository {
      */
     @Override
     public List<AlertAction> listByAlertId(Long tenantId, Long alertId) {
-        return alertActionMapper.listByAlertId(tenantId, alertId);
+        return alertActionMapper.selectList(new LambdaQueryWrapper<AlertAction>()
+                .eq(AlertAction::getTenantId, tenantId)
+                .eq(AlertAction::getAlertId, alertId)
+                .orderByDesc(AlertAction::getId));
     }
 
     /**
@@ -55,7 +64,9 @@ public class AlertActionRepositoryImpl implements AlertActionRepository {
      */
     @Override
     public AlertAction update(AlertAction alertAction) {
-        alertActionMapper.update(alertAction);
+        alertActionMapper.update(alertAction, new LambdaUpdateWrapper<AlertAction>()
+                .eq(AlertAction::getTenantId, alertAction.getTenantId())
+                .eq(AlertAction::getId, alertAction.getId()));
         return alertAction;
     }
 
@@ -64,6 +75,8 @@ public class AlertActionRepositoryImpl implements AlertActionRepository {
      */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return alertActionMapper.deleteById(tenantId, id) > 0;
+        return alertActionMapper.delete(new LambdaQueryWrapper<AlertAction>()
+                .eq(AlertAction::getTenantId, tenantId)
+                .eq(AlertAction::getId, id)) > 0;
     }
 }

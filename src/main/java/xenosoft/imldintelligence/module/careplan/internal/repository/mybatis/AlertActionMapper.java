@@ -1,25 +1,12 @@
 package xenosoft.imldintelligence.module.careplan.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.careplan.internal.model.AlertAction;
 
-import java.util.List;
-
 /**
- * 预警动作 MyBatis Mapper，定义预警动作的数据读写映射。
+ * 预警动作 MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface AlertActionMapper {
-    AlertAction findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    List<AlertAction> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<AlertAction> listByAlertId(@Param("tenantId") Long tenantId, @Param("alertId") Long alertId);
-
-    int insert(AlertAction alertAction);
-
-    int update(AlertAction alertAction);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface AlertActionMapper extends BaseMapper<AlertAction> {
 }

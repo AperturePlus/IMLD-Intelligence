@@ -1,15 +1,25 @@
 package xenosoft.imldintelligence.module.screening.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
+
 @lombok.Data
+@TableName(value = "questionnaire_question", autoResultMap = true)
 public class QuestionnaireQuestion {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long questionnaireId;
     private String questionNo;
     private String content;
     private String questionType;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode optionsJson;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode scoringRuleJson;
     private Integer sortOrder;
     private Boolean requiredFlag;

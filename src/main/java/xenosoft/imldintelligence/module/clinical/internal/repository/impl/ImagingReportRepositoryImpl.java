@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.clinical.internal.model.ImagingReport;
@@ -9,69 +11,59 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.mybatis.Ima
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 影像报告仓储实现类，基于 MyBatis Mapper 完成影像报告的数据持久化。
- */
 @Repository
 @RequiredArgsConstructor
 public class ImagingReportRepositoryImpl implements ImagingReportRepository {
     private final ImagingReportMapper imagingReportMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<ImagingReport> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(imagingReportMapper.findById(tenantId, id));
+        return Optional.ofNullable(imagingReportMapper.selectOne(new LambdaQueryWrapper<ImagingReport>()
+                .eq(ImagingReport::getTenantId, tenantId)
+                .eq(ImagingReport::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<ImagingReport> listByTenantId(Long tenantId) {
-        return imagingReportMapper.listByTenantId(tenantId);
+        return imagingReportMapper.selectList(new LambdaQueryWrapper<ImagingReport>()
+                .eq(ImagingReport::getTenantId, tenantId)
+                .orderByDesc(ImagingReport::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<ImagingReport> listByPatientId(Long tenantId, Long patientId) {
-        return imagingReportMapper.listByPatientId(tenantId, patientId);
+        return imagingReportMapper.selectList(new LambdaQueryWrapper<ImagingReport>()
+                .eq(ImagingReport::getTenantId, tenantId)
+                .eq(ImagingReport::getPatientId, patientId)
+                .orderByDesc(ImagingReport::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<ImagingReport> listByEncounterId(Long tenantId, Long encounterId) {
-        return imagingReportMapper.listByEncounterId(tenantId, encounterId);
+        return imagingReportMapper.selectList(new LambdaQueryWrapper<ImagingReport>()
+                .eq(ImagingReport::getTenantId, tenantId)
+                .eq(ImagingReport::getEncounterId, encounterId)
+                .orderByDesc(ImagingReport::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ImagingReport save(ImagingReport imagingReport) {
         imagingReportMapper.insert(imagingReport);
         return imagingReport;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ImagingReport update(ImagingReport imagingReport) {
-        imagingReportMapper.update(imagingReport);
+        imagingReportMapper.update(imagingReport, new LambdaUpdateWrapper<ImagingReport>()
+                .eq(ImagingReport::getTenantId, imagingReport.getTenantId())
+                .eq(ImagingReport::getId, imagingReport.getId()));
         return imagingReport;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return imagingReportMapper.deleteById(tenantId, id) > 0;
+        return imagingReportMapper.delete(new LambdaQueryWrapper<ImagingReport>()
+                .eq(ImagingReport::getTenantId, tenantId)
+                .eq(ImagingReport::getId, id)) > 0;
     }
 }

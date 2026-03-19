@@ -7,6 +7,7 @@ This schema is organized by module boundary instead of mixed domain buckets.
 - `03-diagnosis-report.sql`: model registry, diagnosis sessions/results/recommendations, doctor feedback, reports, and report versions.
 - `04-careplan-screening-payment.sql`: care plans, follow-up, patient reported data, alerts, questionnaires, ToC transfer, VIP plans/orders/subscriptions.
 - `05-notify-integration-audit.sql`: notifications, integration jobs, audit logs, sensitive-access logs, and model invocation logs.
+- `06-identity-db-views-triggers.sql`: identity-focused database-side optimizations (updated_at triggers + reusable active-user view).
 - `99-comments.sql`: PostgreSQL COMMENT metadata for tables, columns, views, and indexes; load last.
 
 Design notes:

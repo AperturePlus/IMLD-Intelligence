@@ -1,14 +1,24 @@
 package xenosoft.imldintelligence.module.integration.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
+
 @lombok.Data
+@TableName(value = "integration_job", autoResultMap = true)
 public class IntegrationJob {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private String jobNo;
     private String sourceSystem;
     private String direction;
     private String bizType;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private com.fasterxml.jackson.databind.JsonNode requestPayload;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private com.fasterxml.jackson.databind.JsonNode responsePayload;
     private String status;
     private String errorMessage;

@@ -1,8 +1,13 @@
 package xenosoft.imldintelligence.module.screening.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 
 @lombok.Data
+@TableName("questionnaire")
 public class Questionnaire {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private String questionnaireCode;

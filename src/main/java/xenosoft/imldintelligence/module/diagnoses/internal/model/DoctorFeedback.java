@@ -1,15 +1,23 @@
 package xenosoft.imldintelligence.module.diagnoses.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
 
 @lombok.Data
+@TableName(value = "doctor_feedback", autoResultMap = true)
 public class DoctorFeedback {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long sessionId;
     private Long resultId;
     private Long doctorId;
     private String action;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private JsonNode modifiedValue;
     private String rejectReason;
     private java.time.OffsetDateTime createdAt;

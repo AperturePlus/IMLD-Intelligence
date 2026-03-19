@@ -1,5 +1,7 @@
 package xenosoft.imldintelligence.module.clinical.internal.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.clinical.internal.model.ClinicalHistoryEntry;
@@ -10,68 +12,61 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 临床病史条目仓储实现类，基于 MyBatis Mapper 完成临床病史条目的数据持久化。
+ * 临床病史条目仓储实现类，基于 MyBatis-Plus 完成临床病史条目的数据持久化。
  */
 @Repository
 @RequiredArgsConstructor
 public class ClinicalHistoryEntryRepositoryImpl implements ClinicalHistoryEntryRepository {
     private final ClinicalHistoryEntryMapper clinicalHistoryEntryMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<ClinicalHistoryEntry> findById(Long tenantId, Long id) {
-        return Optional.ofNullable(clinicalHistoryEntryMapper.findById(tenantId, id));
+        return Optional.ofNullable(clinicalHistoryEntryMapper.selectOne(new LambdaQueryWrapper<ClinicalHistoryEntry>()
+                .eq(ClinicalHistoryEntry::getTenantId, tenantId)
+                .eq(ClinicalHistoryEntry::getId, id)));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<ClinicalHistoryEntry> listByTenantId(Long tenantId) {
-        return clinicalHistoryEntryMapper.listByTenantId(tenantId);
+        return clinicalHistoryEntryMapper.selectList(new LambdaQueryWrapper<ClinicalHistoryEntry>()
+                .eq(ClinicalHistoryEntry::getTenantId, tenantId)
+                .orderByDesc(ClinicalHistoryEntry::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<ClinicalHistoryEntry> listByPatientId(Long tenantId, Long patientId) {
-        return clinicalHistoryEntryMapper.listByPatientId(tenantId, patientId);
+        return clinicalHistoryEntryMapper.selectList(new LambdaQueryWrapper<ClinicalHistoryEntry>()
+                .eq(ClinicalHistoryEntry::getTenantId, tenantId)
+                .eq(ClinicalHistoryEntry::getPatientId, patientId)
+                .orderByDesc(ClinicalHistoryEntry::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<ClinicalHistoryEntry> listByEncounterId(Long tenantId, Long encounterId) {
-        return clinicalHistoryEntryMapper.listByEncounterId(tenantId, encounterId);
+        return clinicalHistoryEntryMapper.selectList(new LambdaQueryWrapper<ClinicalHistoryEntry>()
+                .eq(ClinicalHistoryEntry::getTenantId, tenantId)
+                .eq(ClinicalHistoryEntry::getEncounterId, encounterId)
+                .orderByDesc(ClinicalHistoryEntry::getId));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ClinicalHistoryEntry save(ClinicalHistoryEntry clinicalHistoryEntry) {
         clinicalHistoryEntryMapper.insert(clinicalHistoryEntry);
         return clinicalHistoryEntry;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ClinicalHistoryEntry update(ClinicalHistoryEntry clinicalHistoryEntry) {
-        clinicalHistoryEntryMapper.update(clinicalHistoryEntry);
+        clinicalHistoryEntryMapper.update(clinicalHistoryEntry, new LambdaUpdateWrapper<ClinicalHistoryEntry>()
+                .eq(ClinicalHistoryEntry::getTenantId, clinicalHistoryEntry.getTenantId())
+                .eq(ClinicalHistoryEntry::getId, clinicalHistoryEntry.getId()));
         return clinicalHistoryEntry;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean deleteById(Long tenantId, Long id) {
-        return clinicalHistoryEntryMapper.deleteById(tenantId, id) > 0;
+        return clinicalHistoryEntryMapper.delete(new LambdaQueryWrapper<ClinicalHistoryEntry>()
+                .eq(ClinicalHistoryEntry::getTenantId, tenantId)
+                .eq(ClinicalHistoryEntry::getId, id)) > 0;
     }
 }

@@ -1,7 +1,15 @@
 package xenosoft.imldintelligence.module.notify.internal.model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import xenosoft.imldintelligence.common.mybatis.JsonNodeTypeHandler;
+
 @lombok.Data
+@TableName(value = "notification_delivery", autoResultMap = true)
 public class NotificationDelivery {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Long tenantId;
     private Long messageId;
@@ -9,6 +17,7 @@ public class NotificationDelivery {
     private String providerMessageId;
     private String deliveryStatus;
     private String failReason;
+    @TableField(typeHandler = JsonNodeTypeHandler.class)
     private com.fasterxml.jackson.databind.JsonNode callbackPayload;
     private java.time.OffsetDateTime deliveredAt;
     private java.time.OffsetDateTime createdAt;

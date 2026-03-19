@@ -1,29 +1,12 @@
 package xenosoft.imldintelligence.module.report.internal.repository.mybatis;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import xenosoft.imldintelligence.module.report.internal.model.Report;
 
-import java.util.List;
-
 /**
- * 报告 MyBatis Mapper，定义报告的数据读写映射。
+ * Report MyBatis-Plus Mapper，复用 BaseMapper 减少重复 CRUD SQL。
  */
 @Mapper
-public interface ReportMapper {
-    Report findById(@Param("tenantId") Long tenantId, @Param("id") Long id);
-
-    Report findByReportNo(@Param("tenantId") Long tenantId, @Param("reportNo") String reportNo);
-
-    List<Report> listByTenantId(@Param("tenantId") Long tenantId);
-
-    List<Report> listByPatientId(@Param("tenantId") Long tenantId, @Param("patientId") Long patientId);
-
-    List<Report> listBySessionId(@Param("tenantId") Long tenantId, @Param("sessionId") Long sessionId);
-
-    int insert(Report report);
-
-    int update(Report report);
-
-    int deleteById(@Param("tenantId") Long tenantId, @Param("id") Long id);
+public interface ReportMapper extends BaseMapper<Report> {
 }
