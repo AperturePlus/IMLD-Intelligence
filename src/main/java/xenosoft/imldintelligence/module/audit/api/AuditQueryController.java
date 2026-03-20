@@ -1,5 +1,12 @@
 package xenosoft.imldintelligence.module.audit.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -37,6 +44,7 @@ import java.time.OffsetDateTime;
 @RestController
 @RequestMapping("/api/v1/audit")
 @ConditionalOnProperty(prefix = "imld.audit", name = {"enabled", "query-api-enabled"}, havingValue = "true", matchIfMissing = true)
+@Tag(name = "Audit & Compliance", description = "审计日志查询 APIs - 提供通用审计、敏感数据访问和模型调用审计日志查询")
 public class AuditQueryController {
     private final AuditQueryService auditQueryService;
     private final AuditQueryAccessGuard accessGuard;
@@ -68,16 +76,36 @@ public class AuditQueryController {
      * @throws ResponseStatusException if access is denied or request parameters are invalid
      */
     @GetMapping("/logs")
+    @Operation(
+            summary = "查询通用审计日志",
+            description = "分页查询系统操作审计日志，支持按用户、操作、资源类型等条件过滤。需要 SYSTEM_ADMIN 或 COMPLIANCE_AUDITOR 角色。",
+            security = {@SecurityRequirement(name = "Bearer Authentication"), @SecurityRequirement(name = "Tenant ID Header")}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "403", description = "无权限访问"),
+            @ApiResponse(responseCode = "400", description = "请求参数无效")
+    })
     public PagedResponse<AuditLogResponse> queryAuditLogs(HttpServletRequest request,
+                                                          @Parameter(description = "租户 ID", required = true, in = ParameterIn.HEADER)
                                                           @RequestHeader(value = AuditHeaderNames.TENANT_ID, required = false) String tenantHeader,
+                                                          @Parameter(description = "用户 ID 过滤条件")
                                                           @RequestParam(value = "userId", required = false) Long userId,
+                                                          @Parameter(description = "操作代码过滤条件")
                                                           @RequestParam(value = "action", required = false) String action,
+                                                          @Parameter(description = "资源类型过滤条件")
                                                           @RequestParam(value = "resourceType", required = false) String resourceType,
+                                                          @Parameter(description = "资源 ID 过滤条件")
                                                           @RequestParam(value = "resourceId", required = false) String resourceId,
+                                                          @Parameter(description = "分布式追踪 ID 过滤条件")
                                                           @RequestParam(value = "traceId", required = false) String traceId,
+                                                          @Parameter(description = "开始时间（ISO 8601 格式）")
                                                           @RequestParam(value = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+                                                          @Parameter(description = "结束时间（ISO 8601 格式）")
                                                           @RequestParam(value = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+                                                          @Parameter(description = "页码（从0开始）")
                                                           @RequestParam(value = "page", required = false) Integer page,
+                                                          @Parameter(description = "每页大小")
                                                           @RequestParam(value = "size", required = false) Integer size) {
         accessGuard.assertAllowed(request);
 

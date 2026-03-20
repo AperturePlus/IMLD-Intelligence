@@ -88,6 +88,11 @@ imld:
       - /api/v1/identity/auth/**
       - /actuator/health
       - /actuator/info
+      - /swagger-ui.html
+      - /swagger-ui/**
+      - /v3/api-docs/**
+      - /swagger-resources/**
+      - /webjars/**
     data-encryption-key: ${IMLD_DATA_ENCRYPTION_KEY:}
     jwt:
       issuer: ${IMLD_JWT_ISSUER:imld-intelligence}
@@ -131,6 +136,21 @@ imld:
       enforce-support-window: ${IMLD_UPGRADE_ENFORCE_SUPPORT_WINDOW:true}
       allow-security-patch-after-expiry: ${IMLD_UPGRADE_ALLOW_SECURITY_PATCH_AFTER_EXPIRY:true}
 
+
+springdoc:
+  api-docs:
+    enabled: ${IMLD_SWAGGER_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${IMLD_SWAGGER_UI_ENABLED:true}
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+  show-actuator: false
 
 resilience4j:
   circuitbreaker:

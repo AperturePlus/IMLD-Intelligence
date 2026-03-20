@@ -29,3 +29,11 @@ imld:
     entitlement:
       enforce-support-window: true
       allow-security-patch-after-expiry: true
+
+# For private deployments, Swagger can be disabled in production for security
+# but is enabled by default for easier deployment and testing
+springdoc:
+  api-docs:
+    enabled: ${IMLD_SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${IMLD_SWAGGER_UI_ENABLED:true}
