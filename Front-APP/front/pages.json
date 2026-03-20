@@ -1,0 +1,368 @@
+{
+	//这是注册的普通页面
+  "pages": [
+    {
+      "path": "pages/login",
+      "style": {  "navigationStyle":"custom"  
+      }
+    },
+	
+	
+//**************************登录注册等页面开始*************************************
+    {
+      "path": "pages/register",
+      "style": {
+         "navigationStyle":"custom"  
+      }
+    },
+	
+	{
+	  "path": "pages/appeal",
+	  "style": {
+	     "navigationStyle":"custom"  
+	  }
+	},
+	  
+	  {
+	  "path": "pages/forget_password",
+	  "style": {
+	     "navigationStyle":"custom"  
+	  }
+	  },
+	  
+	  {
+	    "path": "pages/reset_password",
+	   "style": {
+	      "navigationStyle":"custom"  
+	   }
+	  },
+	  {
+	    "path": "pages/login_admin",
+	   "style": {
+	      "navigationStyle":"custom"  
+	   }
+	  },
+	  
+	  {
+	    "path": "pages/login_doctor",
+	   "style": {
+	      "navigationStyle":"custom"  
+	   }
+	  },
+	  
+	    {
+      "path": "pages/index",
+      "style": {
+        "navigationBarTitleText": "若依移动端框架",
+        "navigationStyle": "custom"
+      }
+    },
+	//***************************登录注册等页面结束*************************************
+	
+	
+	
+	
+	
+	//---------------------------管理员主界面开始--------------------------------
+	{
+	  "path": "pages/admin/index",
+	 "style": {
+	    "navigationStyle":"custom"  
+	 }
+	},
+	//------资讯发布系列页面开始--------
+	{
+	  "path": "pages/admin/publish",
+	 "style": {
+	    "navigationStyle":"custom"  
+	 }
+	},
+	
+	{
+	  "path": "pages/admin/publish_edit",
+	 "style": {
+	    "navigationStyle":"custom"  
+	 }
+	},
+	{
+	  "path": "pages/admin/profile-edit",
+	 "style": {
+	    "navigationStyle":"custom"  
+	 }
+	},
+	
+	{
+	  "path": "pages/admin/post_review",
+	 "style": {
+	    "navigationStyle":"custom"  ,
+		"navigationBarTitleText": "帖子审核"
+	 }
+	},
+	
+	{
+	  "path": "pages/admin/report_review",
+	 "style": {
+	    "navigationStyle":"custom"  ,
+		"navigationBarTitleText": "举报审核"
+	 }
+	},
+	//------资讯发布系列页面结束--------
+	//---------------------------管理员主界面结束--------------------------------
+	
+	
+	
+	
+	
+	//*****************主页页面***************************
+    {
+      "path": "pages/release/index",
+      "style": {
+        "navigationBarTitleText": "发表"
+      }
+    },
+   
+	{ 
+      "path": "pages/question/index",
+      "style": {
+        "navigationBarTitleText": "对话"
+      }
+    },
+	
+	{
+	  "path": "pages/zixun/all",
+	  "style": {
+	    "navigationBarTitleText": "全部资讯"
+	  }
+	},
+	
+	//-------------------广场系列页面开始---------------------
+	{
+	  "path": "pages/square/index",
+	  "style": {
+	    "navigationBarTitleText": "广场"
+	  }
+	},
+	
+	{
+	  "path": "pages/square/post_report",
+	  "style": {
+	    "navigationBarTitleText": "帖子举报"
+	  }
+	},
+	{
+	  "path": "pages/square/pay",
+	  "style": {
+	    "navigationBarTitleText": "支付"
+	  }
+	},
+	//-------------------广场系列页面结束---------------------
+	
+	
+	
+	//*****************个人中心页面***************************
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "个人中心"
+      }
+    },
+	{
+	  "path": "pages/mine/setting/index",
+	  "style": {
+	    "navigationBarTitleText": "账号设置"
+	  }
+	},
+	{
+	  "path": "pages/user_detail",
+	  "style": {
+	    "navigationBarTitleText": "用户详情"
+	  }
+	},
+    {
+      "path": "pages/mine/info/index",
+      "style": {
+        "navigationBarTitleText": "个人信息"
+      }
+    },
+	{
+	  "path": "pages/mine/search/index",
+	  "style": {
+	    "navigationBarTitleText": "用户搜索"
+	  }
+	},
+	
+	{
+	  "path": "pages/mine/search/detail",
+	  "style": {
+	    "navigationBarTitleText": "用户详情"
+	  }
+	},
+	{
+	  "path": "pages/mine/search/report",
+	  "style": {
+	    "navigationBarTitleText": "用户举报"
+	  }
+	},
+	
+	{
+	  "path": "pages/mine/search/evaluate",
+	  "style": {
+	    "navigationBarTitleText": "用户评价"
+	  }
+	},
+	
+    {
+      "path": "pages/mine/info/edit",
+      "style": {
+        "navigationBarTitleText": "编辑个人信息"
+      }
+    },
+	
+	{
+	      "path": "pages/mine/info/confirmPage",
+	      "style": {
+	        "navigationBarTitleText": "确认信息"
+	      }
+	},
+	
+    {
+      "path": "pages/mine/pwd/index",
+      "style": {
+        "navigationBarTitleText": "修改密码"
+      }
+    },
+	{
+	  "path": "pages/mine/myevaluate",
+	  "style": {
+	    "navigationBarTitleText": "我的评价"
+	  }
+	},
+	{
+	  "path": "pages/mine/mypost",
+	  "style": {
+	    "navigationBarTitleText": "我的发布"
+	  }
+	},
+	{
+	  "path": "pages/mine/fensi",
+	  "style": {
+	    "navigationBarTitleText": "我的粉丝"
+	  }
+	},
+	{
+	  "path": "pages/mine/guanzhu",
+	  "style": {
+	    "navigationBarTitleText": "我的关注"
+	  }
+	},
+	{
+	  "path": "pages/mine/evaluate_report",
+	  "style": {
+	    "navigationBarTitleText": "评价举报"
+	  }
+	},
+	
+	
+	{
+	  "path": "pages/mine/myreport",
+	  "style": {
+	    "navigationBarTitleText": "我的举报"
+	  }
+	},
+	{
+	  "path": "pages/mine/mycollect",
+	  "style": {
+	    "navigationBarTitleText": "我的收藏"
+	  }
+	},
+	{
+	  "path": "pages/indexes",
+	  "style": {
+	    "navigationBarTitleText": "我的指标"
+	  }
+	},
+	
+	{
+	  "path": "pages/statistic",
+	  "style": {
+	    "navigationBarTitleText": "我的数据"
+	  }
+	},
+	
+	{
+	  "path": "pages/recipe/index",
+	  "style": {
+	    "navigationBarTitleText": "我的食谱"
+	  }
+	},
+	
+	//*****************************其他不重要的页面***************************************
+	
+
+	
+	
+
+
+    {
+      "path": "pages/common/webview/index",
+      "style": {
+        "navigationBarTitleText": "浏览网页"
+      }
+    },
+    {
+      "path": "pages/common/textview/index",
+      "style": {
+        "navigationBarTitleText": "浏览文本"
+      }
+    }
+  ],
+  
+  
+  
+  
+  //--------------------这是注册页面的下面的导航栏----------------------
+  "tabBar": {
+    "color": "#96563e",
+    "selectedColor": "#96562e",
+    "borderStyle": "white",
+    "backgroundColor": "#d8e8ff",
+    "list": [
+      {
+        "pagePath": "pages/index",
+        "iconPath": "static/images/tabbar/home.png",
+        "selectedIconPath": "static/images/tabbar/home.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/statistic",
+        "iconPath": "static/images/tabbar/basics.png",
+        "selectedIconPath": "static/images/tabbar/basics.png",
+        "text": "评估"
+      },
+	 {
+	   "pagePath": "pages/indexes",
+	   "iconPath": "static/images/tabbar/release.png",
+	   "selectedIconPath": "static/images/tabbar/release.png",
+	   "text": "指标"
+	 },
+      {
+        "pagePath": "pages/recipe/index",
+        "iconPath": "static/images/tabbar/component.png",
+        "selectedIconPath": "static/images/tabbar/component.png",
+        "text": "饮食"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "iconPath": "static/images/tabbar/mine.png",
+        "selectedIconPath": "static/images/tabbar/mine.png",
+        "text": "我的"
+      }
+    ]
+  },
+  
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "饮食管理",
+    "navigationBarBackgroundColor":  "#ffffff"
+  }
+}
