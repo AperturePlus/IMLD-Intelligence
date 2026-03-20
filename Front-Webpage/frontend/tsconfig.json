@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "compilerOptions": {
+    "composite": true // 推荐开启，用于解决方案级别的构建
+  },
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
