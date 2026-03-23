@@ -1,5 +1,5 @@
 <template>
-  <div class="report-manage-container">
+  <div class="report-manage-container" v-loading="loadingReports">
     <el-row :gutter="20" class="full-height">
       
       <el-col :span="6" class="full-height">
@@ -184,120 +184,108 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { 
+import { ref, computed, onMounted } from 'vue'
+import {
   Search, Printer, Download, EditPen, Check, Monitor, Edit, FirstAidKit,
-  ZoomIn, ZoomOut 
+  ZoomIn, ZoomOut
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import diagnosisApi from '../../api/diagnosis'
 
-// --- 状态与过滤 ---
 const searchQuery = ref('')
 const reportStatusFilter = ref('待签发')
 const selectedReport = ref(null)
+const loadingReports = ref(false)
 
-// 视图缩放控制 (默认 100%)
 const paperScale = ref(1.0)
-
 const currentDate = new Date().toISOString().split('T')[0]
+const reports = ref([])
 
-// --- 缩放控制方法 ---
+const fetchReports = async () => {
+  loadingReports.value = true
+  try {
+    const res = await diagnosisApi.getExpertReports()
+    reports.value = res.data.items || []
+
+    if (selectedReport.value) {
+      const matched = reports.value.find((item) => item.id === selectedReport.value.id)
+      selectedReport.value = matched || null
+    }
+  } catch {
+    ElMessage.error('加载专家报告失败，请稍后重试')
+  } finally {
+    loadingReports.value = false
+  }
+}
+
 const handleZoomIn = () => {
   if (paperScale.value < 2.0) {
     paperScale.value = Number((paperScale.value + 0.1).toFixed(1))
   }
 }
+
 const handleZoomOut = () => {
   if (paperScale.value > 0.5) {
     paperScale.value = Number((paperScale.value - 0.1).toFixed(1))
   }
 }
+
 const handleResetZoom = () => {
   paperScale.value = 1.0
 }
 
-// --- 模拟测试数据 ---
-const reports = ref([
-  {
-    id: 'REP-202311-001', visitId: 'MZ8849201', patientName: '林建国', gender: '男', age: 58, date: '2023-11-20', status: '待签发',
-    aiFindings: {
-      biochemical: '血清铁蛋白 850 ng/mL (显著升高), 转铁蛋白饱和度 65% (异常)。',
-      clinical: '皮肤色素沉着伴轻度肝肿大，无角膜 K-F 环。',
-      probability: '89', disease: '遗传性血色病'
-    },
-    expertConclusion: '同意 AI 辅助诊断意见。患者铁代谢指标显著异常，结合临床表型，考虑遗传性血色病可能性大。',
-    treatmentPlan: '建议：\n1. 进一步完善 HFE 基因检测以确诊；\n2. 评估后可考虑启动静脉放血治疗；\n3. 严格限制高铁饮食摄入。'
-  },
-  {
-    id: 'REP-202311-002', visitId: 'MZ8849205', patientName: '陈婉婷', gender: '女', age: 32, date: '2023-11-21', status: '已签发',
-    aiFindings: {
-      biochemical: '铜蓝蛋白 0.08 g/L (极低), 24h尿铜 215 μg (升高), ALT 125 U/L。',
-      clinical: '双眼角膜 K-F 环 (+)，伴有轻微非对称性手部震颤。',
-      probability: '96', disease: '肝豆状核变性 (Wilson病)'
-    },
-    expertConclusion: '根据生化指标及裂隙灯检查结果（K-F环阳性），Wilson病诊断明确。',
-    treatmentPlan: '1. 立即启动青霉胺（0.25g tid）驱铜治疗；\n2. 严格低铜饮食（禁食坚果、动物内脏）；\n3. 建议一级亲属进行 ATP7B 基因筛查；\n4. 1个月后门诊复查肝功及尿铜。'
-  },
-  {
-    id: 'REP-202311-003', visitId: 'MZ8849212', patientName: '张明远', gender: '男', age: 45, date: '2023-11-22', status: '待签发',
-    aiFindings: {
-      biochemical: '血清 α1-抗胰蛋白酶水平 < 0.5 g/L (显著降低)。',
-      clinical: '早期肺气肿改变，伴有不明原因肝硬化。',
-      probability: '85', disease: 'α1-抗胰蛋白酶缺乏症'
-    },
-    expertConclusion: '',
-    treatmentPlan: ''
-  },
-  {
-    id: 'REP-202311-004', visitId: 'MZ8849220', patientName: '王淑芬', gender: '女', age: 62, date: '2023-11-22', status: '待签发',
-    aiFindings: {
-      biochemical: '肝功轻度异常，血脂重度异常。铜铁代谢指标正常。',
-      clinical: 'B超提示重度脂肪肝。',
-      probability: '12', disease: '遗传代谢性肝病排除，倾向代谢相关脂肪性肝病 (MAFLD)'
-    },
-    expertConclusion: '排除遗传代谢性肝病。主要为代谢综合征导致的脂肪肝。',
-    treatmentPlan: '建议减重、控制饮食，心血管内科协同随访。'
-  }
-])
-
-// --- 计算属性 ---
 const filteredReports = computed(() => {
-  return reports.value.filter(report => {
+  return reports.value.filter((report) => {
     const matchStatus = report.status === reportStatusFilter.value
-    const matchSearch = report.patientName.includes(searchQuery.value) || report.visitId.includes(searchQuery.value)
+    const keyword = searchQuery.value.trim()
+    const matchSearch = !keyword || report.patientName.includes(keyword) || report.visitId.includes(keyword)
     return matchStatus && matchSearch
   })
 })
 
-// --- 交互方法 ---
 const handleSelectReport = (report) => {
   selectedReport.value = report
-  // 切换报告时重置缩放比例
   paperScale.value = 1.0
 }
 
-const handleSign = () => {
+const handleSign = async () => {
   if (!selectedReport.value.expertConclusion || !selectedReport.value.treatmentPlan) {
-    ElMessage.warning('请填写完整的专家审核结论与干预计划！')
+    ElMessage.warning('请填写完整的专家审核结论与干预计划')
     return
   }
 
-  ElMessageBox.confirm(
-    `确认签发患者 ${selectedReport.value.patientName} 的专家报告吗？签发后报告将锁定且不可修改。`,
-    '签发确认',
-    {
-      confirmButtonText: '确认签发',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
-    selectedReport.value.status = '已签发'
-    ElMessage({
-      type: 'success',
-      message: '报告已成功签发，自动同步至 HIS 及患者终端！',
+  try {
+    await ElMessageBox.confirm(
+      `确认签发患者 ${selectedReport.value.patientName} 的专家报告吗？签发后报告将锁定且不可修改。`,
+      '签发确认',
+      {
+        confirmButtonText: '确认签发',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    const res = await diagnosisApi.signExpertReport(selectedReport.value.id, {
+      expertConclusion: selectedReport.value.expertConclusion,
+      treatmentPlan: selectedReport.value.treatmentPlan
     })
+
+    const report = res.data.report
+    const idx = reports.value.findIndex((item) => item.id === report.id)
+    if (idx >= 0) {
+      reports.value[idx] = report
+      selectedReport.value = reports.value[idx]
+    }
+
     reportStatusFilter.value = '已签发'
-  }).catch(() => {})
+    ElMessage.success('报告签发成功，已完成同步')
+  } catch {
+    ElMessage.error('报告签发失败，请稍后重试')
+  }
 }
 
 const handlePrint = () => {
@@ -305,8 +293,13 @@ const handlePrint = () => {
 }
 
 const handleExport = () => {
+  if (!selectedReport.value) return
   ElMessage.success(`正在生成 ${selectedReport.value.patientName}_评估报告.pdf ...`)
 }
+
+onMounted(() => {
+  fetchReports()
+})
 </script>
 
 <style scoped>

@@ -1,10 +1,8 @@
-<!-- filepath: d:\Codes\JieBao\VictoryReport\VictoryReportFrontend\src\views\center.vue -->
 <template>
   <div class="center-layout">
     <Leftaside />
     <div class="center-main">
       <router-view />
-      <!-- 你可以在这里继续添加其他内容 -->
     </div>
   </div>
 </template>
@@ -16,14 +14,17 @@ import Leftaside from '../components/Leftaside.vue'
 <style scoped>
 .center-layout {
   display: flex;
-  height: 100vh; /* 保证侧边栏和内容区高度一致 */
-  overflow: hidden;
+  min-height: 100vh;
+  background: #0f1f2c;
 }
+
 .center-main {
   flex: 1;
-  height: 100vh;
-  background: #f5f6fa;
-  overflow-y: auto; /* 内容区可滚动 */
-  box-sizing: border-box;
+  min-height: 100vh;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 2% 2%, rgba(34, 163, 159, 0.14), transparent 32%),
+    radial-gradient(circle at 98% 0%, rgba(15, 109, 141, 0.14), transparent 34%),
+    #eef3f8;
 }
 </style>

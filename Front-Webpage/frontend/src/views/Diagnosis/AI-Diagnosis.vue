@@ -1,5 +1,5 @@
 <template>
-  <div class="ai-diagnosis-container">
+  <div class="ai-diagnosis-container" v-loading="loadingQueue">
     <el-row :gutter="20" class="full-height">
       
       <el-col :span="6" class="full-height">
@@ -170,91 +170,66 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Cpu, Aim, Download, Microphone, Food } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import diagnosisApi from '../../api/diagnosis'
 
-// --- 数据状态 ---
 const isDiagnosing = ref(false)
+const loadingQueue = ref(false)
 const selectedPatient = ref(null)
 const diagnosisResult = ref(null)
+const patients = ref([])
 
-// 扩充到 20 条的模拟待诊患者列表
-const patients = ref([
-  { id: 'P001', name: '林建国', gender: '男', age: 58, avatar: 'https://randomuser.me/api/portraits/men/32.jpg', aiStatus: '未筛查' },
-  { id: 'P002', name: '陈婉婷', gender: '女', age: 32, avatar: 'https://randomuser.me/api/portraits/women/44.jpg', aiStatus: '未筛查' },
-  { id: 'P003', name: '张明远', gender: '男', age: 45, avatar: 'https://randomuser.me/api/portraits/men/67.jpg', aiStatus: '未筛查' },
-  { id: 'P004', name: '王淑芬', gender: '女', age: 62, avatar: 'https://randomuser.me/api/portraits/women/68.jpg', aiStatus: '未筛查' },
-  { id: 'P005', name: '李浩宇', gender: '男', age: 28, avatar: 'https://randomuser.me/api/portraits/men/22.jpg', aiStatus: '未筛查' },
-  { id: 'P006', name: '赵雪梅', gender: '女', age: 51, avatar: 'https://randomuser.me/api/portraits/women/33.jpg', aiStatus: '未筛查' },
-  { id: 'P007', name: '刘振华', gender: '男', age: 66, avatar: 'https://randomuser.me/api/portraits/men/45.jpg', aiStatus: '未筛查' },
-  { id: 'P008', name: '周小雅', gender: '女', age: 24, avatar: 'https://randomuser.me/api/portraits/women/12.jpg', aiStatus: '未筛查' },
-  { id: 'P009', name: '吴建强', gender: '男', age: 53, avatar: 'https://randomuser.me/api/portraits/men/51.jpg', aiStatus: '未筛查' },
-  { id: 'P010', name: '郑丽丽', gender: '女', age: 38, avatar: 'https://randomuser.me/api/portraits/women/25.jpg', aiStatus: '未筛查' },
-  { id: 'P011', name: '孙立军', gender: '男', age: 41, avatar: 'https://randomuser.me/api/portraits/men/18.jpg', aiStatus: '未筛查' },
-  { id: 'P012', name: '马桂英', gender: '女', age: 71, avatar: 'https://randomuser.me/api/portraits/women/71.jpg', aiStatus: '未筛查' },
-  { id: 'P013', name: '黄子韬', gender: '男', age: 31, avatar: 'https://randomuser.me/api/portraits/men/82.jpg', aiStatus: '未筛查' },
-  { id: 'P014', name: '郭晓丹', gender: '女', age: 29, avatar: 'https://randomuser.me/api/portraits/women/55.jpg', aiStatus: '未筛查' },
-  { id: 'P015', name: '冯伟', gender: '男', age: 48, avatar: 'https://randomuser.me/api/portraits/men/61.jpg', aiStatus: '未筛查' },
-  { id: 'P016', name: '曹玉兰', gender: '女', age: 64, avatar: 'https://randomuser.me/api/portraits/women/62.jpg', aiStatus: '未筛查' },
-  { id: 'P017', name: '彭志远', gender: '男', age: 36, avatar: 'https://randomuser.me/api/portraits/men/39.jpg', aiStatus: '未筛查' },
-  { id: 'P018', name: '杨秀云', gender: '女', age: 55, avatar: 'https://randomuser.me/api/portraits/women/48.jpg', aiStatus: '未筛查' },
-  { id: 'P019', name: '何文斌', gender: '男', age: 60, avatar: 'https://randomuser.me/api/portraits/men/74.jpg', aiStatus: '未筛查' },
-  { id: 'P020', name: '许静', gender: '女', age: 27, avatar: 'https://randomuser.me/api/portraits/women/9.jpg', aiStatus: '未筛查' }
-])
-
-// AI 诊断进度条颜色阶梯
 const customColors = [
   { color: '#67c23a', percentage: 30 },
   { color: '#e6a23c', percentage: 70 },
-  { color: '#f56c6c', percentage: 100 },
+  { color: '#f56c6c', percentage: 100 }
 ]
 
-// --- 方法 ---
+const fetchQueue = async () => {
+  loadingQueue.value = true
+  try {
+    const res = await diagnosisApi.getAiQueue()
+    patients.value = res.data.items || []
+  } catch {
+    ElMessage.error('加载待诊队列失败，请稍后重试')
+  } finally {
+    loadingQueue.value = false
+  }
+}
 
-// 1. 选择患者
 const handleSelectPatient = (patient) => {
   if (isDiagnosing.value) {
     ElMessage.warning('AI 正在诊断中，请稍后再切换患者')
     return
   }
+
   selectedPatient.value = patient
-  // 如果该患者还没有出报告，就重置右侧结果
-  if (patient.aiStatus !== '已诊断') {
-    diagnosisResult.value = null
+  diagnosisResult.value = null
+}
+
+const startDiagnosis = async () => {
+  if (!selectedPatient.value || isDiagnosing.value) {
+    return
+  }
+
+  isDiagnosing.value = true
+  try {
+    const res = await diagnosisApi.runAiDiagnosis(selectedPatient.value.id)
+    diagnosisResult.value = res.data
+    selectedPatient.value.aiStatus = '已诊断'
+    ElMessage.success('AI 辅助诊断已完成')
+  } catch {
+    ElMessage.error('AI 诊断失败，请稍后重试')
+  } finally {
+    isDiagnosing.value = false
   }
 }
 
-// 2. 启动 AI 诊断 (模拟 3 秒网络延迟)
-const startDiagnosis = () => {
-  isDiagnosing.value = true
-  
-  setTimeout(() => {
-    // 模拟后端返回的 AI 诊断数据 (以典型的 Wilson 病为例)
-    diagnosisResult.value = {
-      diseaseName: '肝豆状核变性 (Wilson病)',
-      probability: 92,
-      // 模拟图表数据，percentage 控制进度条长度，status 控制颜色
-      indicators: [
-        { name: '血清铜蓝蛋白', value: 0.08, unit: 'g/L', normal: '0.20-0.60', percentage: 15, status: 'exception' }, 
-        { name: '24h 尿铜排泄量', value: 215, unit: 'μg/24h', normal: '< 100', percentage: 85, status: 'exception' },
-        { name: 'ALT (谷丙转氨酶)', value: 125, unit: 'U/L', normal: '9-50', percentage: 60, status: 'warning' },
-        { name: 'AST (谷草转氨酶)', value: 98, unit: 'U/L', normal: '15-40', percentage: 55, status: 'warning' }
-      ],
-      genes: ['ATP7B (c.2333G>T, p.Arg778Leu)', 'ATP7B (c.2975C>T, p.Pro992Leu)'],
-      diet: '建议立即启动严格低铜饮食（摄入量 < 1mg/d）。必须绝对禁食坚果类、巧克力、动物内脏及贝壳类软体海鲜。建议日常饮用纯净水。',
-      sequencing: '高度怀疑 ATP7B 基因复合杂合突变。建议立即对先证者进行 全外显子组测序 (WES) 或针对 ATP7B 的 Sanger 测序验证，并建议对其一级亲属开展家系筛查。'
-    }
-    
-    // 标记左侧列表状态
-    if (selectedPatient.value) {
-      selectedPatient.value.aiStatus = '已诊断'
-    }
-    
-    isDiagnosing.value = false
-    ElMessage.success('AI 辅助诊断已完成！')
-  }, 3000) // 3000毫秒 = 3秒动画
-}
+onMounted(() => {
+  fetchQueue()
+})
 </script>
 
 <style scoped>

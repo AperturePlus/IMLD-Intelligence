@@ -269,7 +269,7 @@
     <div class="action-footer">
       <el-button @click="resetForm" size="large">清空重置</el-button>
       <el-button type="warning" plain size="large" @click="saveDraft">保存草稿</el-button>
-      <el-button type="primary" size="large" @click="submitForm" :icon="Select">提交归档</el-button>
+      <el-button type="primary" size="large" @click="submitForm" :icon="Select" :loading="submitting">提交归档</el-button>
     </div>
   </div>
 </template>
@@ -278,15 +278,14 @@
 import { ref, reactive } from 'vue'
 import { DocumentAdd, Select } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import patientApi from '../../api/patient'
 
-// 模拟自动生成的就诊单号
-const visitId = ref('VISIT-' + new Date().getTime().toString().slice(-8))
+const visitId = ref(`VISIT-${Date.now().toString().slice(-8)}`)
 const activeTab = ref('basic')
 const formRef = ref(null)
+const submitting = ref(false)
 
-// --- 核心表单数据模型 ---
 const formData = reactive({
-  // 基础档案
   name: '',
   gender: '',
   age: null,
@@ -296,8 +295,6 @@ const formData = reactive({
   consanguinity: false,
   familyHistory: false,
   familyHistoryDetail: '',
-
-  // 临床特征
   chiefComplaint: '',
   presentIllness: '',
   jaundice: '无',
@@ -305,17 +302,13 @@ const formData = reactive({
   splenomegaly: false,
   kfRing: '未查',
   neuroSymptoms: [],
-
-  // 生化与代谢
   alt: '',
   ast: '',
   tbil: '',
-  ceruloplasmin: '', // 铜蓝蛋白
-  urineCopper: '',   // 尿铜
-  ferritin: '',      // 铁蛋白
-  transferrinSat: '',// 转铁蛋白饱和度
-
-  // 影像基因与诊断
+  ceruloplasmin: '',
+  urineCopper: '',
+  ferritin: '',
+  transferrinSat: '',
   imagingResult: '',
   biopsyResult: '',
   geneticTested: false,
@@ -324,7 +317,6 @@ const formData = reactive({
   treatmentPlan: ''
 })
 
-// --- 表单必填校验规则 ---
 const rules = {
   name: [{ required: true, message: '患者姓名不能为空', trigger: 'blur' }],
   gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
@@ -334,8 +326,15 @@ const rules = {
   diagnosis: [{ required: true, message: '请输入初步诊断', trigger: 'blur' }]
 }
 
-// --- 操作方法 ---
+const normalizePayload = () => ({
+  ...formData,
+  visitId: visitId.value,
+  visitDate: formData.visitDate ? new Date(formData.visitDate).toISOString().slice(0, 10) : '',
+  neuroSymptoms: [...formData.neuroSymptoms]
+})
+
 const saveDraft = () => {
+  localStorage.setItem('imld_patient_record_draft', JSON.stringify(normalizePayload()))
   ElMessage({
     message: '草稿已保存至本地缓存',
     type: 'success'
@@ -343,28 +342,39 @@ const saveDraft = () => {
 }
 
 const submitForm = () => {
-  if (!formRef.value) return
-  formRef.value.validate((valid) => {
-    if (valid) {
-      ElMessageBox.confirm('确认核对无误并归档该患者病历吗？', '系统提示', {
+  if (!formRef.value || submitting.value) return
+
+  formRef.value.validate(async (valid) => {
+    if (!valid) {
+      ElMessage.error('基础信息或必填项未完善，请检查红框字段')
+      activeTab.value = 'basic'
+      return
+    }
+
+    try {
+      await ElMessageBox.confirm('确认核对无误并归档该患者病历吗？', '系统提示', {
         confirmButtonText: '确认提交',
         cancelButtonText: '返回修改',
         type: 'warning'
-      }).then(() => {
-        // 模拟 API 请求
-        console.log('提交的病历数据:', formData)
-        ElMessage({
-          type: 'success',
-          message: '病历归档成功！正在同步至 AI 辅助诊断中台...',
-          duration: 3000
-        })
-        // 可以在这里写 router.push('/center/patient-list') 跳转回列表
-      }).catch(() => {})
-    } else {
-      ElMessage.error('基础信息或必填项未完善，请检查红框字段！')
-      // 自动跳转回第一个必填项所在的 tab 优化体验
-      activeTab.value = 'basic'
-      return false
+      })
+    } catch {
+      return
+    }
+
+    submitting.value = true
+    try {
+      const res = await patientApi.createRecord(normalizePayload())
+      visitId.value = res.data.visitId || visitId.value
+      ElMessage({
+        type: 'success',
+        message: '病历归档成功，已同步至 AI 辅助诊断中台',
+        duration: 2800
+      })
+      localStorage.removeItem('imld_patient_record_draft')
+    } catch {
+      ElMessage.error('病历归档失败，请稍后重试')
+    } finally {
+      submitting.value = false
     }
   })
 }
@@ -467,3 +477,4 @@ const resetForm = () => {
   }
 }
 </style>
+

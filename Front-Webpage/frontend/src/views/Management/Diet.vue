@@ -1,5 +1,5 @@
 <template>
-  <div class="diet-plan-container">
+  <div class="diet-plan-container" v-loading="loadingPatients">
     <el-row :gutter="20" class="full-height">
       
       <el-col :span="6" class="full-height">
@@ -40,7 +40,7 @@
       </el-col>
 
       <el-col :span="18" class="full-height">
-        <el-card class="right-panel" shadow="never">
+        <el-card class="right-panel" shadow="never" v-loading="loadingPlan">
           
           <div v-if="!selectedPatient" class="empty-state">
             <el-empty description="请从左侧选择慢病患者，制定个性化膳食方案" />
@@ -161,103 +161,113 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Search, Position, Printer, Aim, Warning, Food, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import managementApi from '../../api/management'
 
-// --- 状态与搜索 ---
 const searchQuery = ref('')
 const selectedPatient = ref(null)
+const loadingPatients = ref(false)
+const loadingPlan = ref(false)
+const patients = ref([])
+let searchTimer = null
 
-// --- 测试数据字典：针对不同疾病的配置 ---
-const diseaseConfigs = {
-  '肝豆状核变性 (Wilson病)': {
-    targets: [
-      { label: '每日铜摄入量', value: '< 1.0', unit: 'mg/日', color: '#f56c6c', desc: '绝对核心指标，超量将加重肝脑损伤' },
-      { label: '每日蛋白质摄入', value: '1.5-2.0', unit: 'g/kg', color: '#409EFF', desc: '促进铜排泄与肝细胞修复' },
-      { label: '每日饮水量', value: '> 2000', unit: 'ml', color: '#67c23a', desc: '饮用去离子水或纯净水，忌矿泉水' }
-    ],
-    foods: {
-      red: ['猪肝', '牛羊肉内脏', '巧克力', '可可粉', '花生', '核桃', '芝麻', '河蚌', '牡蛎', '蘑菇'],
-      yellow: ['牛肉', '羊肉', '燕麦', '黄豆', '扁豆', '玉米', '大蒜', '葱'],
-      green: ['精白米面', '鸡蛋清', '猪瘦肉', '鸡鸭肉', '牛奶', '白菜', '萝卜', '苹果', '西瓜', '梨']
-    },
-    mealPlan: [
-      { type: 'success', time: '早餐', menu: '纯鲜牛奶 250ml，精白面馒头 1个，水煮鸡蛋白 2个', nutrition: '含铜量约 0.12mg，高优蛋白' },
-      { type: 'warning', time: '午餐', menu: '白米饭 1碗，清蒸鱼肉 100g，蒜蓉炒大白菜 200g', nutrition: '含铜量约 0.25mg' },
-      { type: 'info', time: '晚餐', menu: '白米粥 1碗，青椒炒肉丝 (瘦猪肉) 80g，凉拌黄瓜', nutrition: '含铜量约 0.18mg' }
-    ]
-  },
-  '遗传性血色病': {
-    targets: [
-      { label: '每日铁摄入量', value: '极低', unit: '控制', color: '#f56c6c', desc: '严格控制富含血红素铁的食物' },
-      { label: '维生素C摄入', value: '避免', unit: '随餐', color: '#e6a23c', desc: '维C会显著增加铁的吸收率' },
-      { label: '每日饮茶量', value: '推荐', unit: '随餐', color: '#67c23a', desc: '茶多酚/鞣酸可有效抑制铁吸收' }
-    ],
-    foods: {
-      red: ['猪血', '鸭血', '动物内脏', '红肉(牛排)', '铁强化谷物', '维生素C补剂', '海鲜(生食)'],
-      yellow: ['鸡鸭肉(适量)', '深绿色蔬菜', '柑橘类水果(禁随餐)'],
-      green: ['精制谷物', '鸡蛋', '奶制品', '根茎类蔬菜', '浓茶', '咖啡']
-    },
-    mealPlan: [
-      { type: 'success', time: '早餐', menu: '白米粥 1碗，水煮鸡蛋 1个，热红茶 1杯', nutrition: '红茶随餐抑制铁吸收' },
-      { type: 'warning', time: '午餐', menu: '素炒西葫芦，清炖豆腐，精白米饭，餐后绿茶', nutrition: '极低血红素铁' },
-      { type: 'info', time: '晚餐', menu: '鸡胸肉沙拉(无柑橘类)，全麦面包，脱脂牛奶', nutrition: '避免维生素C同服' }
-    ]
+const filteredPatients = computed(() => patients.value)
+
+const fetchPatients = async () => {
+  loadingPatients.value = true
+  try {
+    const res = await managementApi.getDietPatients({
+      keyword: searchQuery.value.trim()
+    })
+    patients.value = res.data.items || []
+  } catch {
+    ElMessage.error('加载慢病患者列表失败，请稍后重试')
+  } finally {
+    loadingPatients.value = false
   }
 }
 
-// --- 慢病患者模拟数据 ---
-const patientsRaw = [
-  { id: 'P002', name: '陈婉婷', gender: '女', age: 32, avatar: 'https://randomuser.me/api/portraits/women/44.jpg', disease: '肝豆状核变性 (Wilson病)', compliance: '极佳' },
-  { id: 'P001', name: '林建国', gender: '男', age: 58, avatar: 'https://randomuser.me/api/portraits/men/32.jpg', disease: '遗传性血色病', compliance: '一般' },
-  { id: 'P015', name: '冯伟', gender: '男', age: 48, avatar: 'https://randomuser.me/api/portraits/men/61.jpg', disease: '肝豆状核变性 (Wilson病)', compliance: '差' },
-  { id: 'P008', name: '周小雅', gender: '女', age: 24, avatar: 'https://randomuser.me/api/portraits/women/12.jpg', disease: '肝豆状核变性 (Wilson病)', compliance: '良好' },
-  { id: 'P004', name: '王淑芬', gender: '女', age: 62, avatar: 'https://randomuser.me/api/portraits/women/68.jpg', disease: '遗传性血色病', compliance: '良好' }
-]
-
-const patients = ref(patientsRaw.map(p => ({
-  ...p,
-  ...diseaseConfigs[p.disease]
-})))
-
-// --- 计算属性 ---
-const filteredPatients = computed(() => {
-  if (!searchQuery.value) return patients.value
-  return patients.value.filter(p => p.name.includes(searchQuery.value))
-})
-
-// --- 方法 ---
-const handleSelectPatient = (patient) => {
-  selectedPatient.value = patient
+const handleSelectPatient = async (patient) => {
+  loadingPlan.value = true
+  try {
+    const res = await managementApi.getDietPlan(patient.id)
+    selectedPatient.value = {
+      ...patient,
+      ...res.data
+    }
+  } catch {
+    ElMessage.error('加载患者饮食方案失败，请稍后重试')
+  } finally {
+    loadingPlan.value = false
+  }
 }
 
 const getComplianceType = (level) => {
-  const map = { '极佳': 'success', '良好': 'primary', '一般': 'warning', '差': 'danger' }
+  const map = { 极佳: 'success', 良好: 'primary', 一般: 'warning', 差: 'danger' }
   return map[level] || 'info'
 }
 
-const regenerateMeal = () => {
-  ElMessage.success('正在调用营养大模型，根据患者指标重新排餐...')
+const regenerateMeal = async () => {
+  if (!selectedPatient.value) return
+
+  try {
+    const res = await managementApi.regenerateDietPlan(selectedPatient.value.id)
+    selectedPatient.value.mealPlan = res.data.mealPlan || []
+    ElMessage.success('食谱已重新生成')
+  } catch {
+    ElMessage.error('生成失败，请稍后重试')
+  }
 }
 
-const pushToPatient = () => {
-  ElMessageBox.confirm(
-    `确认将《${selectedPatient.value.disease} 个性化膳食处方》推送至患者【${selectedPatient.value.name}】的微信小程序和 APP 端吗？`,
-    '推送确认',
-    {
-      confirmButtonText: '确认发送',
-      cancelButtonText: '取消',
-      type: 'success',
-    }
-  ).then(() => {
-    ElMessage({ type: 'success', message: '已成功送达患者端！系统将开启饮食打卡监督。' })
-  }).catch(() => {})
+const pushToPatient = async () => {
+  if (!selectedPatient.value) return
+
+  try {
+    await ElMessageBox.confirm(
+      `确认将《${selectedPatient.value.disease} 个性化膳食处方》推送至患者【${selectedPatient.value.name}】端吗？`,
+      '推送确认',
+      {
+        confirmButtonText: '确认发送',
+        cancelButtonText: '取消',
+        type: 'success'
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await managementApi.pushDietPlan(selectedPatient.value.id)
+    ElMessage({ type: 'success', message: '已成功送达患者端，系统将开启饮食打卡监督。' })
+  } catch {
+    ElMessage.error('推送失败，请稍后重试')
+  }
 }
 
 const printDietPlan = () => {
   ElMessage.info('准备生成 PDF 打印件...')
 }
+
+watch(searchQuery, () => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+  }
+  searchTimer = setTimeout(() => {
+    fetchPatients()
+  }, 250)
+})
+
+onMounted(() => {
+  fetchPatients()
+})
+
+onUnmounted(() => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -487,3 +497,4 @@ const printDietPlan = () => {
   padding: 0 !important; /* 彻底移除 cell div 内边距 */
 }
 </style>
+

@@ -1,5 +1,5 @@
 <template>
-  <div class="screening-data-container">
+  <div class="screening-data-container" v-loading="loading">
     <div class="header-actions">
       <div class="title-area">
         <el-text tag="b" size="large" class="main-title">
@@ -106,19 +106,19 @@
             <div class="scroll-content ai-efficiency">
               <el-progress 
                 type="dashboard" 
-                :percentage="94.6" 
+                :percentage="aiEfficiency.diagnosisMatchRate || 0" 
                 color="#67c23a" 
                 :width="160"
                 :stroke-width="14"
               >
                 <template #default="{ percentage }">
-                  <div class="efficiency-value">{{ percentage }}%</div>
+                  <div class="efficiency-value">{{ aiEfficiency.diagnosisMatchRate || 0 }}%</div>
                   <div class="efficiency-label">诊断吻合率</div>
                 </template>
               </el-progress>
               <div class="efficiency-stats">
-                <div class="e-stat"><span class="label">漏诊率</span><span class="val success">0.2%</span></div>
-                <div class="e-stat"><span class="label">平均耗时</span><span class="val primary">1.2s</span></div>
+                <div class="e-stat"><span class="label">漏诊率</span><span class="val success">{{ aiEfficiency.missRate || '0%' }}</span></div>
+                <div class="e-stat"><span class="label">平均耗时</span><span class="val primary">{{ aiEfficiency.avgDuration || '--' }}</span></div>
               </div>
             </div>
           </el-scrollbar>
@@ -156,54 +156,47 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { 
-  DataAnalysis, Download, User, WarnTriangleFilled, 
-  TrendCharts, MagicStick, Top, Bottom, WarningFilled 
+import { ref, onMounted, watch } from 'vue'
+import {
+  DataAnalysis, Download, WarningFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import managementApi from '../../api/management'
 
-// --- 状态数据 ---
-const dateRange = ref('')
-const currentTime = ref(new Date().toLocaleString())
-let timer = null
+const dateRange = ref([])
+const currentTime = ref('')
+const loading = ref(false)
 
-// --- 核心指标统计 ---
-const statCards = ref([
-  { title: '累计筛查总人数', value: 12450, color: '#409EFF', icon: 'User', trend: 5.2 },
-  { title: '检出高危/阳性', value: 342, color: '#f56c6c', icon: 'WarnTriangleFilled', trend: 1.5, suffix: '例' },
-  { title: '基因突变携带率', value: 2.8, color: '#e6a23c', icon: 'TrendCharts', trend: -0.3, suffix: '%' },
-  { title: 'AI 干预采纳数', value: 890, color: '#67c23a', icon: 'MagicStick', trend: 12.4, suffix: '次' }
-])
+const statCards = ref([])
+const riskDistribution = ref([])
+const topGenes = ref([])
+const aiEfficiency = ref({})
+const highRiskPatients = ref([])
 
-// --- 风险等级分布 ---
-const riskDistribution = ref([
-  { level: '极高', count: 85, percentage: 15, color: '#f56c6c' },
-  { level: '高', count: 257, percentage: 35, color: '#e6a23c' },
-  { level: '中', count: 420, percentage: 55, color: '#e6a23c' },
-  { level: '低', count: 11688, percentage: 100, color: '#67c23a' }
-])
+const fetchOverview = async () => {
+  loading.value = true
+  try {
+    const [from, to] = Array.isArray(dateRange.value) ? dateRange.value : []
+    const params = {
+      from: from ? new Date(from).toISOString().slice(0, 10) : '',
+      to: to ? new Date(to).toISOString().slice(0, 10) : ''
+    }
 
-// --- 高频基因突变 (扩展至 7 条以测试滚动条效果) ---
-const topGenes = ref([
-  { name: 'ATP7B', desc: '肝豆状核变性', percentage: 82 },
-  { name: 'HFE', desc: '遗传性血色病', percentage: 65 },
-  { name: 'SERPINA1', desc: 'α1-抗胰蛋白酶缺乏', percentage: 48 },
-  { name: 'SLC37A4', desc: '糖原累积病 Ib型', percentage: 30 },
-  { name: 'UGT1A1', desc: 'Gilbert综合征 (黄疸)', percentage: 22 },
-  { name: 'G6PC', desc: '糖原累积病 Ia型', percentage: 15 },
-  { name: 'NPC1', desc: '尼曼-匹克病 (C型)', percentage: 8 }
-])
+    const res = await managementApi.getScreeningOverview(params)
+    const payload = res.data || {}
+    statCards.value = payload.statCards || []
+    riskDistribution.value = payload.riskDistribution || []
+    topGenes.value = payload.topGenes || []
+    aiEfficiency.value = payload.aiEfficiency || {}
+    highRiskPatients.value = payload.highRiskPatients || []
+    currentTime.value = payload.updatedAt || new Date().toLocaleString()
+  } catch {
+    ElMessage.error('加载筛查数据失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
+}
 
-// --- 高危患者台账 ---
-const highRiskPatients = ref([
-  { date: '2023-11-24', name: '李*豪', age: 14, clue: '铜蓝蛋白极低 (0.05 g/L)，AST/ALT 比例失调', aiSuggest: 'Wilson病 (极高危)' },
-  { date: '2023-11-23', name: '赵*刚', age: 52, clue: '铁蛋白 > 1000 ng/mL，转铁蛋白饱和度 75%', aiSuggest: '遗传性血色病' },
-  { date: '2023-11-22', name: '陈*明', age: 28, clue: '持续性非结合胆红素升高，排除溶血', aiSuggest: 'Gilbert综合征' },
-  { date: '2023-11-21', name: '王*宇', age: 6, clue: '空腹低血糖伴乳酸酸中毒，肝大', aiSuggest: '糖原累积病' }
-])
-
-// --- 方法 ---
 const exportData = () => {
   ElMessage.success('正在导出区域筛查与流行病学统计报表...')
 }
@@ -212,15 +205,12 @@ const handleReview = (row) => {
   ElMessage.info(`正在为患者 ${row.name} 建立干预随访档案...`)
 }
 
-// 实时更新时间
-onMounted(() => {
-  timer = setInterval(() => {
-    currentTime.value = new Date().toLocaleString()
-  }, 1000)
+watch(dateRange, () => {
+  fetchOverview()
 })
 
-onUnmounted(() => {
-  clearInterval(timer)
+onMounted(() => {
+  fetchOverview()
 })
 </script>
 
