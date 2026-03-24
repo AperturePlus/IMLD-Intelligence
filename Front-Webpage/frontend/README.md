@@ -21,9 +21,29 @@ bun run build
 bun run preview
 ```
 
+## Electron（Windows）
+
+开发模式（Electron + Vite，继续使用 Mock）：
+
+```bash
+bun run dev:electron
+```
+
+打包 Windows 安装包（NSIS）：
+
+```bash
+bun run build:electron:win
+```
+
+打包 Windows 目录版本（免安装）：
+
+```bash
+bun run build:electron:win:dir
+```
+
 ## Mock 说明
 
-开发环境默认启用 Mock（见 `.env.development`）：
+开发环境默认启用 Mock（见 `.env.development`），Electron 打包模式使用 `.env.electron`：
 
 - `POST /dj-rest-auth/login/`
 - `POST /dj-rest-auth/registration/`

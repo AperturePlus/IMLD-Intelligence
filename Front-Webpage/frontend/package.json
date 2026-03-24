@@ -2,13 +2,18 @@
   "name": "victoryreportfrontend",
   "private": true,
   "version": "0.0.0",
+  "main": "electron/main.cjs",
   "type": "module",
   "packageManager": "bun@1.3.10",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "build:renderer:electron": "vue-tsc -b && vite build --mode electron",
+    "dev:electron": "concurrently -k \"vite --mode development --host 127.0.0.1 --port 5173\" \"wait-on tcp:5173 && cross-env ELECTRON_RENDERER_URL=http://127.0.0.1:5173 electron .\"",
+    "build:electron:win": "bun run build:renderer:electron && electron-builder --win nsis",
+    "build:electron:win:dir": "bun run build:renderer:electron && electron-builder --win dir"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -33,10 +38,46 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.3",
     "typescript": "~5.7.2",
     "vite": "6.2.6",
-    "vue-tsc": "^2.2.4"
+    "vue-tsc": "^2.2.4",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "io.xenosoft.imld.frontend",
+    "productName": "IMLD-Intelligence-Frontend",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   }
 }
