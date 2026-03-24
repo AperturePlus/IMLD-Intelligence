@@ -71,16 +71,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import patientApi from '../../api/patient'
+import type { PatientSummary } from '../../api/types'
 
 const searchQuery = ref('')
 const loading = ref(false)
-const patients = ref([])
-let searchTimer = null
+const patients = ref<PatientSummary[]>([])
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const filteredPatients = computed(() => patients.value)
 
@@ -98,8 +99,10 @@ const fetchPatients = async () => {
   }
 }
 
-const getRiskTagType = (level) => {
-  const map = {
+type RiskTagType = 'danger' | 'warning' | 'success' | 'info'
+
+const getRiskTagType = (level: string): RiskTagType => {
+  const map: Record<string, RiskTagType> = {
     高: 'danger',
     中: 'warning',
     低: 'success'

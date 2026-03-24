@@ -169,17 +169,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Cpu, Aim, Download, Microphone, Food } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import diagnosisApi from '../../api/diagnosis'
+import type { DiagnosisQueuePatient, DiagnosisResult } from '../../api/types'
 
 const isDiagnosing = ref(false)
 const loadingQueue = ref(false)
-const selectedPatient = ref(null)
-const diagnosisResult = ref(null)
-const patients = ref([])
+const selectedPatient = ref<DiagnosisQueuePatient | null>(null)
+const diagnosisResult = ref<DiagnosisResult | null>(null)
+const patients = ref<DiagnosisQueuePatient[]>([])
 
 const customColors = [
   { color: '#67c23a', percentage: 30 },
@@ -199,7 +200,7 @@ const fetchQueue = async () => {
   }
 }
 
-const handleSelectPatient = (patient) => {
+const handleSelectPatient = (patient: DiagnosisQueuePatient) => {
   if (isDiagnosing.value) {
     ElMessage.warning('AI 正在诊断中，请稍后再切换患者')
     return
@@ -210,15 +211,16 @@ const handleSelectPatient = (patient) => {
 }
 
 const startDiagnosis = async () => {
-  if (!selectedPatient.value || isDiagnosing.value) {
+  const patient = selectedPatient.value
+  if (!patient || isDiagnosing.value) {
     return
   }
 
   isDiagnosing.value = true
   try {
-    const res = await diagnosisApi.runAiDiagnosis(selectedPatient.value.id)
+    const res = await diagnosisApi.runAiDiagnosis(patient.id)
     diagnosisResult.value = res.data
-    selectedPatient.value.aiStatus = '已诊断'
+    patient.aiStatus = '已诊断'
     ElMessage.success('AI 辅助诊断已完成')
   } catch {
     ElMessage.error('AI 诊断失败，请稍后重试')

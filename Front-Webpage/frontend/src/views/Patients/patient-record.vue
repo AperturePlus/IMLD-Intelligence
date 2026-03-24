@@ -274,18 +274,52 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { DocumentAdd, Select } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import patientApi from '../../api/patient'
+import type { PatientRecordPayload } from '../../api/types'
 
 const visitId = ref(`VISIT-${Date.now().toString().slice(-8)}`)
 const activeTab = ref('basic')
-const formRef = ref(null)
+const formRef = ref<FormInstance>()
 const submitting = ref(false)
 
-const formData = reactive({
+interface PatientRecordForm {
+  name: string
+  gender: string
+  age: number | null
+  visitDate: Date | string | null
+  phone: string
+  idCard: string
+  consanguinity: boolean
+  familyHistory: boolean
+  familyHistoryDetail: string
+  chiefComplaint: string
+  presentIllness: string
+  jaundice: string
+  hepatomegaly: boolean
+  splenomegaly: boolean
+  kfRing: string
+  neuroSymptoms: string[]
+  alt: string
+  ast: string
+  tbil: string
+  ceruloplasmin: string
+  urineCopper: string
+  ferritin: string
+  transferrinSat: string
+  imagingResult: string
+  biopsyResult: string
+  geneticTested: boolean
+  mutatedGene: string
+  diagnosis: string
+  treatmentPlan: string
+}
+
+const formData = reactive<PatientRecordForm>({
   name: '',
   gender: '',
   age: null,
@@ -317,7 +351,7 @@ const formData = reactive({
   treatmentPlan: ''
 })
 
-const rules = {
+const rules: FormRules<PatientRecordForm> = {
   name: [{ required: true, message: '患者姓名不能为空', trigger: 'blur' }],
   gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
   age: [{ required: true, message: '请输入年龄', trigger: 'blur' }],
@@ -326,7 +360,7 @@ const rules = {
   diagnosis: [{ required: true, message: '请输入初步诊断', trigger: 'blur' }]
 }
 
-const normalizePayload = () => ({
+const normalizePayload = (): PatientRecordPayload => ({
   ...formData,
   visitId: visitId.value,
   visitDate: formData.visitDate ? new Date(formData.visitDate).toISOString().slice(0, 10) : '',
@@ -344,7 +378,7 @@ const saveDraft = () => {
 const submitForm = () => {
   if (!formRef.value || submitting.value) return
 
-  formRef.value.validate(async (valid) => {
+  formRef.value.validate(async (valid: boolean) => {
     if (!valid) {
       ElMessage.error('基础信息或必填项未完善，请检查红框字段')
       activeTab.value = 'basic'
@@ -383,7 +417,7 @@ const resetForm = () => {
   ElMessageBox.confirm('清空后当前录入的所有数据将丢失，是否继续？', '警告', {
     confirmButtonText: '确认清空',
     cancelButtonText: '取消',
-    type: 'danger'
+    type: 'warning'
   }).then(() => {
     if (formRef.value) formRef.value.resetFields()
     ElMessage.info('表单已重置')

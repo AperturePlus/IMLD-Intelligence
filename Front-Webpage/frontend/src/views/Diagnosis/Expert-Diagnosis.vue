@@ -183,7 +183,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import {
   Search, Printer, Download, EditPen, Check, Monitor, Edit, FirstAidKit,
@@ -191,15 +191,16 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import diagnosisApi from '../../api/diagnosis'
+import type { ExpertReport } from '../../api/types'
 
 const searchQuery = ref('')
-const reportStatusFilter = ref('待签发')
-const selectedReport = ref(null)
+const reportStatusFilter = ref<'待签发' | '已签发'>('待签发')
+const selectedReport = ref<ExpertReport | null>(null)
 const loadingReports = ref(false)
 
 const paperScale = ref(1.0)
 const currentDate = new Date().toISOString().split('T')[0]
-const reports = ref([])
+const reports = ref<ExpertReport[]>([])
 
 const fetchReports = async () => {
   loadingReports.value = true
@@ -207,8 +208,9 @@ const fetchReports = async () => {
     const res = await diagnosisApi.getExpertReports()
     reports.value = res.data.items || []
 
-    if (selectedReport.value) {
-      const matched = reports.value.find((item) => item.id === selectedReport.value.id)
+    const selectedReportId = selectedReport.value?.id
+    if (selectedReportId) {
+      const matched = reports.value.find((item) => item.id === selectedReportId)
       selectedReport.value = matched || null
     }
   } catch {
@@ -243,20 +245,23 @@ const filteredReports = computed(() => {
   })
 })
 
-const handleSelectReport = (report) => {
+const handleSelectReport = (report: ExpertReport) => {
   selectedReport.value = report
   paperScale.value = 1.0
 }
 
 const handleSign = async () => {
-  if (!selectedReport.value.expertConclusion || !selectedReport.value.treatmentPlan) {
+  const report = selectedReport.value
+  if (!report) return
+
+  if (!report.expertConclusion || !report.treatmentPlan) {
     ElMessage.warning('请填写完整的专家审核结论与干预计划')
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      `确认签发患者 ${selectedReport.value.patientName} 的专家报告吗？签发后报告将锁定且不可修改。`,
+      `确认签发患者 ${report.patientName} 的专家报告吗？签发后报告将锁定且不可修改。`,
       '签发确认',
       {
         confirmButtonText: '确认签发',
@@ -269,15 +274,15 @@ const handleSign = async () => {
   }
 
   try {
-    const res = await diagnosisApi.signExpertReport(selectedReport.value.id, {
-      expertConclusion: selectedReport.value.expertConclusion,
-      treatmentPlan: selectedReport.value.treatmentPlan
+    const res = await diagnosisApi.signExpertReport(report.id, {
+      expertConclusion: report.expertConclusion,
+      treatmentPlan: report.treatmentPlan
     })
 
-    const report = res.data.report
-    const idx = reports.value.findIndex((item) => item.id === report.id)
+    const updatedReport = res.data.report
+    const idx = reports.value.findIndex((item) => item.id === updatedReport.id)
     if (idx >= 0) {
-      reports.value[idx] = report
+      reports.value[idx] = updatedReport
       selectedReport.value = reports.value[idx]
     }
 
@@ -293,8 +298,9 @@ const handlePrint = () => {
 }
 
 const handleExport = () => {
-  if (!selectedReport.value) return
-  ElMessage.success(`正在生成 ${selectedReport.value.patientName}_评估报告.pdf ...`)
+  const report = selectedReport.value
+  if (!report) return
+  ElMessage.success(`正在生成 ${report.patientName}_评估报告.pdf ...`)
 }
 
 onMounted(() => {

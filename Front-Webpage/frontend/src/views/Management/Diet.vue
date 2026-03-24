@@ -160,18 +160,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Search, Position, Printer, Aim, Warning, Food, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import managementApi from '../../api/management'
+import type { DietPatient, DietPlanResponse } from '../../api/types'
 
 const searchQuery = ref('')
-const selectedPatient = ref(null)
+type DietPatientWithPlan = DietPatient & DietPlanResponse
+
+const selectedPatient = ref<DietPatientWithPlan | null>(null)
 const loadingPatients = ref(false)
 const loadingPlan = ref(false)
-const patients = ref([])
-let searchTimer = null
+const patients = ref<DietPatient[]>([])
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const filteredPatients = computed(() => patients.value)
 
@@ -189,7 +192,7 @@ const fetchPatients = async () => {
   }
 }
 
-const handleSelectPatient = async (patient) => {
+const handleSelectPatient = async (patient: DietPatient) => {
   loadingPlan.value = true
   try {
     const res = await managementApi.getDietPlan(patient.id)
@@ -204,17 +207,23 @@ const handleSelectPatient = async (patient) => {
   }
 }
 
-const getComplianceType = (level) => {
-  const map = { 极佳: 'success', 良好: 'primary', 一般: 'warning', 差: 'danger' }
+type ComplianceTagType = 'success' | 'primary' | 'warning' | 'danger' | 'info'
+
+const getComplianceType = (level: string): ComplianceTagType => {
+  const map: Record<string, ComplianceTagType> = { 极佳: 'success', 良好: 'primary', 一般: 'warning', 差: 'danger' }
   return map[level] || 'info'
 }
 
 const regenerateMeal = async () => {
-  if (!selectedPatient.value) return
+  const patient = selectedPatient.value
+  if (!patient) return
 
   try {
-    const res = await managementApi.regenerateDietPlan(selectedPatient.value.id)
-    selectedPatient.value.mealPlan = res.data.mealPlan || []
+    const res = await managementApi.regenerateDietPlan(patient.id)
+    selectedPatient.value = {
+      ...patient,
+      mealPlan: res.data.mealPlan || []
+    }
     ElMessage.success('食谱已重新生成')
   } catch {
     ElMessage.error('生成失败，请稍后重试')
@@ -222,11 +231,12 @@ const regenerateMeal = async () => {
 }
 
 const pushToPatient = async () => {
-  if (!selectedPatient.value) return
+  const patient = selectedPatient.value
+  if (!patient) return
 
   try {
     await ElMessageBox.confirm(
-      `确认将《${selectedPatient.value.disease} 个性化膳食处方》推送至患者【${selectedPatient.value.name}】端吗？`,
+      `确认将《${patient.disease} 个性化膳食处方》推送至患者【${patient.name}】端吗？`,
       '推送确认',
       {
         confirmButtonText: '确认发送',
@@ -239,7 +249,7 @@ const pushToPatient = async () => {
   }
 
   try {
-    await managementApi.pushDietPlan(selectedPatient.value.id)
+    await managementApi.pushDietPlan(patient.id)
     ElMessage({ type: 'success', message: '已成功送达患者端，系统将开启饮食打卡监督。' })
   } catch {
     ElMessage.error('推送失败，请稍后重试')

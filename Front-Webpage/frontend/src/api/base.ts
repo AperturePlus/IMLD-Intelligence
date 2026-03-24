@@ -1,4 +1,5 @@
-import axios from 'axios'
+import axios, { AxiosHeaders } from 'axios'
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import router from '../router'
 import { createMockAdapter, isMockEnabled } from '../mock/httpMock'
 
@@ -9,11 +10,15 @@ const service = axios.create({
 })
 
 service.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('token')
     if (token) {
-      config.headers = config.headers ?? {}
-      config.headers.Authorization = `Token ${token}`
+      const headers =
+        config.headers instanceof AxiosHeaders
+          ? config.headers
+          : new AxiosHeaders(config.headers)
+      headers.set('Authorization', `Token ${token}`)
+      config.headers = headers
     }
 
     if (isMockEnabled()) {
@@ -25,18 +30,18 @@ service.interceptors.request.use(
 
     return config
   },
-  (error) => Promise.reject(error)
+  (error: AxiosError) => Promise.reject(error)
 )
 
 service.interceptors.response.use(
   (response) => response,
-  (error) => {
+  (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('username')
 
       if (router.currentRoute.value.path !== '/') {
-        alert('登录已过期，请重新登录。')
+        alert('Login expired, please sign in again.')
         router.push('/')
       }
     }

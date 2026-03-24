@@ -111,7 +111,7 @@
                 :width="160"
                 :stroke-width="14"
               >
-                <template #default="{ percentage }">
+                <template #default>
                   <div class="efficiency-value">{{ aiEfficiency.diagnosisMatchRate || 0 }}%</div>
                   <div class="efficiency-label">诊断吻合率</div>
                 </template>
@@ -155,23 +155,35 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import {
   DataAnalysis, Download, WarningFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import managementApi from '../../api/management'
+import type {
+  AiEfficiencyMetrics,
+  HighRiskPatientItem,
+  RiskDistributionItem,
+  ScreeningOverviewResponse,
+  StatCard,
+  TopGeneItem
+} from '../../api/types'
 
-const dateRange = ref([])
+const dateRange = ref<[Date | string, Date | string] | []>([])
 const currentTime = ref('')
 const loading = ref(false)
 
-const statCards = ref([])
-const riskDistribution = ref([])
-const topGenes = ref([])
-const aiEfficiency = ref({})
-const highRiskPatients = ref([])
+const statCards = ref<StatCard[]>([])
+const riskDistribution = ref<RiskDistributionItem[]>([])
+const topGenes = ref<TopGeneItem[]>([])
+const aiEfficiency = ref<AiEfficiencyMetrics>({
+  diagnosisMatchRate: 0,
+  missRate: '0%',
+  avgDuration: '--'
+})
+const highRiskPatients = ref<HighRiskPatientItem[]>([])
 
 const fetchOverview = async () => {
   loading.value = true
@@ -183,13 +195,13 @@ const fetchOverview = async () => {
     }
 
     const res = await managementApi.getScreeningOverview(params)
-    const payload = res.data || {}
-    statCards.value = payload.statCards || []
-    riskDistribution.value = payload.riskDistribution || []
-    topGenes.value = payload.topGenes || []
-    aiEfficiency.value = payload.aiEfficiency || {}
-    highRiskPatients.value = payload.highRiskPatients || []
-    currentTime.value = payload.updatedAt || new Date().toLocaleString()
+    const payload: Partial<ScreeningOverviewResponse> = res.data ?? {}
+    statCards.value = payload.statCards ?? []
+    riskDistribution.value = payload.riskDistribution ?? []
+    topGenes.value = payload.topGenes ?? []
+    aiEfficiency.value = payload.aiEfficiency ?? { diagnosisMatchRate: 0, missRate: '0%', avgDuration: '--' }
+    highRiskPatients.value = payload.highRiskPatients ?? []
+    currentTime.value = payload.updatedAt ?? new Date().toLocaleString()
   } catch {
     ElMessage.error('加载筛查数据失败，请稍后重试')
   } finally {
@@ -201,7 +213,7 @@ const exportData = () => {
   ElMessage.success('正在导出区域筛查与流行病学统计报表...')
 }
 
-const handleReview = (row) => {
+const handleReview = (row: HighRiskPatientItem) => {
   ElMessage.info(`正在为患者 ${row.name} 建立干预随访档案...`)
 }
 

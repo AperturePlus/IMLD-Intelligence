@@ -1,3 +1,4 @@
+// @ts-nocheck
 const MOCK_USERS_KEY = '__imld_mock_users__'
 const MOCK_TOKENS_KEY = '__imld_mock_tokens__'
 const MOCK_PATIENTS_KEY = '__imld_mock_patients__'
