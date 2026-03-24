@@ -113,7 +113,7 @@
 import { ref, provide, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import avatarImg from '../assets/login.webp' // 确保图片路径正确
+import avatarImg from '@/assets/login.webp'
 
 // 这里已经完全删除了 import { UserFilled, Cpu ... } 的代码！
 

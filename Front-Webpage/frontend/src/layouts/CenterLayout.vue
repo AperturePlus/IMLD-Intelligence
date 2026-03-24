@@ -1,6 +1,6 @@
 <template>
   <div class="center-layout">
-    <Leftaside />
+    <AppSidebar />
     <div class="center-main">
       <router-view />
     </div>
@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import Leftaside from '../components/Leftaside.vue'
+import AppSidebar from '@/layouts/components/AppSidebar.vue'
 </script>
 
 <style scoped>

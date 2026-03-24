@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders } from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
-import router from '../router'
+import router from '@/app/router'
 import { createMockAdapter, isMockEnabled } from '../mock/httpMock'
 
 const service = axios.create({
