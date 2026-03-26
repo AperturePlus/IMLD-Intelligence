@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2018",
+    "target": "esnext",
     "module": "ESNext",
-    "moduleResolution": "Node",
-    "strict": false,
+    "moduleResolution": "bundler",
+    "strict": true,
     "allowJs": false,
     "checkJs": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
+    // "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
