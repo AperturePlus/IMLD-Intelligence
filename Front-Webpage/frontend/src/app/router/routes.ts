@@ -46,6 +46,11 @@ export const routes: RouteRecordRaw[] = [
         path: 'data-screening',
         name: 'data-screening',
         component: () => import('@/pages/management/DataScreeningPage.vue')
+      },
+      {
+        path: 'license-activation',
+        name: 'license-activation',
+        component: () => import('@/pages/system/LicenseActivationPage.vue')
       }
     ]
   }

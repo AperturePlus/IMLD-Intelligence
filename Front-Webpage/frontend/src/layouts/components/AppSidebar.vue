@@ -76,6 +76,10 @@
             <el-icon><Setting /></el-icon>
             <span>系统设置</span>
           </template>
+          <el-menu-item index="/center/license-activation">
+            <span class="menu-dot"></span>
+            <span>许可证激活</span>
+          </el-menu-item>
           <el-menu-item index="/center/account-manage">
             <span class="menu-dot"></span>
             <span>账号权限</span>
