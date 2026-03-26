@@ -5,12 +5,12 @@ spring:
     group:
       dev-saas: dev,saas
       dev-private: dev,private
-      dev-hybrid: dev,private,hybrid
+      dev-private-bridge: dev,private,private-bridge
   datasource:
     driver-class-name: ${IMLD_DB_DRIVER:org.postgresql.Driver}
     url: ${IMLD_DB_URL:jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8}
-    username: ${IMLD_DB_USERNAME:postgres}
-    password: ${IMLD_DB_PASSWORD:postgres}
+    username: ${IMLD_DB_USERNAME:imld_user}
+    password: ${IMLD_DB_PASSWORD:imldintel}
   sql:
     init:
       mode: ${IMLD_SQL_INIT_MODE:never}
@@ -124,6 +124,7 @@ imld:
       startup-validation-enabled: ${IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED:false}
       activation-required: ${IMLD_ACTIVATION_REQUIRED:true}
       activation-code: ${IMLD_ACTIVATION_CODE:}
+      activation-state-file-path: ${IMLD_ACTIVATION_STATE_FILE_PATH:}
       license-file-path: ${IMLD_LICENSE_FILE_PATH:}
       public-key-file-path: ${IMLD_LICENSE_PUBLIC_KEY_FILE_PATH:}
       machine-binding-enabled: ${IMLD_MACHINE_BINDING_ENABLED:true}

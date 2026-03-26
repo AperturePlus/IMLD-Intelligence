@@ -3,7 +3,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8
     username: postgres
-    password: postgres
+    password: L0-postgres
   sql:
     init:
       mode: always

@@ -18,6 +18,23 @@
   - 面向在院就诊患者的 `VIP` 订阅权益联动。
 - 架构约束：无论 `SaaS` 还是私有化，必须基于同一代码仓、同一模块边界、同一主干演进。
 
+## 启动指令基线（开发与交付）
+
+- 开发联调统一使用 `spring.profiles.active` 组：
+  - `dev-saas`：`.\gradlew.bat bootRun --args="--spring.profiles.active=dev-saas"`
+  - `dev-private`：`.\gradlew.bat bootRun --args="--spring.profiles.active=dev-private"`
+  - `dev-private-bridge`：`.\gradlew.bat bootRun --args="--spring.profiles.active=dev-private-bridge"`
+- 交付环境建议使用部署形态 profile：
+  - `saas`
+  - `private`
+  - `private,private-bridge`
+- `private` 与 `private-bridge` 默认要求签名许可证校验；上线前必须明确：
+  - `IMLD_LICENSE_FILE_PATH`
+  - `IMLD_LICENSE_PUBLIC_KEY_FILE_PATH`
+  - `IMLD_ACTIVATION_STATE_FILE_PATH`
+- 若仅用于本地联调且不做授权验签，可临时设置 `IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED=false`，但不得作为生产配置。
+- 当 profile 名称、激活参数、启动方式变更时，必须同时更新 `README.md` 启动命令章节与本节内容。
+
 ## 工作总原则
 
 - 单代码基线：通过配置、策略、适配器区分部署形态，禁止维护两套功能等价系统。

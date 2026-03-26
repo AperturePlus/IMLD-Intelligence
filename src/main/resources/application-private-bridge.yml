@@ -1,3 +1,5 @@
+# Private deployment outbound bridge profile.
+# This profile is an additive capability profile (not a third deployment mode).
 imld:
   deployment:
     mode: private

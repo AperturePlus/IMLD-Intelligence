@@ -18,6 +18,7 @@ imld:
       startup-validation-enabled: true
       activation-required: true
       activation-code: ${IMLD_ACTIVATION_CODE:}
+      activation-state-file-path: ${IMLD_ACTIVATION_STATE_FILE_PATH:/opt/imld/license/activation-state.json}
       license-file-path: ${IMLD_LICENSE_FILE_PATH:/opt/imld/license/license.json}
       public-key-file-path: ${IMLD_LICENSE_PUBLIC_KEY_FILE_PATH:/opt/imld/license/public.pem}
       machine-binding-enabled: true
