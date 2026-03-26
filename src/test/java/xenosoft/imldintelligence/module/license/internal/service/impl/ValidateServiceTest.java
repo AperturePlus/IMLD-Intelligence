@@ -52,6 +52,7 @@ class ValidateServiceTest {
                 deploymentPrivate(),
                 licenseProperties(activationCode, licensePath, publicKeyPath, false),
                 upgradeProperties(true, manifestPath, false),
+                activationStateService(licenseProperties(activationCode, licensePath, publicKeyPath, false)),
                 new CryptoServiceImpl(),
                 JsonMapper.builder().findAndAddModules().build()
         );
@@ -86,6 +87,7 @@ class ValidateServiceTest {
                 deploymentPrivate(),
                 licenseProperties(activationCode, licensePath, publicKeyPath, false),
                 upgradeProperties(true, manifestPath, false),
+                activationStateService(licenseProperties(activationCode, licensePath, publicKeyPath, false)),
                 new CryptoServiceImpl(),
                 JsonMapper.builder().findAndAddModules().build()
         );
@@ -120,6 +122,77 @@ class ValidateServiceTest {
                 deploymentPrivate(),
                 licenseProperties(activationCode, licensePath, publicKeyPath, false),
                 upgradeProperties(true, manifestPath, true),
+                activationStateService(licenseProperties(activationCode, licensePath, publicKeyPath, false)),
+                new CryptoServiceImpl(),
+                JsonMapper.builder().findAndAddModules().build()
+        );
+
+        assertDoesNotThrow(validateService::validateStartupOrThrow);
+    }
+
+    @Test
+    void shouldTreatHybridAsPrivateForDeploymentCompatibility() throws Exception {
+        KeyPair keyPair = generateRsaKeyPair();
+        Path publicKeyPath = writePublicKeyPem(keyPair.getPublic());
+        String activationCode = "ACT-2026-LOCAL";
+
+        LicenseInfo licenseInfo = new LicenseInfo();
+        licenseInfo.setLicenseId("LIC-004");
+        licenseInfo.setHospitalId("HOSP-D");
+        licenseInfo.setDeploymentMode("hybrid");
+        licenseInfo.setSupportStartDate(LocalDate.of(2026, 1, 1));
+        licenseInfo.setSupportEndDate(LocalDate.of(2027, 1, 31));
+        licenseInfo.setActivationCodeHash(new CryptoServiceImpl().sha256Hex(activationCode));
+
+        Path licensePath = writeSignedEnvelope(licenseInfo, keyPair.getPrivate());
+        Path manifestPath = Files.createTempFile("imld-manifest-", ".json");
+
+        ValidateService validateService = new ValidateService(
+                deploymentPrivate(),
+                licenseProperties(activationCode, licensePath, publicKeyPath, false),
+                upgradeProperties(false, manifestPath, false),
+                activationStateService(licenseProperties(activationCode, licensePath, publicKeyPath, false)),
+                new CryptoServiceImpl(),
+                JsonMapper.builder().findAndAddModules().build()
+        );
+
+        assertDoesNotThrow(validateService::validateStartupOrThrow);
+    }
+
+    @Test
+    void shouldValidateUsingPersistedActivationHashWhenRuntimeActivationCodeIsMissing() throws Exception {
+        KeyPair keyPair = generateRsaKeyPair();
+        Path publicKeyPath = writePublicKeyPem(keyPair.getPublic());
+        String activationCode = "ACT-STATE-ONLY-2026";
+
+        LicenseInfo licenseInfo = new LicenseInfo();
+        licenseInfo.setLicenseId("LIC-005");
+        licenseInfo.setHospitalId("HOSP-E");
+        licenseInfo.setDeploymentMode("private");
+        licenseInfo.setSupportStartDate(LocalDate.of(2026, 1, 1));
+        licenseInfo.setSupportEndDate(LocalDate.of(2027, 1, 31));
+        licenseInfo.setActivationCodeHash(new CryptoServiceImpl().sha256Hex(activationCode));
+
+        Path licensePath = writeSignedEnvelope(licenseInfo, keyPair.getPrivate());
+        Path manifestPath = Files.createTempFile("imld-manifest-", ".json");
+
+        LicenseProperties properties = licenseProperties("", licensePath, publicKeyPath, false);
+        Path activationStatePath = Files.createTempDirectory("imld-activation-state").resolve("activation-state.json");
+        properties.getPrivateEdition().setActivationStateFilePath(activationStatePath.toString());
+
+        ActivationStateService activationStateService = activationStateService(properties);
+        activationStateService.storeActivationCode(
+                activationCode,
+                licenseInfo.getLicenseId(),
+                "TEST-MACHINE",
+                "test-case"
+        );
+
+        ValidateService validateService = new ValidateService(
+                deploymentPrivate(),
+                properties,
+                upgradeProperties(false, manifestPath, false),
+                activationStateService,
                 new CryptoServiceImpl(),
                 JsonMapper.builder().findAndAddModules().build()
         );
@@ -154,6 +227,14 @@ class ValidateServiceTest {
         properties.getEntitlement().setEnforceSupportWindow(true);
         properties.getEntitlement().setAllowSecurityPatchAfterExpiry(allowSecurityPatchAfterExpiry);
         return properties;
+    }
+
+    private ActivationStateService activationStateService(LicenseProperties properties) {
+        return new ActivationStateService(
+                properties,
+                new CryptoServiceImpl(),
+                JsonMapper.builder().findAndAddModules().build()
+        );
     }
 
     private KeyPair generateRsaKeyPair() throws Exception {

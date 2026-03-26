@@ -76,8 +76,8 @@ public class LicenseCliService {
      * @throws IllegalStateException if the expected mode differs from the license mode
      */
     public void validateDeploymentMode(LicenseInfo licenseInfo, String expectedMode) {
-        String runtimeMode = normalize(expectedMode);
-        String licenseMode = normalize(licenseInfo.getDeploymentMode());
+        String runtimeMode = normalizeDeploymentMode(expectedMode);
+        String licenseMode = normalizeDeploymentMode(licenseInfo.getDeploymentMode());
         if (!runtimeMode.equals(licenseMode)) {
             throw new IllegalStateException(
                     "Deployment mode mismatch. expected=" + runtimeMode + ", license=" + licenseMode
@@ -225,8 +225,15 @@ public class LicenseCliService {
         return normalized;
     }
 
-    private String normalize(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    private String normalizeDeploymentMode(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if ("hybrid".equals(normalized)) {
+            return "private";
+        }
+        return normalized;
     }
 
     private boolean hasText(String value) {

@@ -35,17 +35,20 @@ public class ValidateService {
     private final DeploymentProperties deploymentProperties;
     private final LicenseProperties licenseProperties;
     private final UpgradeProperties upgradeProperties;
+    private final ActivationStateService activationStateService;
     private final CryptoService cryptoService;
     private final ObjectMapper objectMapper;
 
     public ValidateService(DeploymentProperties deploymentProperties,
                            LicenseProperties licenseProperties,
                            UpgradeProperties upgradeProperties,
+                           ActivationStateService activationStateService,
                            CryptoService cryptoService,
                            ObjectMapper objectMapper) {
         this.deploymentProperties = deploymentProperties;
         this.licenseProperties = licenseProperties;
         this.upgradeProperties = upgradeProperties;
+        this.activationStateService = activationStateService;
         this.cryptoService = cryptoService;
         this.objectMapper = objectMapper.copy();
         this.objectMapper.setConfig(
@@ -160,7 +163,7 @@ public class ValidateService {
      * Ensures the runtime deployment mode is exactly the mode granted by the license payload.
      */
     private void validateDeploymentMode(LicenseInfo licenseInfo) {
-        String licenseMode = normalize(licenseInfo.getDeploymentMode());
+        String licenseMode = normalizeDeploymentMode(licenseInfo.getDeploymentMode());
         String runtimeMode = deploymentProperties.normalizedMode();
         if (!runtimeMode.equals(licenseMode)) {
             throw new IllegalStateException(
@@ -179,13 +182,19 @@ public class ValidateService {
         if (!hasText(licenseInfo.getActivationCodeHash())) {
             throw new IllegalStateException("License activationCodeHash is missing");
         }
-        if (!hasText(privateEdition.getActivationCode())) {
-            throw new IllegalStateException("Activation code is required but not provided");
-        }
-        String runtimeActivationHash = cryptoService.sha256Hex(privateEdition.getActivationCode().trim());
+        String runtimeActivationHash = resolveRuntimeActivationHash(privateEdition);
         if (!runtimeActivationHash.equalsIgnoreCase(licenseInfo.getActivationCodeHash().trim())) {
             throw new IllegalStateException("Activation code mismatch");
         }
+    }
+
+    private String resolveRuntimeActivationHash(LicenseProperties.PrivateEdition privateEdition) {
+        if (hasText(privateEdition.getActivationCode())) {
+            return cryptoService.sha256Hex(privateEdition.getActivationCode().trim());
+        }
+
+        return activationStateService.loadPersistedActivationCodeHash()
+                .orElseThrow(() -> new IllegalStateException("Activation code is required but not provided"));
     }
 
     /**
@@ -264,7 +273,14 @@ public class ValidateService {
         return value != null && !value.trim().isEmpty();
     }
 
-    private String normalize(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    private String normalizeDeploymentMode(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if ("hybrid".equals(normalized)) {
+            return "private";
+        }
+        return normalized;
     }
 }

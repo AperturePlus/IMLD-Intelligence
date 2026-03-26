@@ -17,9 +17,11 @@ import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LicenseCliServiceTest {
@@ -94,6 +96,27 @@ class LicenseCliServiceTest {
 
         assertNotNull(verifiedManifest);
         assertEquals("2.0.0", verifiedManifest.getVersion());
+    }
+
+    @Test
+    void shouldTreatHybridAsPrivateWhenValidatingDeploymentMode() {
+        LicenseInfo licenseInfo = new LicenseInfo();
+        licenseInfo.setDeploymentMode("hybrid");
+
+        LicenseCliService service = new LicenseCliService(new CryptoServiceImpl(), JsonMapper.builder().findAndAddModules().build());
+        assertDoesNotThrow(() -> service.validateDeploymentMode(licenseInfo, "private"));
+
+        licenseInfo.setDeploymentMode("private");
+        assertDoesNotThrow(() -> service.validateDeploymentMode(licenseInfo, "hybrid"));
+    }
+
+    @Test
+    void shouldRejectMismatchedDeploymentMode() {
+        LicenseInfo licenseInfo = new LicenseInfo();
+        licenseInfo.setDeploymentMode("private");
+
+        LicenseCliService service = new LicenseCliService(new CryptoServiceImpl(), JsonMapper.builder().findAndAddModules().build());
+        assertThrows(IllegalStateException.class, () -> service.validateDeploymentMode(licenseInfo, "saas"));
     }
 
     private KeyPair generateRsaKeyPair() throws Exception {

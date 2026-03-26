@@ -137,7 +137,8 @@ public final class LicenseApiDtos {
                 String cpuIdHash,
                 String macAddrHash,
                 String hdIdHash,
-                String osInfoHash
+                String osInfoHash,
+                String machineFingerprintHash
         ) {
         }
     }

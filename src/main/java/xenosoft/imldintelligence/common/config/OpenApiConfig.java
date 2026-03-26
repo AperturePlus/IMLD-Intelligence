@@ -13,12 +13,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * OpenAPI/Swagger configuration for IMLD Intelligence API documentation.
  *
- * <p>This configuration supports multiple deployment modes (SaaS, Private, Hybrid)
- * and provides comprehensive API documentation with security schemas.</p>
+ * <p>This configuration supports both SaaS and private deployment from one codebase.
+ * Private deployment can optionally enable a controlled cloud bridge for allowlisted
+ * outbound scenarios.</p>
  */
 @Configuration
 public class OpenApiConfig {
@@ -28,6 +30,9 @@ public class OpenApiConfig {
 
     @Value("${imld.deployment.mode:saas}")
     private String deploymentMode;
+
+    @Value("${imld.cloud-bridge.enabled:false}")
+    private boolean cloudBridgeEnabled;
 
     @Value("${server.servlet.context-path:}")
     private String contextPath;
@@ -71,7 +76,8 @@ public class OpenApiConfig {
         StringBuilder desc = new StringBuilder();
         desc.append("IMLD Intelligence is a modular medical health platform designed for ");
         desc.append("primary healthcare institutions, individual users, and privacy-focused hospitals.\n\n");
-        desc.append("**Deployment Mode**: ").append(deploymentMode.toUpperCase()).append("\n\n");
+        desc.append("**Deployment Mode**: ").append(normalizedDeploymentMode().toUpperCase(Locale.ROOT)).append("\n");
+        desc.append("**Cloud Bridge Enabled**: ").append(cloudBridgeEnabled).append("\n\n");
 
         desc.append("### Key Features\n\n");
         desc.append("- **Identity & Access Management**: User authentication, patient management, consent tracking\n");
@@ -88,9 +94,9 @@ public class OpenApiConfig {
         desc.append("- Sensitive data access is audited and logged\n\n");
 
         desc.append("### Deployment Modes\n\n");
-        desc.append("- **SaaS**: Cloud-based deployment for primary healthcare and individual users\n");
+        desc.append("- **SaaS**: Public cloud deployment for community healthcare institutions and individual users\n");
         desc.append("- **Private**: On-premise deployment for privacy-focused hospitals\n");
-        desc.append("- **Hybrid**: Private deployment with controlled cloud communication for specific features\n");
+        desc.append("- **Private + Cloud Bridge**: Private mode with controlled outbound communication for allowlisted scenarios only\n");
 
         return desc.toString();
     }
@@ -100,14 +106,29 @@ public class OpenApiConfig {
         String url = contextPath != null && !contextPath.isEmpty() ? contextPath : "/";
         server.setUrl(url);
 
-        String serverDescription = switch (deploymentMode.toLowerCase()) {
-            case "saas" -> "SaaS Cloud Environment";
-            case "private" -> "Private On-Premise Environment";
-            case "hybrid" -> "Hybrid Environment (Private with Cloud Bridge)";
+        String serverDescription = switch (normalizedDeploymentMode()) {
+            case "saas" -> "Public SaaS Environment";
+            case "private" -> cloudBridgeEnabled
+                    ? "Private On-Premise Environment (Controlled Cloud Bridge Enabled)"
+                    : "Private On-Premise Environment (Local-Only Core Services)";
             default -> "Development Environment";
         };
 
         server.setDescription(serverDescription);
         return List.of(server);
+    }
+
+    private String normalizedDeploymentMode() {
+        if (deploymentMode == null) {
+            return "saas";
+        }
+        String normalized = deploymentMode.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            return "saas";
+        }
+        if ("hybrid".equals(normalized)) {
+            return "private";
+        }
+        return normalized;
     }
 }

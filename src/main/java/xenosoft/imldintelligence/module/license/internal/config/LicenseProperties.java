@@ -23,6 +23,7 @@ public class LicenseProperties {
         private boolean startupValidationEnabled = true;
         private boolean activationRequired = true;
         private String activationCode = "";
+        private String activationStateFilePath = "";
         private String licenseFilePath = "";
         private String publicKeyFilePath = "";
         private boolean machineBindingEnabled = true;

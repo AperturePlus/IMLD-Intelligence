@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import xenosoft.imldintelligence.module.license.internal.config.LicenseProperties;
 import xenosoft.imldintelligence.module.license.internal.config.UpgradeProperties;
+import xenosoft.imldintelligence.module.license.internal.model.Fingerprint;
 import xenosoft.imldintelligence.module.license.internal.model.LicenseInfo;
 import xenosoft.imldintelligence.module.license.internal.model.ReleaseManifest;
 
@@ -34,15 +35,18 @@ public class LicenseCliRunner implements ApplicationRunner {
 
     private final ConfigurableApplicationContext applicationContext;
     private final LicenseCliService licenseCliService;
+    private final ActivationStateService activationStateService;
     private final LicenseProperties licenseProperties;
     private final UpgradeProperties upgradeProperties;
 
     public LicenseCliRunner(ConfigurableApplicationContext applicationContext,
                             LicenseCliService licenseCliService,
+                            ActivationStateService activationStateService,
                             LicenseProperties licenseProperties,
                             UpgradeProperties upgradeProperties) {
         this.applicationContext = applicationContext;
         this.licenseCliService = licenseCliService;
+        this.activationStateService = activationStateService;
         this.licenseProperties = licenseProperties;
         this.upgradeProperties = upgradeProperties;
     }
@@ -83,6 +87,14 @@ public class LicenseCliRunner implements ApplicationRunner {
         licenseCliService.validateActivationCode(licenseInfo, activationCode);
         if (machineBinding) {
             licenseCliService.validateMachineBinding(licenseInfo);
+        }
+        if (hasText(activationCode)) {
+            activationStateService.storeActivationCode(
+                    activationCode,
+                    licenseInfo.getLicenseId(),
+                    new Fingerprint().getFingerprintHash(),
+                    "cli-import-license"
+            );
         }
 
         Path installedPath = licenseCliService.importLicenseFile(sourceLicenseFile, targetLicenseFile);
