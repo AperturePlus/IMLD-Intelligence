@@ -7,9 +7,9 @@
   --surface-card: #ffffff;
   --text-main: #1f2a37;
   --text-secondary: #526174;
-  --electron-titlebar-bg: rgba(244, 247, 250, 0.92);
-  --electron-titlebar-border: rgba(142, 156, 178, 0.28);
-  --electron-titlebar-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  --electron-titlebar-bg: rgba(248, 250, 252, 0.88);
+  --electron-titlebar-border: rgba(148, 163, 184, 0.15);
+  --electron-titlebar-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
   --electron-titlebar-safe-top: 0px;
 }
 
