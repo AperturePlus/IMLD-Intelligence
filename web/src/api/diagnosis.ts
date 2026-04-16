@@ -204,6 +204,33 @@ const isDiagnosedStatus = (status: string | undefined): boolean => {
   return upper === 'COMPLETED' || upper === 'REVIEWED'
 }
 
+const parseProbabilityPercent = (value: string | undefined): number => {
+  const parsed = Number.parseFloat(String(value ?? '0'))
+  if (!Number.isFinite(parsed)) {
+    return 0
+  }
+  const normalized = parsed > 1 ? parsed : parsed * 100
+  return Math.round(Math.max(0, Math.min(100, normalized)))
+}
+
+const buildDiagnosisResultFromExpertReport = (report: ExpertReport): DiagnosisResult => ({
+  diseaseName: report.aiFindings?.disease || '遗传代谢性肝病风险提示',
+  probability: parseProbabilityPercent(report.aiFindings?.probability),
+  indicators: [
+    {
+      name: '关键生化线索',
+      value: 1,
+      unit: '',
+      normal: '--',
+      percentage: 78,
+      status: 'warning'
+    }
+  ],
+  genes: [],
+  diet: report.treatmentPlan || '建议清淡饮食，避免酒精和高脂饮食。',
+  sequencing: '建议结合家系史与临床特征评估基因检测。'
+})
+
 const fetchSessions = async (): Promise<{ response: AxiosResponse<ApiEnvelope<PagedResult<DiagnosisSessionApi>>>; items: DiagnosisSessionApi[] }> => {
   const response = await service<ApiEnvelope<PagedResult<DiagnosisSessionApi>>>({
     url: '/api/v1/web/diagnoses/sessions',
@@ -416,6 +443,44 @@ const diagnosisApi = {
           url: '/api/v1/web/diagnosis/ai-queue/',
           method: 'get'
         }) as Promise<AxiosResponse<DiagnosisQueueResponse>>
+      }
+    })()
+  },
+
+  getLatestDiagnosisResultByPatient(patientId: string): Promise<AxiosResponse<DiagnosisResult | null>> {
+    return (async () => {
+      const numericPatientId = parsePositiveInteger(patientId)
+      if (!numericPatientId) {
+        throw new Error('invalid patientId')
+      }
+
+      try {
+        const { response, items: sessions } = await fetchSessions()
+        const latestSession = sortSessionsDesc(sessions).find((session) => {
+          return session.patientId === numericPatientId && isDiagnosedStatus(session.status)
+        })
+        return mapAxiosResponse(response, latestSession ? buildDiagnosisResult(latestSession) : null)
+      } catch (error) {
+        if (!isEndpointMissing(error)) {
+          throw error
+        }
+
+        const fallbackResponse = await service<ExpertReportListResponse>({
+          url: '/api/v1/web/diagnosis/expert-reports/',
+          method: 'get'
+        })
+        const latestReport = [...(fallbackResponse.data.items || [])]
+          .filter((item) => parsePositiveInteger(item.patientId) === numericPatientId)
+          .sort((left, right) => {
+            const leftTime = new Date(left.signedAt || left.date || '').getTime()
+            const rightTime = new Date(right.signedAt || right.date || '').getTime()
+            return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime)
+          })[0]
+
+        return mapAxiosResponse(
+          fallbackResponse,
+          latestReport ? buildDiagnosisResultFromExpertReport(latestReport) : null
+        )
       }
     })()
   },
