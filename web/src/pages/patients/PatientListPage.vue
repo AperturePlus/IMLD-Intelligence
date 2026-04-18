@@ -5,7 +5,7 @@
         <el-col :xs="16" :sm="12" :md="8">
           <el-input
             v-model="searchQuery"
-            placeholder="请输入患者姓名或拼音搜索..."
+            placeholder="请输入病号、患者姓名或拼音搜索..."
             clearable
             :prefix-icon="Search"
             size="large"
@@ -37,10 +37,19 @@
             </el-col>
 
             <el-col :span="18">
-              <div style="margin-bottom: 12px;">
-                <el-text tag="b" style="margin-right: 12px; color: #303133; font-size: 20px;">
+              <div style="margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                <el-text type="info" style="font-size: 12px; letter-spacing: 1px;">
+                  病号
+                </el-text>
+                <el-text tag="b" style="color: #303133; font-size: 22px; line-height: 1;">
+                  {{ patient.id }}
+                </el-text>
+                <el-text tag="b" style="color: #606266; font-size: 16px;">
                   {{ patient.name }}
                 </el-text>
+              </div>
+
+              <div style="margin-bottom: 12px;">
                 <el-text type="info" style="font-size: 15px;">
                   {{ patient.gender }} | {{ patient.age }} 岁
                 </el-text>

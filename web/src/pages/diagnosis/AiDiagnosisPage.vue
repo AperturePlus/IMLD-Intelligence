@@ -22,14 +22,18 @@
               <el-avatar :size="46" :src="patient.avatar" />
               <div class="item-info">
                 <div class="item-header">
-                  <span class="name">{{ patient.name }}</span>
+                  <div class="patient-identity">
+                    <span class="patient-no-label">病号</span>
+                    <span class="patient-no-value">{{ patient.id }}</span>
+                    <span class="patient-name">{{ patient.name }}</span>
+                  </div>
                   <el-tag 
                     v-if="patient.aiStatus === '已诊断'" 
                     size="small" type="success" effect="dark" round
                   >已出报告</el-tag>
                 </div>
                 <div class="item-sub">
-                  {{ patient.gender }} | {{ patient.age }} 岁 | ID: {{ patient.id }}
+                  {{ patient.gender }} | {{ patient.age }} 岁
                 </div>
               </div>
             </div>
@@ -399,10 +403,32 @@ onMounted(() => {
   margin-bottom: 6px;
 }
 
-.item-header .name {
-  font-size: 16px;
-  font-weight: bold;
+.patient-identity {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.patient-no-label {
+  font-size: 12px;
+  color: #909399;
+  letter-spacing: 1px;
+}
+
+.patient-no-value {
+  font-size: 17px;
+  font-weight: 700;
   color: #303133;
+}
+
+.patient-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-sub {

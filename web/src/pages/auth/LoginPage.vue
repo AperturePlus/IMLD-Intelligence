@@ -5,7 +5,6 @@
     <div class="page-title">
       <h1>{{ BRANDING.shortName }}</h1>
       <h2>{{ BRANDING.systemName }}</h2>
-      <p>聚焦早期筛查与辅助诊断，服务基层机构与大型医院的一体化临床工作台。</p>
     </div>
 
     <div class="mobile-switch">
