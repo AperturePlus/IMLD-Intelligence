@@ -51,11 +51,12 @@ class JwtUtilTest {
     void shouldGenerateAndParseRefreshToken() {
         JwtUtil jwtUtil = new JwtUtil(properties, Clock.fixed(Instant.parse("2026-03-07T00:00:00Z"), ZoneOffset.UTC));
 
-        String token = jwtUtil.generateRefreshToken(new RefreshTokenSubject(301L, 401L));
+        String token = jwtUtil.generateRefreshToken(new RefreshTokenSubject(301L, 401L, "DOCTOR"));
         RefreshTokenSubject parsed = jwtUtil.parseRefreshToken(token);
 
         assertThat(parsed.userId()).isEqualTo(301L);
         assertThat(parsed.tenantId()).isEqualTo(401L);
+        assertThat(parsed.userType()).isEqualTo("DOCTOR");
         assertThat(jwtUtil.isRefreshTokenValid(token)).isTrue();
     }
 
@@ -75,7 +76,7 @@ class JwtUtilTest {
     @Test
     void shouldRejectRefreshTokenWhenParsedAsAccessToken() {
         JwtUtil jwtUtil = new JwtUtil(properties, Clock.fixed(Instant.parse("2026-03-07T00:00:00Z"), ZoneOffset.UTC));
-        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(301L, 401L));
+        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(301L, 401L, "DOCTOR"));
 
         assertThatThrownBy(() -> jwtUtil.parseAccessToken(refreshToken))
                 .isInstanceOf(JwtException.class)

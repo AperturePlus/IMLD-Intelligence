@@ -57,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken = jwtUtil.generateAccessToken(subject);
         String refreshToken = jwtUtil.generateRefreshToken(
-                new RefreshTokenSubject(user.getId(), tenant.getId()));
+                new RefreshTokenSubject(user.getId(), tenant.getId(), user.getUserType()));
 
         user.setLastLoginAt(OffsetDateTime.now());
         userAccountRepository.update(user);
@@ -68,6 +68,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthToken refreshToken(String token) {
         RefreshTokenSubject refreshSubject = jwtUtil.parseRefreshToken(token);
+        if ("TOC".equalsIgnoreCase(refreshSubject.userType())) {
+            throw new IllegalArgumentException("Refresh token type is not allowed for this endpoint");
+        }
 
         String jti = jwtUtil.extractJti(token);
         if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
@@ -78,6 +81,9 @@ public class AuthServiceImpl implements AuthService {
                 refreshSubject.tenantId(), refreshSubject.userId());
         if (subject == null) {
             throw new IllegalArgumentException("User not found or inactive");
+        }
+        if (refreshSubject.userType() != null && !refreshSubject.userType().equalsIgnoreCase(subject.userType())) {
+            throw new IllegalArgumentException("Refresh token subject type mismatch");
         }
 
         String accessToken = jwtUtil.generateAccessToken(subject);
@@ -118,7 +124,7 @@ public class AuthServiceImpl implements AuthService {
         );
         String accessToken = jwtUtil.generateAccessToken(subject);
         String refreshToken = jwtUtil.generateRefreshToken(
-                new RefreshTokenSubject(0L, role.getTenantId()));
+                new RefreshTokenSubject(0L, role.getTenantId(), "SYSTEM"));
         return AuthToken.bearer(accessToken, refreshToken, jwtUtil.getAccessTokenExpiresInSeconds());
     }
 

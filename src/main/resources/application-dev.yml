@@ -31,6 +31,9 @@ imld:
   deployment:
     mode: saas
     tenant-mode: multi-tenant
+  community:
+    scope: GLOBAL
+    global-tenant-code: IMLD_COMMUNITY
   cloud-bridge:
     enabled: false
   licensing:

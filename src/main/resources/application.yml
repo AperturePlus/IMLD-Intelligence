@@ -14,7 +14,7 @@ spring:
   sql:
     init:
       mode: ${IMLD_SQL_INIT_MODE:never}
-      schema-locations: classpath:schema/01-identity.sql,classpath:schema/02-clinical.sql,classpath:schema/03-diagnosis-report.sql,classpath:schema/04-careplan-screening-payment.sql,classpath:schema/05-notify-integration-audit.sql,classpath:schema/99-comments.sql
+      schema-locations: classpath:schema/01-identity.sql,classpath:schema/02-clinical.sql,classpath:schema/03-diagnosis-report.sql,classpath:schema/04-careplan-screening-payment.sql,classpath:schema/05-notify-integration-audit.sql,classpath:schema/07-community.sql,classpath:schema/99-comments.sql
   data:
     redis:
       host: ${IMLD_REDIS_HOST:localhost}
@@ -104,6 +104,7 @@ imld:
       - /api/v1/auth/**
       - /api/v1/app/auth/**
       - /api/v1/web/auth/**
+      - /api/v1/app/toc/auth/**
       - /api/v1/identity/auth/**
       - /api/v1/app/identity/auth/**
       - /api/v1/web/identity/auth/**

@@ -140,7 +140,7 @@ class AuthServiceImplTest {
 
     @Test
     void refreshTokenSuccessful() {
-        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L));
+        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L, "DOCTOR"));
         UserSubject subject = new UserSubject(10L, 1L, "DOCTOR", "ICU", Set.of("DOCTOR"));
 
         when(tokenBlacklistService.isBlacklisted(anyString())).thenReturn(false);
@@ -154,7 +154,7 @@ class AuthServiceImplTest {
 
     @Test
     void refreshTokenFailsWhenBlacklisted() {
-        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L));
+        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L, "DOCTOR"));
         String jti = jwtUtil.extractJti(refreshToken);
 
         when(tokenBlacklistService.isBlacklisted(jti)).thenReturn(true);
@@ -166,7 +166,7 @@ class AuthServiceImplTest {
 
     @Test
     void refreshTokenFailsWhenUserInactive() {
-        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L));
+        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L, "DOCTOR"));
 
         when(tokenBlacklistService.isBlacklisted(anyString())).thenReturn(false);
         when(permissionService.loadSubject(1L, 10L)).thenReturn(null);
@@ -214,7 +214,7 @@ class AuthServiceImplTest {
 
     @Test
     void logoutBlacklistsRefreshToken() {
-        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L));
+        String refreshToken = jwtUtil.generateRefreshToken(new RefreshTokenSubject(10L, 1L, "DOCTOR"));
 
         authService.logout(refreshToken);
 
