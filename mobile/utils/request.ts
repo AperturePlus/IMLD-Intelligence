@@ -1,6 +1,5 @@
-import store from '@/store'
 import config from '@/config'
-import { getToken } from '@/utils/auth'
+import { clearTocSession, getTenantId, getToken } from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import { toast, showConfirm } from '@/utils/common'
 import { handleMockRequest } from '@/mock'
@@ -11,7 +10,7 @@ const baseUrl = config.baseUrl
 
 const handleResponseCode = (responseData: Record<string, any>) => {
   const code = Number(responseData.code || 200)
-  const msg = errorCode[String(code)] || responseData.msg || errorCode.default
+  const msg = errorCode[String(code)] || responseData.message || responseData.msg || errorCode.default
   return { code, msg }
 }
 
@@ -25,6 +24,11 @@ const request = (options: RequestConfig): Promise<any> => {
   if (getToken() && !isToken) {
     requestConfig.header = requestConfig.header || {}
     requestConfig.header.Authorization = `Bearer ${getToken()}`
+  }
+
+  const tenantId = getTenantId()
+  if (tenantId && !requestConfig.header['X-Tenant-Id']) {
+    requestConfig.header['X-Tenant-Id'] = tenantId
   }
 
   return new Promise((resolve, reject) => {
@@ -78,10 +82,9 @@ const request = (options: RequestConfig): Promise<any> => {
         if (code === 401) {
           showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then((modalRes: any) => {
             if (modalRes.confirm) {
-              store.dispatch('LogOut').then(() => {
-                uni.reLaunch({
-                  url: '/pages/login'
-                })
+	              clearTocSession()
+              uni.reLaunch({
+                url: '/pages/login'
               })
             }
           })

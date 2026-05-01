@@ -18,8 +18,8 @@ export interface AppConfig {
 }
 
 const config: AppConfig = {
-  baseUrl: 'http://localhost:9090',
-  mockMode: 'full',
+  baseUrl: 'http://localhost:8080',
+  mockMode: 'off',
   appInfo: {
     name: 'ruoyi-app',
     version: '1.1.0',
