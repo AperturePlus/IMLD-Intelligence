@@ -53,6 +53,8 @@ public interface IndicatorMappingRepository {
      */
     IndicatorMapping save(IndicatorMapping indicatorMapping);
 
+    IndicatorMapping upsertByNaturalKey(IndicatorMapping indicatorMapping);
+
     /**
      * 更新指标映射。
      *

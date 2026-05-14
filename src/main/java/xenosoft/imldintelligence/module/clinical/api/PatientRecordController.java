@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -66,7 +67,7 @@ public class PatientRecordController implements PatientRecordControllerContract 
     private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     @CheckPermission(resource = "PATIENT", action = "CREATE")
     public ApiResponse<PatientRecordApiDtos.Response.PatientRecordCreateResponse> createPatientRecord(
             Long tenantId,

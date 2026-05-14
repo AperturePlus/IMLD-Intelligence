@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
 import xenosoft.imldintelligence.common.dto.PageQueryRequest;
@@ -65,6 +67,7 @@ public class ClinicalController implements ClinicalControllerContract {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<ClinicalApiDtos.Response.LabResultResponse> upsertLabResult(
             Long tenantId,
             ClinicalApiDtos.Request.UpsertLabResultRequest request) {
@@ -104,6 +107,7 @@ public class ClinicalController implements ClinicalControllerContract {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<ClinicalApiDtos.Response.GeneticReportResponse> registerGeneticReport(
             Long tenantId,
             ClinicalApiDtos.Request.RegisterGeneticReportRequest request) {
@@ -163,6 +167,7 @@ public class ClinicalController implements ClinicalControllerContract {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<ClinicalApiDtos.Response.ImagingReportResponse> upsertImagingReport(
             Long tenantId,
             ClinicalApiDtos.Request.UpsertImagingReportRequest request) {
@@ -199,6 +204,7 @@ public class ClinicalController implements ClinicalControllerContract {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<ClinicalApiDtos.Response.PathologyReportResponse> recordPathologyReport(
             Long tenantId,
             ClinicalApiDtos.Request.RecordPathologyReportRequest request) {
@@ -235,6 +241,7 @@ public class ClinicalController implements ClinicalControllerContract {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<ClinicalApiDtos.Response.ClinicalHistoryEntryResponse> recordClinicalHistory(
             Long tenantId,
             ClinicalApiDtos.Request.RecordClinicalHistoryRequest request) {
@@ -253,12 +260,11 @@ public class ClinicalController implements ClinicalControllerContract {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<ClinicalApiDtos.Response.IndicatorMappingResponse> upsertIndicatorMapping(
             Long tenantId,
             ClinicalApiDtos.Request.UpsertIndicatorMappingRequest request) {
-        IndicatorMapping mapping = indicatorMappingRepository
-                .findBySourceSystemAndSourceCode(tenantId, request.sourceSystem(), request.sourceCode())
-                .orElseGet(IndicatorMapping::new);
+        IndicatorMapping mapping = new IndicatorMapping();
         mapping.setTenantId(tenantId);
         mapping.setSourceSystem(trimToNull(request.sourceSystem()));
         mapping.setSourceCode(trimToNull(request.sourceCode()));
@@ -267,11 +273,7 @@ public class ClinicalController implements ClinicalControllerContract {
         mapping.setUnitConversionExpr(trimToNull(request.unitConversionExpr()));
         mapping.setQualityRule(request.qualityRule());
         mapping.setStatus(normalize(request.status(), "ACTIVE"));
-        if (mapping.getId() == null) {
-            indicatorMappingRepository.save(mapping);
-        } else {
-            indicatorMappingRepository.update(mapping);
-        }
+        mapping = indicatorMappingRepository.upsertByNaturalKey(mapping);
         return ApiResponse.success(toIndicatorMappingResponse(mapping));
     }
 
