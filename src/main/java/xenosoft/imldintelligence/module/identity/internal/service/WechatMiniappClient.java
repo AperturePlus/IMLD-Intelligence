@@ -1,16 +1,16 @@
 package xenosoft.imldintelligence.module.identity.internal.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
-import xenosoft.imldintelligence.module.identity.internal.config.WechatMiniappProperties;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Map;
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import lombok.RequiredArgsConstructor;
+import xenosoft.imldintelligence.module.identity.internal.config.WechatMiniappProperties;
 
 @Component
 @RequiredArgsConstructor
@@ -20,50 +20,92 @@ public class WechatMiniappClient {
     private final WebClient.Builder webClientBuilder;
 
     public WechatSession code2Session(String jsCode) {
-        if (!hasText(properties.getAppid()) || !hasText(properties.getSecret())) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "WeChat miniapp is not configured");
+        String appid = trimToNull(properties.getAppid());
+        String secret = trimToNull(properties.getSecret());
+        String endpoint = trimToNull(properties.getCode2SessionEndpoint());
+        String code = trimToNull(jsCode);
+
+        if (appid == null || secret == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "WeChat miniapp is not configured"
+            );
         }
-        String endpoint = properties.getCode2SessionEndpoint();
-        if (!hasText(endpoint)) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "WeChat code2session endpoint is not configured");
+        if (endpoint == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "WeChat code2session endpoint is not configured"
+            );
         }
-        if (!hasText(jsCode)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "jsCode must not be blank");
+        if (code == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "jsCode must not be blank"
+            );
         }
 
-        WebClient client = webClientBuilder.build();
-        String url = UriComponentsBuilder.fromHttpUrl(endpoint.trim())
-                .queryParam("appid", properties.getAppid().trim())
-                .queryParam("secret", properties.getSecret().trim())
-                .queryParam("js_code", jsCode.trim())
+        var uri = UriComponentsBuilder.fromUriString(endpoint)
+                .queryParam("appid", appid)
+                .queryParam("secret", secret)
+                .queryParam("js_code", code)
                 .queryParam("grant_type", "authorization_code")
-                .build(true)
-                .toUriString();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> payload = client.get()
-                .uri(url)
+                .encode()
+                .build()
+                .toUri();
+
+        WebClient client = webClientBuilder.build();
+
+        Code2SessionResponse payload = client.get()
+                .uri(uri)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(Map.class)
+                .bodyToMono(Code2SessionResponse.class)
                 .timeout(properties.getTimeout())
                 .block();
 
-        String errcode = payload == null ? null : Objects.toString(payload.get("errcode"), null);
-        if (errcode != null && !"0".equals(errcode)) {
-            String errmsg = payload == null ? null : Objects.toString(payload.get("errmsg"), null);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "WeChat login failed: " + (errmsg == null ? errcode : errmsg));
+        if (payload == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "WeChat login failed: empty response"
+            );
         }
 
-        String openid = payload == null ? null : Objects.toString(payload.get("openid"), null);
-        String unionid = payload == null ? null : Objects.toString(payload.get("unionid"), null);
-        if (!hasText(openid)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "WeChat login failed: missing openid");
+        if (payload.errcode() != null && payload.errcode() != 0) {
+            String message = trimToNull(payload.errmsg());
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "WeChat login failed: " + (message == null ? payload.errcode() : message)
+            );
         }
-        return new WechatSession(openid.trim(), hasText(unionid) ? unionid.trim() : null);
+
+        String openid = trimToNull(payload.openid());
+        String unionid = trimToNull(payload.unionid());
+
+        if (openid == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "WeChat login failed: missing openid"
+            );
+        }
+
+        return new WechatSession(openid, unionid);
     }
 
-    private boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record Code2SessionResponse(
+            Integer errcode,
+            String errmsg,
+            String openid,
+            String unionid
+    ) {
     }
 
     public record WechatSession(String openid, String unionid) {
