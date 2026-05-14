@@ -25,5 +25,13 @@ public interface CommunityReportRepository {
                              String resultAction,
                              String resultNote,
                              Long handledBy);
+
+    boolean updateModerationIfStatus(Long tenantId,
+                                     Long reportId,
+                                     String expectedStatus,
+                                     String status,
+                                     String resultAction,
+                                     String resultNote,
+                                     Long handledBy);
 }
 

@@ -49,5 +49,24 @@ public class CommunityReportRepositoryImpl implements CommunityReportRepository 
                                     Long handledBy) {
         return communityContentReportMapper.updateModeration(tenantId, reportId, status, resultAction, resultNote, handledBy) > 0;
     }
+
+    @Override
+    public boolean updateModerationIfStatus(Long tenantId,
+                                            Long reportId,
+                                            String expectedStatus,
+                                            String status,
+                                            String resultAction,
+                                            String resultNote,
+                                            Long handledBy) {
+        return communityContentReportMapper.updateModerationIfStatus(
+                tenantId,
+                reportId,
+                expectedStatus,
+                status,
+                resultAction,
+                resultNote,
+                handledBy
+        ) > 0;
+    }
 }
 

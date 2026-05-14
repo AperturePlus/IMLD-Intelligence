@@ -1,7 +1,10 @@
 package xenosoft.imldintelligence.module.community.api;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import xenosoft.imldintelligence.common.RequireAnyRole;
@@ -85,6 +88,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.BoardResponse> createBoard(Long tenantId,
                                                                             CommunityApiDtos.Request.CreateBoardRequest request) {
         UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
@@ -101,7 +105,11 @@ public class CommunityController implements CommunityControllerContract {
         board.setDiseaseScope(trimToNull(request.diseaseScope()));
         board.setSortOrder(request.sortOrder() != null ? request.sortOrder() : 0);
         board.setStatus(hasText(request.status()) ? request.status().trim() : STATUS_ACTIVE);
-        boardRepository.save(board);
+        try {
+            boardRepository.save(board);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Board code already exists", ex);
+        }
 
         CommunityBoard created = boardRepository.findByBoardCode(resolvedTenantId, board.getBoardCode()).orElse(board);
         return ApiResponse.success(toBoardResponse(created));
@@ -188,6 +196,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.PostDetailResponse> createPost(Long tenantId,
                                                                                 CommunityApiDtos.Request.CreatePostRequest request) {
         UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
@@ -290,6 +299,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.CommentResponse> createComment(
             Long tenantId,
             Long postId,
@@ -346,6 +356,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.ToggleResultResponse> likePost(
             Long tenantId,
             Long postId,
@@ -367,6 +378,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.ToggleResultResponse> unlikePost(Long tenantId,
                                                                                   Long postId,
                                                                                   Long tocUserId) {
@@ -387,6 +399,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.ToggleResultResponse> bookmarkPost(
             Long tenantId,
             Long postId,
@@ -405,6 +418,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.ToggleResultResponse> unbookmarkPost(Long tenantId,
                                                                                       Long postId,
                                                                                       Long tocUserId) {
@@ -422,6 +436,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.ReportResponse> createReport(
             Long tenantId,
             CommunityApiDtos.Request.CreateReportRequest request) {
@@ -511,6 +526,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.PostDetailResponse> moderatePost(Long tenantId,
                                                                                   Long postId,
                                                                                   CommunityApiDtos.Request.ModeratePostRequest request) {
@@ -561,6 +577,7 @@ public class CommunityController implements CommunityControllerContract {
 
     @Override
     @RequireAnyRole({ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ApiResponse<CommunityApiDtos.Response.ReportResponse> moderateReport(Long tenantId,
                                                                                 Long reportId,
                                                                                 CommunityApiDtos.Request.ModerateReportRequest request) {
@@ -574,7 +591,15 @@ public class CommunityController implements CommunityControllerContract {
         String resultAction = trimToNull(request.resultAction());
         String resultNote = trimToNull(request.resultNote());
 
-        boolean ok = reportRepository.updateModeration(resolvedTenantId, reportId, status, resultAction, resultNote, subject.userId());
+        boolean ok = reportRepository.updateModerationIfStatus(
+                resolvedTenantId,
+                reportId,
+                report.getStatus(),
+                status,
+                resultAction,
+                resultNote,
+                subject.userId()
+        );
         if (!ok) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update report moderation");
         }

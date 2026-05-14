@@ -65,5 +65,26 @@ public interface CommunityContentReportMapper extends BaseMapper<CommunityConten
                          @Param("resultAction") String resultAction,
                          @Param("resultNote") String resultNote,
                          @Param("handledBy") Long handledBy);
+
+    @Update({
+            "<script>",
+            "UPDATE community_content_report",
+            "SET status = #{status},",
+            "    result_action = #{resultAction},",
+            "    result_note = #{resultNote},",
+            "    handled_by = #{handledBy},",
+            "    handled_at = now()",
+            "WHERE tenant_id = #{tenantId}",
+            "  AND id = #{reportId}",
+            "  AND status = #{expectedStatus}",
+            "</script>"
+    })
+    int updateModerationIfStatus(@Param("tenantId") Long tenantId,
+                                 @Param("reportId") Long reportId,
+                                 @Param("expectedStatus") String expectedStatus,
+                                 @Param("status") String status,
+                                 @Param("resultAction") String resultAction,
+                                 @Param("resultNote") String resultNote,
+                                 @Param("handledBy") Long handledBy);
 }
 
