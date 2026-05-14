@@ -3,6 +3,8 @@ package xenosoft.imldintelligence.module.identity.internal.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import xenosoft.imldintelligence.module.identity.internal.dto.AuthToken;
 import xenosoft.imldintelligence.module.identity.internal.dto.LoginRequest;
 import xenosoft.imldintelligence.module.identity.internal.model.Role;
@@ -23,6 +25,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class AuthServiceImpl implements AuthService {
 
     private final UserAccountRepository userAccountRepository;
@@ -33,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklistService tokenBlacklistService;
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public AuthToken login(LoginRequest loginRequest) {
         Tenant tenant = resolveTenant(loginRequest.tenantCode());
 
@@ -101,11 +105,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void revokeToken(String token) {
         blacklistToken(token);
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void logout(String refreshToken) {
         blacklistToken(refreshToken);
     }

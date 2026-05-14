@@ -1,9 +1,12 @@
 package xenosoft.imldintelligence.module.identity.internal.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import xenosoft.imldintelligence.module.identity.api.dto.IdentityApiDtos;
 import xenosoft.imldintelligence.module.identity.internal.config.IdentityVerificationProperties;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class AccountCredentialServiceImpl implements AccountCredentialService {
     private static final String PURPOSE_REGISTER = "REGISTER";
     private static final String PURPOSE_PASSWORD_RESET = "PASSWORD_RESET";
@@ -53,6 +57,7 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public IdentityApiDtos.Response.EmailCodeSendResponse sendRegistrationEmailCode(
             IdentityApiDtos.Request.SendRegistrationEmailCodeCommand request) {
         Tenant tenant = resolveTenant(request.tenantCode());
@@ -69,6 +74,7 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public IdentityApiDtos.Response.EmailCodeSendResponse sendPasswordResetEmailCode(
             IdentityApiDtos.Request.ForgotPasswordCommand request) {
         Tenant tenant = resolveTenant(request.tenantCode());
@@ -83,6 +89,7 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public AuthToken register(IdentityApiDtos.Request.RegisterCommand request) {
         Tenant tenant = resolveTenant(request.tenantCode());
         String username = normalizeRequired(request.username(), "username");
@@ -110,13 +117,18 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
         user.setUserType(userType);
         user.setEmail(email);
         user.setStatus(STATUS_ACTIVE);
-        userAccountRepository.save(user);
+        try {
+            userAccountRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username or email already exists", ex);
+        }
 
         bindDefaultRoleIfPresent(tenant.getId(), user.getId(), userType);
         return authService.login(new LoginRequest(username, password, request.tenantCode()));
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void resetPassword(IdentityApiDtos.Request.ResetPasswordCommand request) {
         Tenant tenant = resolveTenant(request.tenantCode());
         String username = normalizeRequired(request.username(), "username");
@@ -160,7 +172,11 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
         record.setExpiresAt(now.plus(verificationProperties.getExpiresIn()));
         record.setCreatedAt(now);
         record.setUpdatedAt(now);
-        emailVerificationCodeRepository.save(record);
+        try {
+            emailVerificationCodeRepository.save(record);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Verification code already issued", ex);
+        }
 
         verificationEmailSender.sendVerificationCode(email, scenario, code, verificationProperties.getExpiresIn());
         return new IdentityApiDtos.Response.EmailCodeSendResponse(
@@ -196,7 +212,10 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code is incorrect");
         }
 
-        emailVerificationCodeRepository.consume(tenantId, latest.getId(), now);
+        boolean consumed = emailVerificationCodeRepository.consumePendingCode(tenantId, latest.getId(), now);
+        if (!consumed) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code is invalid or expired");
+        }
     }
 
     private void bindDefaultRoleIfPresent(Long tenantId, Long userId, String userType) {
@@ -221,7 +240,11 @@ public class AccountCredentialServiceImpl implements AccountCredentialService {
         relation.setUserId(userId);
         relation.setRoleId(role.get().getId());
         relation.setGrantedBy(userId);
-        userRoleRelRepository.save(relation);
+        try {
+            userRoleRelRepository.save(relation);
+        } catch (DataIntegrityViolationException ignored) {
+            // Idempotent under concurrent grant/register calls.
+        }
     }
 
     private String generateUserNo(Long tenantId) {

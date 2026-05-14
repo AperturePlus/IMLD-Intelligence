@@ -1,7 +1,10 @@
 package xenosoft.imldintelligence.module.identity.internal.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import xenosoft.imldintelligence.module.identity.api.dto.IdentityApiDtos;
 import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
 import xenosoft.imldintelligence.module.identity.internal.model.UserRoleRel;
@@ -14,6 +17,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class UserManagementServiceImpl implements UserManagementService {
 
     private final UserAccountRepository userAccountRepository;
@@ -37,6 +41,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public UserAccount grantRole(Long tenantId, Long userId,
                                   IdentityApiDtos.Request.GrantRoleRequest request) {
         UserAccount user = userAccountRepository.findById(tenantId, userId)
@@ -52,7 +57,11 @@ public class UserManagementServiceImpl implements UserManagementService {
             rel.setUserId(userId);
             rel.setRoleId(request.roleId());
             rel.setGrantedBy(request.grantedBy());
-            userRoleRelRepository.save(rel);
+            try {
+                userRoleRelRepository.save(rel);
+            } catch (DataIntegrityViolationException ignored) {
+                // Idempotent under concurrent role grants.
+            }
         }
 
         return user;
