@@ -1,7 +1,14 @@
 package xenosoft.imldintelligence.module.identity.api;
 
-import lombok.RequiredArgsConstructor;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.springframework.web.bind.annotation.RestController;
+
+import lombok.RequiredArgsConstructor;
 import xenosoft.imldintelligence.common.CheckPermission;
 import xenosoft.imldintelligence.common.RequireAnyRole;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
@@ -21,12 +28,6 @@ import xenosoft.imldintelligence.module.identity.internal.service.ConsentRecordS
 import xenosoft.imldintelligence.module.identity.internal.service.PatientService;
 import xenosoft.imldintelligence.module.identity.internal.service.PermissionService;
 import xenosoft.imldintelligence.module.identity.internal.service.UserManagementService;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -104,8 +105,10 @@ public class IdentityController implements IdentityControllerContract {
             Long tenantId,
             IdentityApiDtos.Query.PatientPageQuery query,
             PageQueryRequest pageQuery) {
-        int page = pageQuery.page() != null ? pageQuery.page() : DEFAULT_PAGE;
-        int size = pageQuery.size() != null ? pageQuery.size() : DEFAULT_SIZE;
+        Integer pageValue = pageQuery.page();
+        int page = pageValue != null ? pageValue : DEFAULT_PAGE;
+        Integer sizeValue = pageQuery.size();
+        int size = sizeValue != null ? sizeValue : DEFAULT_SIZE;
         long offset = (long) page * size;
 
         long total = patientService.countPatients(tenantId, query);
@@ -142,8 +145,10 @@ public class IdentityController implements IdentityControllerContract {
             Long tenantId,
             IdentityApiDtos.Query.UserAccountPageQuery query,
             PageQueryRequest pageQuery) {
-        int page = pageQuery.page() != null ? pageQuery.page() : DEFAULT_PAGE;
-        int size = pageQuery.size() != null ? pageQuery.size() : DEFAULT_SIZE;
+        Integer pageValue = pageQuery.page();
+        int page = pageValue != null ? pageValue : DEFAULT_PAGE;
+        Integer sizeValue = pageQuery.size();
+        int size = sizeValue != null ? sizeValue : DEFAULT_SIZE;
         long offset = (long) page * size;
 
         long total = userManagementService.countUsers(tenantId, query);
@@ -171,8 +176,10 @@ public class IdentityController implements IdentityControllerContract {
             Long tenantId,
             IdentityApiDtos.Query.ConsentRecordPageQuery query,
             PageQueryRequest pageQuery) {
-        int page = pageQuery.page() != null ? pageQuery.page() : DEFAULT_PAGE;
-        int size = pageQuery.size() != null ? pageQuery.size() : DEFAULT_SIZE;
+        Integer pageValue = pageQuery.page();
+        int page = pageValue != null ? pageValue : DEFAULT_PAGE;
+        Integer sizeValue = pageQuery.size();
+        int size = sizeValue != null ? sizeValue : DEFAULT_SIZE;
         long offset = (long) page * size;
 
         long total = consentRecordService.countConsents(tenantId, query);
@@ -201,7 +208,7 @@ public class IdentityController implements IdentityControllerContract {
             IdentityApiDtos.Request.EvaluatePermissionRequest request) {
         Map<String, Object> resAttr = new java.util.LinkedHashMap<>();
         if (request.resourceAttributes() != null) {
-            request.resourceAttributes().fields().forEachRemaining(
+            request.resourceAttributes().properties().forEach(
                     entry -> resAttr.put(entry.getKey(), entry.getValue()));
         }
 
