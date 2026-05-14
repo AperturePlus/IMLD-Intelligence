@@ -1,12 +1,19 @@
 package xenosoft.imldintelligence.module.community.api;
 
-import lombok.RequiredArgsConstructor;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import lombok.RequiredArgsConstructor;
 import xenosoft.imldintelligence.common.RequireAnyRole;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
 import xenosoft.imldintelligence.common.dto.PageQueryRequest;
@@ -31,12 +38,6 @@ import xenosoft.imldintelligence.module.identity.internal.model.TocUser;
 import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.repository.TocUserRepository;
 import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -103,7 +104,8 @@ public class CommunityController implements CommunityControllerContract {
         board.setBoardName(request.boardName().trim());
         board.setDescription(trimToNull(request.description()));
         board.setDiseaseScope(trimToNull(request.diseaseScope()));
-        board.setSortOrder(request.sortOrder() != null ? request.sortOrder() : 0);
+        Integer reqSort = request.sortOrder();
+        board.setSortOrder(reqSort != null ? reqSort : 0);
         board.setStatus(hasText(request.status()) ? request.status().trim() : STATUS_ACTIVE);
         try {
             boardRepository.save(board);
