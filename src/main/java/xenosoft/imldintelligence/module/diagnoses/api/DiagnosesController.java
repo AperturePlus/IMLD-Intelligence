@@ -25,18 +25,16 @@ import lombok.RequiredArgsConstructor;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
 import xenosoft.imldintelligence.common.dto.PageQueryRequest;
 import xenosoft.imldintelligence.common.dto.PagedResultResponse;
+import xenosoft.imldintelligence.module.clinical.internal.model.ClinicalHistoryEntry;
 import xenosoft.imldintelligence.module.clinical.internal.model.GeneticReport;
 import xenosoft.imldintelligence.module.clinical.internal.model.LabResult;
-import xenosoft.imldintelligence.module.clinical.internal.model.ClinicalHistoryEntry;
 import xenosoft.imldintelligence.module.clinical.internal.repository.ClinicalHistoryEntryRepository;
 import xenosoft.imldintelligence.module.clinical.internal.repository.GeneticReportRepository;
 import xenosoft.imldintelligence.module.clinical.internal.repository.GeneticVariantRepository;
 import xenosoft.imldintelligence.module.clinical.internal.repository.LabResultRepository;
 import xenosoft.imldintelligence.module.diagnoses.api.dto.DiagnosesApiDtos;
 import xenosoft.imldintelligence.module.diagnoses.api.dto.ImldInferenceApiDtos;
-import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisResult;
 import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisSession;
-import xenosoft.imldintelligence.module.diagnoses.internal.model.DoctorFeedback;
 import xenosoft.imldintelligence.module.diagnoses.internal.model.ModelRegistry;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisRecommendationRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisResultRepository;
@@ -327,7 +325,8 @@ public class DiagnosesController implements DiagnosesControllerContract {
         if (target == null || derived == null) {
             return;
         }
-        derived.fields().forEachRemaining(entry -> target.set(entry.getKey(), entry.getValue()));
+
+        target.setAll(derived);
     }
 
     private JsonNode buildSnapshot(JsonNode input,

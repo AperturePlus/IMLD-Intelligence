@@ -17,6 +17,8 @@ import xenosoft.imldintelligence.module.diagnoses.api.dto.ImldInferenceApiDtos;
 import xenosoft.imldintelligence.module.diagnoses.internal.config.ImldInferenceProperties;
 import xenosoft.imldintelligence.module.diagnoses.internal.service.ImldInferenceService;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -473,7 +475,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
             if (predictor != null && modelLocation.equals(loadedModelLocation)) {
                 return predictor;
             }
-            Resource modelResource = resourceLoader.getResource(modelLocation);
+            Resource modelResource = resourceLoader.getResource(Objects.requireNonNull(modelLocation, "modelLocation"));
             if (!modelResource.exists()) {
                 throw new IllegalStateException("IMLD model file not found: " + modelLocation);
             }
@@ -496,7 +498,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
             return local;
         }
         String metadataLocation = resolveResourceLocation(properties.getMetadataFilePath());
-        Resource metadataResource = resourceLoader.getResource(metadataLocation);
+        Resource metadataResource = resourceLoader.getResource(Objects.requireNonNull(metadataLocation, "metadataLocation"));
         if (!metadataResource.exists()) {
             ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), properties.getModelVersionFallback());
             modelMeta = fallback;
@@ -528,8 +530,13 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
             ModelMeta loaded = new ModelMeta(List.copyOf(featureColumns), Map.copyOf(metrics), version);
             modelMeta = loaded;
             return loaded;
-        } catch (Exception ex) {
-            logger.warn("Failed to parse model metadata, fallback to defaults. metadataLocation={}", metadataLocation, ex);
+        } catch (IOException ex) {
+            logger.warn("Failed to read or parse model metadata, fallback to defaults. metadataLocation={}", metadataLocation, ex);
+            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), properties.getModelVersionFallback());
+            modelMeta = fallback;
+            return fallback;
+        } catch (RuntimeException ex) {
+            logger.warn("Unexpected error while loading model metadata, fallback to defaults. metadataLocation={}", metadataLocation, ex);
             ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), properties.getModelVersionFallback());
             modelMeta = fallback;
             return fallback;
@@ -659,9 +666,11 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
     }
 
     private String sha256OfObject(Object obj) {
-        ObjectMapper canonical = objectMapper.copy()
+        JsonMapper canonical = JsonMapper.builder()
                 .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
-                .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+                .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+                .build();
+
         String text;
         try {
             text = canonical.writeValueAsString(obj);
