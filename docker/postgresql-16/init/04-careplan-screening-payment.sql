@@ -204,6 +204,7 @@ CREATE TABLE IF NOT EXISTS vip_subscription (
     start_at TIMESTAMPTZ NOT NULL,
     end_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, order_id),
     FOREIGN KEY (tenant_id, toc_user_id) REFERENCES toc_user(tenant_id, id),
     FOREIGN KEY (tenant_id, plan_id) REFERENCES vip_plan(tenant_id, id),
     FOREIGN KEY (tenant_id, order_id) REFERENCES vip_order(tenant_id, id)
