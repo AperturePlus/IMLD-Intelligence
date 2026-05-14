@@ -46,7 +46,6 @@ public class SmsVerificationCodeRepositoryImpl implements SmsVerificationCodeRep
                 .eq(SmsVerificationCode::getPurpose, purpose)
                 .eq(SmsVerificationCode::getMobileHash, mobileHash)
                 .eq(SmsVerificationCode::getStatus, "PENDING")
-                .gt(SmsVerificationCode::getExpiresAt, now)
                 .set(SmsVerificationCode::getStatus, "REPLACED")
                 .set(SmsVerificationCode::getConsumedAt, now)
                 .set(SmsVerificationCode::getUpdatedAt, now));
@@ -64,13 +63,15 @@ public class SmsVerificationCodeRepositoryImpl implements SmsVerificationCodeRep
     }
 
     @Override
-    public void consume(Long tenantId, Long id, OffsetDateTime now) {
-        mapper.update(null, new LambdaUpdateWrapper<SmsVerificationCode>()
+    public boolean consumePendingCode(Long tenantId, Long id, OffsetDateTime now) {
+        return mapper.update(null, new LambdaUpdateWrapper<SmsVerificationCode>()
                 .eq(SmsVerificationCode::getTenantId, tenantId)
                 .eq(SmsVerificationCode::getId, id)
+                .eq(SmsVerificationCode::getStatus, "PENDING")
+                .gt(SmsVerificationCode::getExpiresAt, now)
                 .set(SmsVerificationCode::getStatus, "CONSUMED")
                 .set(SmsVerificationCode::getConsumedAt, now)
-                .set(SmsVerificationCode::getUpdatedAt, now));
+                .set(SmsVerificationCode::getUpdatedAt, now)) > 0;
     }
 
     private LambdaQueryWrapper<SmsVerificationCode> baseQuery(Long tenantId, String purpose, String mobileHash) {

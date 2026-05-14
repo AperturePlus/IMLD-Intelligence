@@ -2,9 +2,12 @@ package xenosoft.imldintelligence.module.identity.internal.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import xenosoft.imldintelligence.module.identity.api.toc.dto.TocAuthApiDtos;
 import xenosoft.imldintelligence.module.identity.internal.config.IdentityVerificationProperties;
@@ -32,6 +35,7 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class TocAuthServiceImpl implements TocAuthService {
 
     private static final String USER_TYPE_TOC = "TOC";
@@ -55,6 +59,7 @@ public class TocAuthServiceImpl implements TocAuthService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TocAuthApiDtos.Response.TocAuthSessionResponse wechatLogin(TocAuthApiDtos.Request.WechatLoginRequest request) {
         long tenantId = tenantResolver.requireGlobalTenantId();
 
@@ -74,7 +79,12 @@ public class TocAuthServiceImpl implements TocAuthService {
             created.setStatus("ACTIVE");
             created.setCreatedAt(now);
             created.setUpdatedAt(now);
-            return tocUserRepository.save(created);
+            try {
+                return tocUserRepository.save(created);
+            } catch (DataIntegrityViolationException ex) {
+                return tocUserRepository.findByTocUid(tenantId, tocUid)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "ToC user creation conflict", ex));
+            }
         });
 
         boolean needUpdate = false;
@@ -99,6 +109,7 @@ public class TocAuthServiceImpl implements TocAuthService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TocAuthApiDtos.Response.PhoneCodeSendResponse sendPhoneLoginCode(TocAuthApiDtos.Request.SendPhoneCodeRequest request) {
         long tenantId = tenantResolver.requireGlobalTenantId();
 
@@ -154,6 +165,7 @@ public class TocAuthServiceImpl implements TocAuthService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TocAuthApiDtos.Response.TocAuthSessionResponse phoneLogin(TocAuthApiDtos.Request.PhoneLoginRequest request) {
         long tenantId = tenantResolver.requireGlobalTenantId();
 
@@ -188,7 +200,10 @@ public class TocAuthServiceImpl implements TocAuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code is incorrect");
         }
 
-        smsVerificationCodeRepository.consume(tenantId, latest.getId(), now);
+        boolean consumed = smsVerificationCodeRepository.consumePendingCode(tenantId, latest.getId(), now);
+        if (!consumed) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code is invalid or expired");
+        }
 
         String tocUid = tocUidFactory.mobileTocUid(mobile);
         TocUser user = tocUserRepository.findByTocUid(tenantId, tocUid).orElseGet(() -> {
@@ -203,7 +218,12 @@ public class TocAuthServiceImpl implements TocAuthService {
             created.setStatus("ACTIVE");
             created.setCreatedAt(now);
             created.setUpdatedAt(now);
-            return tocUserRepository.save(created);
+            try {
+                return tocUserRepository.save(created);
+            } catch (DataIntegrityViolationException ex) {
+                return tocUserRepository.findByTocUid(tenantId, tocUid)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "ToC user creation conflict", ex));
+            }
         });
 
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
@@ -239,6 +259,7 @@ public class TocAuthServiceImpl implements TocAuthService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void logout(TocAuthApiDtos.Request.LogoutRequest request) {
         blacklistToken(request.refreshToken());
     }

@@ -16,6 +16,6 @@ public interface SmsVerificationCodeRepository {
 
     void incrementVerifyAttempt(Long tenantId, Long id, int nextAttemptCount, String status, OffsetDateTime now);
 
-    void consume(Long tenantId, Long id, OffsetDateTime now);
+    boolean consumePendingCode(Long tenantId, Long id, OffsetDateTime now);
 }
 

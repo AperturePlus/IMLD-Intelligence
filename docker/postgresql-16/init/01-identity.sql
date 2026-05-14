@@ -296,3 +296,7 @@ CREATE INDEX IF NOT EXISTS idx_encounter_tenant_patient_time
 
 CREATE INDEX IF NOT EXISTS idx_email_verification_code_lookup
     ON email_verification_code (tenant_id, purpose, email, username, status, expires_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_email_verification_code_pending
+    ON email_verification_code (tenant_id, purpose, email, username)
+    WHERE status = 'PENDING';
