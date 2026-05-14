@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xenosoft.imldintelligence.module.audit.internal.config.AuditProperties;
 import xenosoft.imldintelligence.module.audit.internal.context.AuditContext;
@@ -52,7 +54,10 @@ public class AuditTrailServiceImpl implements AuditTrailService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            isolation = Isolation.READ_COMMITTED
+    )
     public AuditLog recordAudit(AuditRecordCommand command) {
         requireNonNull(command, "command is required");
         ResolvedContext context = resolveContext(
@@ -94,7 +99,10 @@ public class AuditTrailServiceImpl implements AuditTrailService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            isolation = Isolation.READ_COMMITTED
+    )
     public SensitiveDataAccessLog recordSensitiveAccess(SensitiveAccessRecordCommand command) {
         requireNonNull(command, "command is required");
         ResolvedContext context = resolveContext(
@@ -129,7 +137,10 @@ public class AuditTrailServiceImpl implements AuditTrailService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            isolation = Isolation.READ_COMMITTED
+    )
     public ModelInvocationLog recordModelInvocation(ModelInvocationRecordCommand command) {
         requireNonNull(command, "command is required");
         ResolvedContext context = resolveContext(
