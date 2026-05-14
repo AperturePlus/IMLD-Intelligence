@@ -2,6 +2,7 @@ package xenosoft.imldintelligence.module.notify.internal.repository;
 
 import xenosoft.imldintelligence.module.notify.internal.model.NotificationMessage;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +52,22 @@ public interface NotificationMessageRepository {
      * @return 更新后的通知消息
      */
     NotificationMessage update(NotificationMessage notificationMessage);
+
+    /**
+     * 仅当当前状态匹配 expectedStatus 时推进消息状态，避免重复投递回调覆盖。
+     *
+     * @param tenantId 租户标识
+     * @param id 消息主键
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param sentAt 实际发送时间
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusIfCurrent(Long tenantId,
+                                  Long id,
+                                  String expectedStatus,
+                                  String targetStatus,
+                                  OffsetDateTime sentAt);
 
     /**
      * 按租户和通知消息主键删除通知消息。

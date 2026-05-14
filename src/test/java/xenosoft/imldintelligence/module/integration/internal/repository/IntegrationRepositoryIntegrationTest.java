@@ -63,6 +63,17 @@ class IntegrationRepositoryIntegrationTest extends AbstractPostgresIntegrationTe
                     assertThat(value.getResponsePayload().get("resp").asText()).isEqualTo("ok");
                 });
 
+        OffsetDateTime failedAt = OffsetDateTime.now().plusMinutes(1).withNano(0);
+        assertThat(integrationJobRepository.updateStatusIfCurrent(
+                tenantA.getId(), job.getId(), "SUCCESS", "FAILED", failedAt, "timeout")).isTrue();
+        assertThat(integrationJobRepository.updateStatusIfCurrent(
+                tenantA.getId(), job.getId(), "SUCCESS", "FAILED", failedAt, "timeout")).isFalse();
+        assertThat(integrationJobRepository.findById(tenantA.getId(), job.getId())).get()
+                .satisfies(value -> {
+                    assertThat(value.getStatus()).isEqualTo("FAILED");
+                    assertThat(value.getErrorMessage()).isEqualTo("timeout");
+                });
+
         assertThat(integrationJobRepository.deleteById(tenantA.getId(), job.getId())).isTrue();
         assertThat(integrationJobRepository.findById(tenantA.getId(), job.getId())).isEmpty();
     }

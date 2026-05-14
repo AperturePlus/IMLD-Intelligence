@@ -8,6 +8,7 @@ import xenosoft.imldintelligence.module.notify.internal.model.NotificationMessag
 import xenosoft.imldintelligence.module.notify.internal.repository.NotificationMessageRepository;
 import xenosoft.imldintelligence.module.notify.internal.repository.mybatis.NotificationMessageMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,6 +70,21 @@ public class NotificationMessageRepositoryImpl implements NotificationMessageRep
                 .eq(NotificationMessage::getTenantId, notificationMessage.getTenantId())
                 .eq(NotificationMessage::getId, notificationMessage.getId()));
         return notificationMessage;
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         OffsetDateTime sentAt) {
+        LambdaUpdateWrapper<NotificationMessage> wrapper = new LambdaUpdateWrapper<NotificationMessage>()
+                .eq(NotificationMessage::getTenantId, tenantId)
+                .eq(NotificationMessage::getId, id)
+                .eq(NotificationMessage::getStatus, expectedStatus)
+                .set(NotificationMessage::getStatus, targetStatus)
+                .set(NotificationMessage::getSentAt, sentAt);
+        return notificationMessageMapper.update(null, wrapper) > 0;
     }
 
     /**

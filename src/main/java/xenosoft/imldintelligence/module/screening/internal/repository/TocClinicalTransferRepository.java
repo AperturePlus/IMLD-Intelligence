@@ -2,6 +2,7 @@ package xenosoft.imldintelligence.module.screening.internal.repository;
 
 import xenosoft.imldintelligence.module.screening.internal.model.TocClinicalTransfer;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +60,26 @@ public interface TocClinicalTransferRepository {
      * @return 更新后的TOC临床转化记录
      */
     TocClinicalTransfer update(TocClinicalTransfer tocClinicalTransfer);
+
+    /**
+     * 仅当当前状态匹配 expectedStatus 时推进状态，避免并发重复审批。
+     *
+     * @param tenantId 租户标识
+     * @param id 转诊记录主键
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param approvedBy 审批人
+     * @param approvedAt 审批时间
+     * @param transferNote 审批备注
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusIfCurrent(Long tenantId,
+                                  Long id,
+                                  String expectedStatus,
+                                  String targetStatus,
+                                  Long approvedBy,
+                                  OffsetDateTime approvedAt,
+                                  String transferNote);
 
     /**
      * 按租户和TOC临床转化记录主键删除TOC临床转化记录。

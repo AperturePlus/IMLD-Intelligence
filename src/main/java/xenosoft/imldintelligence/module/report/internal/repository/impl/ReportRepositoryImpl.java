@@ -1,5 +1,6 @@
 package xenosoft.imldintelligence.module.report.internal.repository.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import xenosoft.imldintelligence.module.report.internal.model.Report;
 import xenosoft.imldintelligence.module.report.internal.repository.ReportRepository;
 import xenosoft.imldintelligence.module.report.internal.repository.mybatis.ReportMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,6 +70,49 @@ public class ReportRepositoryImpl implements ReportRepository {
                 .eq(Report::getTenantId, report.getTenantId())
                 .eq(Report::getId, report.getId()));
         return report;
+    }
+
+    @Override
+    public Optional<Report> lockByIdForUpdate(Long tenantId, Long id) {
+        return Optional.ofNullable(reportMapper.selectOne(new LambdaQueryWrapper<Report>()
+                .eq(Report::getTenantId, tenantId)
+                .eq(Report::getId, id)
+                .last("FOR UPDATE")));
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         Long signedBy,
+                                         OffsetDateTime signedAt,
+                                         JsonNode signatureData) {
+        LambdaUpdateWrapper<Report> wrapper = new LambdaUpdateWrapper<Report>()
+                .eq(Report::getTenantId, tenantId)
+                .eq(Report::getId, id)
+                .eq(Report::getStatus, expectedStatus)
+                .set(Report::getStatus, targetStatus)
+                .set(Report::getSignedBy, signedBy)
+                .set(Report::getSignedAt, signedAt)
+                .set(Report::getSignatureData, signatureData)
+                .set(Report::getUpdatedAt, OffsetDateTime.now().withNano(0));
+        return reportMapper.update(null, wrapper) > 0;
+    }
+
+    @Override
+    public boolean updateCurrentVersionIfMatches(Long tenantId,
+                                                 Long id,
+                                                 Integer expectedVersion,
+                                                 Integer targetVersion,
+                                                 OffsetDateTime updatedAt) {
+        LambdaUpdateWrapper<Report> wrapper = new LambdaUpdateWrapper<Report>()
+                .eq(Report::getTenantId, tenantId)
+                .eq(Report::getId, id)
+                .eq(Report::getCurrentVersion, expectedVersion)
+                .set(Report::getCurrentVersion, targetVersion)
+                .set(Report::getUpdatedAt, updatedAt);
+        return reportMapper.update(null, wrapper) > 0;
     }
 
     @Override

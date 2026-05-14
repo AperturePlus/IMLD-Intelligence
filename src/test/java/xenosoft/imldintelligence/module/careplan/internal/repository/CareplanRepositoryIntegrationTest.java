@@ -223,6 +223,28 @@ class CareplanRepositoryIntegrationTest extends AbstractPostgresIntegrationTest 
                     assertThat(value.getTriggerDetail().get("bp").asText()).isEqualTo("170/110");
                 });
 
+        OffsetDateTime resolvedAt = OffsetDateTime.now().plusMinutes(1).withNano(0);
+        assertThat(alertEventRepository.updateStatusIfCurrent(
+                tenant.getId(),
+                event.getId(),
+                "ACKNOWLEDGED",
+                "RESOLVED",
+                resolvedAt,
+                "resolved by protocol",
+                doctor.getId()
+        )).isTrue();
+        assertThat(alertEventRepository.updateStatusIfCurrent(
+                tenant.getId(),
+                event.getId(),
+                "ACKNOWLEDGED",
+                "RESOLVED",
+                resolvedAt,
+                "resolved by protocol",
+                doctor.getId()
+        )).isFalse();
+        assertThat(alertEventRepository.findById(tenant.getId(), event.getId())).get()
+                .extracting(AlertEvent::getStatus).isEqualTo("RESOLVED");
+
         assertThat(alertEventRepository.deleteById(tenant.getId(), event.getId())).isTrue();
         assertThat(alertEventRepository.findById(tenant.getId(), event.getId())).isEmpty();
     }

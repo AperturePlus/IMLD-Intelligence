@@ -8,6 +8,7 @@ import xenosoft.imldintelligence.module.payment.internal.model.VipSubscription;
 import xenosoft.imldintelligence.module.payment.internal.repository.VipSubscriptionRepository;
 import xenosoft.imldintelligence.module.payment.internal.repository.mybatis.VipSubscriptionMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +62,21 @@ public class VipSubscriptionRepositoryImpl implements VipSubscriptionRepository 
                 .eq(VipSubscription::getTenantId, vipSubscription.getTenantId())
                 .eq(VipSubscription::getId, vipSubscription.getId()));
         return vipSubscription;
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         OffsetDateTime endAt) {
+        LambdaUpdateWrapper<VipSubscription> wrapper = new LambdaUpdateWrapper<VipSubscription>()
+                .eq(VipSubscription::getTenantId, tenantId)
+                .eq(VipSubscription::getId, id)
+                .eq(VipSubscription::getSubscriptionStatus, expectedStatus)
+                .set(VipSubscription::getSubscriptionStatus, targetStatus)
+                .set(VipSubscription::getEndAt, endAt);
+        return vipSubscriptionMapper.update(null, wrapper) > 0;
     }
 
     @Override

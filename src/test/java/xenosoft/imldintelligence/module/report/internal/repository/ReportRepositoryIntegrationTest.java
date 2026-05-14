@@ -121,12 +121,27 @@ class ReportRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {
         assertThat(reportRepository.listByTenantId(tenant.getId())).extracting(Report::getId).contains(report.getId());
         assertThat(reportRepository.listByPatientId(tenant.getId(), patient.getId())).extracting(Report::getId).contains(report.getId());
         assertThat(reportRepository.listBySessionId(tenant.getId(), session.getId())).extracting(Report::getId).contains(report.getId());
+        assertThat(reportRepository.lockByIdForUpdate(tenant.getId(), report.getId())).isPresent();
 
-        report.setStatus("SIGNED");
-        report.setSignedBy(doctor.getId());
-        report.setSignedAt(OffsetDateTime.now().withNano(0));
-        report.setSignatureData(OBJECT_MAPPER.createObjectNode().put("signed", true));
-        reportRepository.update(report);
+        OffsetDateTime signedAt = OffsetDateTime.now().withNano(0);
+        assertThat(reportRepository.updateStatusIfCurrent(
+                tenant.getId(),
+                report.getId(),
+                "DRAFT",
+                "SIGNED",
+                doctor.getId(),
+                signedAt,
+                OBJECT_MAPPER.createObjectNode().put("signed", true)
+        )).isTrue();
+        assertThat(reportRepository.updateStatusIfCurrent(
+                tenant.getId(),
+                report.getId(),
+                "DRAFT",
+                "SIGNED",
+                doctor.getId(),
+                signedAt,
+                OBJECT_MAPPER.createObjectNode().put("signed", true)
+        )).isFalse();
         assertThat(reportRepository.findById(tenant.getId(), report.getId())).get()
                 .satisfies(value -> {
                     assertThat(value.getStatus()).isEqualTo("SIGNED");
@@ -164,11 +179,17 @@ class ReportRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {
         reportVersion.setContentSnapshot(OBJECT_MAPPER.createObjectNode().put("v", 2));
         reportVersion.setChangeSummary("updated");
         reportVersionRepository.update(reportVersion);
+        assertThat(reportRepository.updateCurrentVersionIfMatches(
+                tenant.getId(), report.getId(), 1, 2, OffsetDateTime.now().withNano(0))).isTrue();
+        assertThat(reportRepository.updateCurrentVersionIfMatches(
+                tenant.getId(), report.getId(), 1, 3, OffsetDateTime.now().withNano(0))).isFalse();
         assertThat(reportVersionRepository.findById(tenant.getId(), reportVersion.getId())).get()
                 .satisfies(value -> {
                     assertThat(value.getChangeSummary()).isEqualTo("updated");
                     assertThat(value.getContentSnapshot().get("v").asInt()).isEqualTo(2);
                 });
+        assertThat(reportRepository.findById(tenant.getId(), report.getId())).get()
+                .extracting(Report::getCurrentVersion).isEqualTo(2);
 
         assertThat(reportVersionRepository.deleteById(tenant.getId(), reportVersion.getId())).isTrue();
         assertThat(reportVersionRepository.findById(tenant.getId(), reportVersion.getId())).isEmpty();

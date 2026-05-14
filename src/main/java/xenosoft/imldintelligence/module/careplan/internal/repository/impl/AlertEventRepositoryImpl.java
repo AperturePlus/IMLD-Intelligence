@@ -8,6 +8,7 @@ import xenosoft.imldintelligence.module.careplan.internal.model.AlertEvent;
 import xenosoft.imldintelligence.module.careplan.internal.repository.AlertEventRepository;
 import xenosoft.imldintelligence.module.careplan.internal.repository.mybatis.AlertEventMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,6 +80,25 @@ public class AlertEventRepositoryImpl implements AlertEventRepository {
                 .eq(AlertEvent::getTenantId, alertEvent.getTenantId())
                 .eq(AlertEvent::getId, alertEvent.getId()));
         return alertEvent;
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         OffsetDateTime resolvedAt,
+                                         String resolutionNote,
+                                         Long assignedTo) {
+        LambdaUpdateWrapper<AlertEvent> wrapper = new LambdaUpdateWrapper<AlertEvent>()
+                .eq(AlertEvent::getTenantId, tenantId)
+                .eq(AlertEvent::getId, id)
+                .eq(AlertEvent::getStatus, expectedStatus)
+                .set(AlertEvent::getStatus, targetStatus)
+                .set(AlertEvent::getResolvedAt, resolvedAt)
+                .set(AlertEvent::getResolutionNote, resolutionNote)
+                .set(AlertEvent::getAssignedTo, assignedTo);
+        return alertEventMapper.update(null, wrapper) > 0;
     }
 
     /**

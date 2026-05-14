@@ -8,6 +8,7 @@ import xenosoft.imldintelligence.module.screening.internal.model.TocClinicalTran
 import xenosoft.imldintelligence.module.screening.internal.repository.TocClinicalTransferRepository;
 import xenosoft.imldintelligence.module.screening.internal.repository.mybatis.TocClinicalTransferMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,6 +80,25 @@ public class TocClinicalTransferRepositoryImpl implements TocClinicalTransferRep
                 .eq(TocClinicalTransfer::getTenantId, tocClinicalTransfer.getTenantId())
                 .eq(TocClinicalTransfer::getId, tocClinicalTransfer.getId()));
         return tocClinicalTransfer;
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         Long approvedBy,
+                                         OffsetDateTime approvedAt,
+                                         String transferNote) {
+        LambdaUpdateWrapper<TocClinicalTransfer> wrapper = new LambdaUpdateWrapper<TocClinicalTransfer>()
+                .eq(TocClinicalTransfer::getTenantId, tenantId)
+                .eq(TocClinicalTransfer::getId, id)
+                .eq(TocClinicalTransfer::getTransferStatus, expectedStatus)
+                .set(TocClinicalTransfer::getTransferStatus, targetStatus)
+                .set(TocClinicalTransfer::getApprovedBy, approvedBy)
+                .set(TocClinicalTransfer::getApprovedAt, approvedAt)
+                .set(TocClinicalTransfer::getTransferNote, transferNote);
+        return tocClinicalTransferMapper.update(null, wrapper) > 0;
     }
 
     /**
