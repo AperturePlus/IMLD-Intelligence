@@ -20,19 +20,19 @@ const baseUrl = config.baseUrl
 
 const upload = (options: UploadOptions): Promise<any> => {
   const isToken = (options.headers || {}).isToken === false
+  const uploadHeader: Record<string, any> = options.header ?? {}
   const uploadConfig: UploadOptions = {
     ...options,
-    header: options.header || {}
+    header: uploadHeader
   }
 
   if (getToken() && !isToken) {
-    uploadConfig.header = uploadConfig.header || {}
-    uploadConfig.header.Authorization = `Bearer ${getToken()}`
+    uploadHeader.Authorization = `Bearer ${getToken()}`
   }
 
   const tenantId = getTenantId()
-  if (tenantId && !uploadConfig.header['X-Tenant-Id']) {
-    uploadConfig.header['X-Tenant-Id'] = tenantId
+  if (tenantId && !uploadHeader['X-Tenant-Id']) {
+    uploadHeader['X-Tenant-Id'] = tenantId
   }
 
   if (uploadConfig.params) {
@@ -65,7 +65,7 @@ const upload = (options: UploadOptions): Promise<any> => {
       url: `${baseUrl}${uploadConfig.url}`,
       filePath: uploadConfig.filePath,
       name: uploadConfig.name || 'file',
-      header: uploadConfig.header,
+      header: uploadHeader,
       formData: uploadConfig.formData,
       success: (res: any) => {
         const result = JSON.parse(res.data || '{}')

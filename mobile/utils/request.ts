@@ -16,19 +16,19 @@ const handleResponseCode = (responseData: Record<string, any>) => {
 
 const request = (options: RequestConfig): Promise<any> => {
   const isToken = (options.headers || {}).isToken === false
+  const requestHeader: Record<string, unknown> = options.header ?? {}
   const requestConfig: RequestConfig = {
     ...options,
-    header: options.header || {}
+    header: requestHeader
   }
 
   if (getToken() && !isToken) {
-    requestConfig.header = requestConfig.header || {}
-    requestConfig.header.Authorization = `Bearer ${getToken()}`
+    requestHeader.Authorization = `Bearer ${getToken()}`
   }
 
   const tenantId = getTenantId()
-  if (tenantId && !requestConfig.header['X-Tenant-Id']) {
-    requestConfig.header['X-Tenant-Id'] = tenantId
+  if (tenantId && !requestHeader['X-Tenant-Id']) {
+    requestHeader['X-Tenant-Id'] = tenantId
   }
 
   return new Promise((resolve, reject) => {
@@ -41,7 +41,7 @@ const request = (options: RequestConfig): Promise<any> => {
         method: requestMethod,
         url: requestUrl,
         data: requestData,
-        headers: requestConfig.header
+        headers: requestHeader
       })
         .then((responseData: ApiResponse<any>) => {
           const { code, msg } = handleResponseCode(responseData as any)
@@ -64,7 +64,7 @@ const request = (options: RequestConfig): Promise<any> => {
       timeout: requestConfig.timeout || timeout,
       url: requestUrl,
       data: requestData,
-      header: requestConfig.header,
+      header: requestHeader,
       dataType: 'json'
     })
       .then((response: [any, any]) => {

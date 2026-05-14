@@ -53,6 +53,7 @@
 
 <script>
 import { phoneLogin, sendPhoneLoginCode, wechatLogin } from '@/api/tocAuth'
+import config from '@/config'
 import { setRefreshToken, setTenantId, setTocNickname, setTocUserId, setToken } from '@/utils/auth'
 
 export default {
@@ -64,6 +65,12 @@ export default {
       sendingCode: false,
       cooldownSeconds: 0,
       cooldownTimer: null
+    }
+  },
+  computed: {
+    isMockMode() {
+      const globalMockMode = this.globalConfig && this.globalConfig.mockMode
+      return (globalMockMode || config.mockMode) === 'full'
     }
   },
   onUnload() {
@@ -155,12 +162,13 @@ export default {
       this.cooldownSeconds = 0
     },
     handleSendCode() {
-      const mobile = this.validateMobile(this.phoneForm.mobile)
-      if (!mobile) {
-        this.$modal.msgError('请输入正确的手机号')
+      if (this.sendingCode || this.cooldownSeconds > 0) {
         return
       }
-      if (this.sendingCode || this.cooldownSeconds > 0) {
+      const rawMobile = String(this.phoneForm.mobile || '').trim()
+      const mobile = this.isMockMode ? rawMobile : this.validateMobile(rawMobile)
+      if (!this.isMockMode && !mobile) {
+        this.$modal.msgError('请输入正确的手机号')
         return
       }
       this.sendingCode = true
@@ -179,18 +187,19 @@ export default {
         })
     },
     handlePhoneLogin() {
-      const mobile = this.validateMobile(this.phoneForm.mobile)
-      const code = String(this.phoneForm.code || '').trim()
-      if (!mobile) {
+      const rawMobile = String(this.phoneForm.mobile || '').trim()
+      const rawCode = String(this.phoneForm.code || '').trim()
+      const mobile = this.isMockMode ? rawMobile : this.validateMobile(rawMobile)
+      if (!this.isMockMode && !mobile) {
         this.$modal.msgError('请输入正确的手机号')
         return
       }
-      if (!code) {
+      if (!this.isMockMode && !rawCode) {
         this.$modal.msgError('请输入验证码')
         return
       }
       this.$modal.loading('登录中，请稍候...')
-      phoneLogin({ mobile, code })
+      phoneLogin({ mobile: mobile || 'mock-mobile', code: rawCode || 'mock-code' })
         .then((res) => {
           this.$modal.closeLoading()
           if (this.applySession(res)) {
@@ -199,7 +208,7 @@ export default {
         })
         .catch(() => {
           this.$modal.closeLoading()
-          this.$modal.msgError('登录失败，请检查验证码')
+          this.$modal.msgError(this.isMockMode ? 'Mock 登录失败，请检查 mock 配置' : '登录失败，请检查验证码')
         })
     }
   }
