@@ -77,6 +77,14 @@ export default {
           });
         return;
       }
+      if (config.deploymentMode === "mock") {
+        setToken("mock_token_xxx");
+        setRefreshToken("mock_refresh_token");
+        setTenantId(1);
+        setTocUserId(999);
+        setTocNickname("Mock用户");
+        return;
+      }
       this.$tab.reLaunch("/pages/login");
     },
   },

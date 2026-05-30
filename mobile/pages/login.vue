@@ -16,7 +16,7 @@
     </view>
 
     <view class="login-form-content">
-      <view class="mode-tabs">
+      <view v-if="!isMockMode" class="mode-tabs">
         <view
           class="mode-tab"
           :class="mode === 'wechat' ? 'active' : ''"
@@ -31,7 +31,7 @@
         >
       </view>
 
-      <view v-if="mode === 'wechat'">
+      <view v-if="!isMockMode && mode === 'wechat'">
         <button
           @click="handleWechatLogin"
           class="login-btn cu-btn block bg-blue lg round"
@@ -50,7 +50,7 @@
         </view>
       </view>
 
-      <view v-else>
+      <view v-else-if="!isMockMode">
         <view class="input-item flex align-center">
           <view class="iconfont icon-phone icon"></view>
           <input
@@ -88,6 +88,18 @@
             登录
           </button>
         </view>
+      </view>
+
+      <view v-if="isMockMode" class="dev-login-wrap">
+        <view class="dev-divider">
+          <text class="dev-divider-text">Mock 模式</text>
+        </view>
+        <button
+          @click="handleMockLogin"
+          class="login-btn cu-btn block bg-orange lg round"
+        >
+          Mock 模式一键登录
+        </button>
       </view>
 
       <view v-if="isDevMode" class="dev-login-wrap">
@@ -136,8 +148,7 @@ export default {
   },
   computed: {
     isMockMode() {
-      const globalMockMode = this.globalConfig && this.globalConfig.mockMode;
-      return (globalMockMode || config.mockMode) === "full";
+      return config.deploymentMode === "mock";
     },
     isDevMode() {
       return config.deploymentMode === "dev";
@@ -174,6 +185,16 @@ export default {
       setTocUserId(data.tocUserId);
       setTocNickname(data.nickname || "");
       return true;
+    },
+    handleMockLogin() {
+      this.$modal.loading("Mock 模式登录中...");
+      setToken("mock_token_xxx");
+      setRefreshToken("mock_refresh_token");
+      setTenantId(1);
+      setTocUserId(999);
+      setTocNickname("Mock用户");
+      this.$modal.closeLoading();
+      this.$tab.reLaunch("/pages/index");
     },
     handleDevLogin() {
       this.$modal.loading("开发模式登录中...");

@@ -14,7 +14,7 @@ export interface AppInfo {
 export interface AppConfig {
   baseUrl: string;
   mockMode: "full" | "off";
-  deploymentMode: "dev" | "prod";
+  deploymentMode: "dev" | "prod" | "mock";
   appInfo: AppInfo;
 }
 
