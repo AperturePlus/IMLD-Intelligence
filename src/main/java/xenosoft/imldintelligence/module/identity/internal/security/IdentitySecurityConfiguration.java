@@ -15,7 +15,12 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
+
+import java.util.List;
 
 /**
  * 身份安全配置类，按配置在 JWT 鉴权链与开放访问链之间切换。
@@ -117,9 +122,29 @@ public class IdentitySecurityConfiguration {
         return new JsonAccessDeniedHandler(objectMapper);
     }
 
+    /**
+     * 创建 CORS 配置源 Bean（安全关闭时启用，便于本地开发跨域请求）。
+     *
+     * @return CORS 配置源实例
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "false", matchIfMissing = true)
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(false);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     private HttpSecurity applyStatelessDefaults(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
