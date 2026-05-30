@@ -1,12 +1,21 @@
 package xenosoft.imldintelligence.module.clinical.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.RequiredArgsConstructor;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Function;
+
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import lombok.RequiredArgsConstructor;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
 import xenosoft.imldintelligence.common.dto.PageQueryRequest;
 import xenosoft.imldintelligence.common.dto.PagedResultResponse;
@@ -23,14 +32,6 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.GeneticVari
 import xenosoft.imldintelligence.module.clinical.internal.repository.ImagingReportRepository;
 import xenosoft.imldintelligence.module.clinical.internal.repository.IndicatorMappingRepository;
 import xenosoft.imldintelligence.module.clinical.internal.repository.LabResultRepository;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.function.Function;
 
 @RestController
 @RequiredArgsConstructor

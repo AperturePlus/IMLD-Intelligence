@@ -247,10 +247,7 @@ public class AuditQueryController {
         if (resolved <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "size must be > 0");
         }
-        if (resolved > auditProperties.getMaxPageSize()) {
-            return auditProperties.getMaxPageSize();
-        }
-        return resolved;
+        return Math.min(resolved, auditProperties.getMaxPageSize());
     }
 
     private String trimToNull(String value) {

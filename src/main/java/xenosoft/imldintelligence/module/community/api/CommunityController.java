@@ -127,7 +127,8 @@ public class CommunityController implements CommunityControllerContract {
         long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
 
         int page = pageQuery != null && pageQuery.page() != null ? pageQuery.page() : DEFAULT_PAGE;
-        int size = pageQuery != null && pageQuery.size() != null ? pageQuery.size() : DEFAULT_SIZE;
+        Integer requestedSize = pageQuery != null ? pageQuery.size() : null;
+        int size = requestedSize != null ? requestedSize : DEFAULT_SIZE;
         long offset = (long) page * size;
 
         String status = resolvePostListStatus(subject, query);
@@ -143,7 +144,8 @@ public class CommunityController implements CommunityControllerContract {
                 size
         );
 
-        long total = rows.isEmpty() ? 0L : (rows.getFirst().getTotalCount() == null ? 0L : rows.getFirst().getTotalCount());
+        Long totalCount = rows.isEmpty() ? null : rows.get(0).getTotalCount();
+        long total = totalCount != null ? totalCount : 0L;
         List<CommunityApiDtos.Response.PostSummaryResponse> items = rows.stream()
                 .map(this::toPostSummaryResponse)
                 .toList();
