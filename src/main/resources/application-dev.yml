@@ -29,7 +29,7 @@ spring:
 
 imld:
   deployment:
-    mode: saas
+    mode: develop
     tenant-mode: multi-tenant
   community:
     scope: GLOBAL
@@ -42,3 +42,6 @@ imld:
       machine-binding-enabled: false
   upgrade:
     check-enabled: false
+  security:
+    public-paths:
+      - /api/v1/app/toc/auth/dev/login

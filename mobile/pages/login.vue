@@ -1,45 +1,105 @@
 <template>
   <view class="normal-login-container">
-    <image class="bg-image" src="/static/images/login.png" mode="aspectFill"></image>
+    <image
+      class="bg-image"
+      src="/static/images/login.png"
+      mode="aspectFill"
+    ></image>
 
     <view class="logo-content align-center justify-center flex-direction flex">
-      <text class="title" style="font-weight: bold; font-size: 24px;">数智肝循</text>
-      <text class="subtitle" style="font-size: 16px; margin-top: 5px;">IMLD 患者管理平台</text>
+      <text class="title" style="font-weight: bold; font-size: 24px"
+        >数智肝循</text
+      >
+      <text class="subtitle" style="font-size: 16px; margin-top: 5px"
+        >IMLD 患者管理平台</text
+      >
     </view>
 
     <view class="login-form-content">
       <view class="mode-tabs">
-        <view class="mode-tab" :class="mode === 'wechat' ? 'active' : ''" @tap="mode = 'wechat'">微信登录</view>
-        <view class="mode-tab" :class="mode === 'phone' ? 'active' : ''" @tap="mode = 'phone'">手机号登录</view>
+        <view
+          class="mode-tab"
+          :class="mode === 'wechat' ? 'active' : ''"
+          @tap="mode = 'wechat'"
+          >微信登录</view
+        >
+        <view
+          class="mode-tab"
+          :class="mode === 'phone' ? 'active' : ''"
+          @tap="mode = 'phone'"
+          >手机号登录</view
+        >
       </view>
 
       <view v-if="mode === 'wechat'">
-        <button @click="handleWechatLogin" class="login-btn cu-btn block bg-blue lg round">微信一键登录</button>
+        <button
+          @click="handleWechatLogin"
+          class="login-btn cu-btn block bg-blue lg round"
+        >
+          微信一键登录
+        </button>
         <view class="tips text-center">
           <text class="text-white">登录即代表同意</text>
-          <text @click="handlePrivacy" class="text-blue underline-text">隐私政策</text>
+          <text @click="handlePrivacy" class="text-blue underline-text"
+            >隐私政策</text
+          >
           <text class="text-white">与</text>
-          <text @click="handleUserAgrement" class="text-blue underline-text">用户协议</text>
+          <text @click="handleUserAgrement" class="text-blue underline-text"
+            >用户协议</text
+          >
         </view>
       </view>
 
       <view v-else>
         <view class="input-item flex align-center">
           <view class="iconfont icon-phone icon"></view>
-          <input v-model="phoneForm.mobile" class="input" type="number" placeholder="请输入手机号" maxlength="20" />
+          <input
+            v-model="phoneForm.mobile"
+            class="input"
+            type="number"
+            placeholder="请输入手机号"
+            maxlength="20"
+          />
         </view>
 
         <view class="input-item flex align-center code-row">
           <view class="iconfont icon-code icon"></view>
-          <input v-model="phoneForm.code" class="input" type="number" placeholder="请输入验证码" maxlength="6" />
-          <button class="code-btn" :disabled="cooldownSeconds > 0 || sendingCode" @click="handleSendCode">
-            {{ cooldownSeconds > 0 ? cooldownSeconds + 's' : '发送验证码' }}
+          <input
+            v-model="phoneForm.code"
+            class="input"
+            type="number"
+            placeholder="请输入验证码"
+            maxlength="6"
+          />
+          <button
+            class="code-btn"
+            :disabled="cooldownSeconds > 0 || sendingCode"
+            @click="handleSendCode"
+          >
+            {{ cooldownSeconds > 0 ? cooldownSeconds + "s" : "发送验证码" }}
           </button>
         </view>
 
         <view class="action-btn">
-          <button @click="handlePhoneLogin" class="login-btn cu-btn block bg-blue lg round">登录</button>
+          <button
+            @click="handlePhoneLogin"
+            class="login-btn cu-btn block bg-blue lg round"
+          >
+            登录
+          </button>
         </view>
+      </view>
+
+      <view v-if="isDevMode" class="dev-login-wrap">
+        <view class="dev-divider">
+          <text class="dev-divider-text">开发环境</text>
+        </view>
+        <button
+          @click="handleDevLogin"
+          class="login-btn cu-btn block bg-cyan lg round"
+        >
+          开发模式一键登录（李晓华）
+        </button>
       </view>
     </view>
 
@@ -52,167 +112,209 @@
 </template>
 
 <script>
-import { phoneLogin, sendPhoneLoginCode, wechatLogin } from '@/api/tocAuth'
-import config from '@/config'
-import { setRefreshToken, setTenantId, setTocNickname, setTocUserId, setToken } from '@/utils/auth'
+import { phoneLogin, sendPhoneLoginCode, wechatLogin } from "@/api/tocAuth";
+import { devLogin } from "@/api/devAuth";
+import config from "@/config";
+import {
+  setRefreshToken,
+  setTenantId,
+  setTocNickname,
+  setTocUserId,
+  setToken,
+} from "@/utils/auth";
 
 export default {
   data() {
     return {
-      mode: 'wechat',
+      mode: "wechat",
       globalConfig: getApp().globalData ? getApp().globalData.config : {},
-      phoneForm: { mobile: '', code: '' },
+      phoneForm: { mobile: "", code: "" },
       sendingCode: false,
       cooldownSeconds: 0,
-      cooldownTimer: null
-    }
+      cooldownTimer: null,
+    };
   },
   computed: {
     isMockMode() {
-      const globalMockMode = this.globalConfig && this.globalConfig.mockMode
-      return (globalMockMode || config.mockMode) === 'full'
-    }
+      const globalMockMode = this.globalConfig && this.globalConfig.mockMode;
+      return (globalMockMode || config.mockMode) === "full";
+    },
+    isDevMode() {
+      return config.deploymentMode === "dev";
+    },
   },
   onUnload() {
-    this.stopCooldown()
+    this.stopCooldown();
   },
   methods: {
     handleAdminLogin() {
-      this.$tab.navigateTo('/pages/login-admin')
+      this.$tab.navigateTo("/pages/login-admin");
     },
     handlePrivacy() {
-      const site = this.globalConfig.appInfo.agreements[0]
-      this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+      const site = this.globalConfig.appInfo.agreements[0];
+      this.$tab.navigateTo(
+        `/pages/common/webview/index?title=${site.title}&url=${site.url}`
+      );
     },
     handleUserAgrement() {
-      const site = this.globalConfig.appInfo.agreements[1]
-      this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+      const site = this.globalConfig.appInfo.agreements[1];
+      this.$tab.navigateTo(
+        `/pages/common/webview/index?title=${site.title}&url=${site.url}`
+      );
     },
     applySession(response) {
-      const data = (response && response.data) || {}
+      const data = (response && response.data) || {};
       if (!data.accessToken || !data.tenantId || !data.tocUserId) {
-        this.$modal.msgError('登录失败，请稍后重试')
-        return false
+        this.$modal.msgError("登录失败，请稍后重试");
+        return false;
       }
-      setToken(data.accessToken)
-      setRefreshToken(data.refreshToken || '')
-      setTenantId(data.tenantId)
-      setTocUserId(data.tocUserId)
-      setTocNickname(data.nickname || '')
-      return true
+      setToken(data.accessToken);
+      setRefreshToken(data.refreshToken || "");
+      setTenantId(data.tenantId);
+      setTocUserId(data.tocUserId);
+      setTocNickname(data.nickname || "");
+      return true;
+    },
+    handleDevLogin() {
+      this.$modal.loading("开发模式登录中...");
+      devLogin()
+        .then((res) => {
+          this.$modal.closeLoading();
+          if (this.applySession(res)) {
+            this.$tab.reLaunch("/pages/index");
+          }
+        })
+        .catch(() => {
+          this.$modal.closeLoading();
+          this.$modal.msgError("开发模式登录失败，请检查后端服务");
+        });
     },
     handleWechatLogin() {
-      this.$modal.loading('登录中，请稍候...')
+      this.$modal.loading("登录中，请稍候...");
       uni.login({
-        provider: 'weixin',
+        provider: "weixin",
         success: (loginRes) => {
-          const jsCode = (loginRes && loginRes.code) || ''
+          const jsCode = (loginRes && loginRes.code) || "";
           if (!jsCode) {
-            this.$modal.closeLoading()
-            this.$modal.msgError('获取微信登录凭证失败')
-            return
+            this.$modal.closeLoading();
+            this.$modal.msgError("获取微信登录凭证失败");
+            return;
           }
           wechatLogin({ jsCode })
             .then((res) => {
-              this.$modal.closeLoading()
+              this.$modal.closeLoading();
               if (this.applySession(res)) {
-                this.$tab.reLaunch('/pages/index')
+                this.$tab.reLaunch("/pages/index");
               }
             })
             .catch(() => {
-              this.$modal.closeLoading()
-              this.$modal.msgError('微信登录失败，请稍后重试')
-            })
+              this.$modal.closeLoading();
+              this.$modal.msgError("微信登录失败，请稍后重试");
+            });
         },
         fail: () => {
-          this.$modal.closeLoading()
-          this.$modal.msgError('当前环境不支持微信登录')
-        }
-      })
+          this.$modal.closeLoading();
+          this.$modal.msgError("当前环境不支持微信登录");
+        },
+      });
     },
     validateMobile(mobile) {
-      const value = String(mobile || '').trim()
+      const value = String(mobile || "").trim();
       if (!value) {
-        return ''
+        return "";
       }
       if (!/^1\\d{10}$/.test(value)) {
-        return ''
+        return "";
       }
-      return value
+      return value;
     },
     startCooldown(seconds) {
-      this.stopCooldown()
-      this.cooldownSeconds = Math.max(0, Number(seconds || 0))
+      this.stopCooldown();
+      this.cooldownSeconds = Math.max(0, Number(seconds || 0));
       if (this.cooldownSeconds <= 0) {
-        return
+        return;
       }
       this.cooldownTimer = setInterval(() => {
         if (this.cooldownSeconds <= 1) {
-          this.stopCooldown()
-          return
+          this.stopCooldown();
+          return;
         }
-        this.cooldownSeconds -= 1
-      }, 1000)
+        this.cooldownSeconds -= 1;
+      }, 1000);
     },
     stopCooldown() {
       if (this.cooldownTimer) {
-        clearInterval(this.cooldownTimer)
-        this.cooldownTimer = null
+        clearInterval(this.cooldownTimer);
+        this.cooldownTimer = null;
       }
-      this.cooldownSeconds = 0
+      this.cooldownSeconds = 0;
     },
     handleSendCode() {
       if (this.sendingCode || this.cooldownSeconds > 0) {
-        return
+        return;
       }
-      const rawMobile = String(this.phoneForm.mobile || '').trim()
-      const mobile = this.isMockMode ? rawMobile : this.validateMobile(rawMobile)
+      const rawMobile = String(this.phoneForm.mobile || "").trim();
+      const mobile = this.isMockMode
+        ? rawMobile
+        : this.validateMobile(rawMobile);
       if (!this.isMockMode && !mobile) {
-        this.$modal.msgError('请输入正确的手机号')
-        return
+        this.$modal.msgError("请输入正确的手机号");
+        return;
       }
-      this.sendingCode = true
+      this.sendingCode = true;
       sendPhoneLoginCode(mobile)
         .then((res) => {
-          const data = (res && res.data) || {}
-          const seconds = data.resendAfterSeconds === undefined ? 60 : data.resendAfterSeconds
-          this.startCooldown(seconds)
-          uni.showToast({ title: '验证码已发送', icon: 'success' })
+          const data = (res && res.data) || {};
+          const seconds =
+            data.resendAfterSeconds === undefined
+              ? 60
+              : data.resendAfterSeconds;
+          this.startCooldown(seconds);
+          uni.showToast({ title: "验证码已发送", icon: "success" });
         })
         .catch(() => {
-          this.$modal.msgError('验证码发送失败，请稍后重试')
+          this.$modal.msgError("验证码发送失败，请稍后重试");
         })
         .finally(() => {
-          this.sendingCode = false
-        })
+          this.sendingCode = false;
+        });
     },
     handlePhoneLogin() {
-      const rawMobile = String(this.phoneForm.mobile || '').trim()
-      const rawCode = String(this.phoneForm.code || '').trim()
-      const mobile = this.isMockMode ? rawMobile : this.validateMobile(rawMobile)
+      const rawMobile = String(this.phoneForm.mobile || "").trim();
+      const rawCode = String(this.phoneForm.code || "").trim();
+      const mobile = this.isMockMode
+        ? rawMobile
+        : this.validateMobile(rawMobile);
       if (!this.isMockMode && !mobile) {
-        this.$modal.msgError('请输入正确的手机号')
-        return
+        this.$modal.msgError("请输入正确的手机号");
+        return;
       }
       if (!this.isMockMode && !rawCode) {
-        this.$modal.msgError('请输入验证码')
-        return
+        this.$modal.msgError("请输入验证码");
+        return;
       }
-      this.$modal.loading('登录中，请稍候...')
-      phoneLogin({ mobile: mobile || 'mock-mobile', code: rawCode || 'mock-code' })
+      this.$modal.loading("登录中，请稍候...");
+      phoneLogin({
+        mobile: mobile || "mock-mobile",
+        code: rawCode || "mock-code",
+      })
         .then((res) => {
-          this.$modal.closeLoading()
+          this.$modal.closeLoading();
           if (this.applySession(res)) {
-            this.$tab.reLaunch('/pages/index')
+            this.$tab.reLaunch("/pages/index");
           }
         })
         .catch(() => {
-          this.$modal.closeLoading()
-          this.$modal.msgError(this.isMockMode ? 'Mock 登录失败，请检查 mock 配置' : '登录失败，请检查验证码')
-        })
-    }
-  }
-}
+          this.$modal.closeLoading();
+          this.$modal.msgError(
+            this.isMockMode
+              ? "Mock 登录失败，请检查 mock 配置"
+              : "登录失败，请检查验证码"
+          );
+        });
+    },
+  },
+};
 </script>
 
 <style lang="scss">
@@ -337,6 +439,30 @@ page {
 
     .text-center {
       text-align: center;
+    }
+
+    .dev-login-wrap {
+      margin-top: 30rpx;
+
+      .dev-divider {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20rpx;
+
+        &::before,
+        &::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        .dev-divider-text {
+          padding: 0 20rpx;
+          font-size: 24rpx;
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
     }
   }
 

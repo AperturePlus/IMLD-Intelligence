@@ -3,24 +3,50 @@
     <view class="post-card" v-if="post">
       <view class="title">{{ post.title }}</view>
       <view class="meta">
-        <text>{{ post.authorDisplayName || '用户' }}</text>
+        <text>{{ post.authorDisplayName || "用户" }}</text>
         <text class="dot">·</text>
         <text>{{ formatTime(post.createdAt) }}</text>
-        <text class="status" v-if="post.status && post.status !== 'PUBLISHED'">{{ post.status }}</text>
+        <text
+          class="status"
+          v-if="post.status && post.status !== 'PUBLISHED'"
+          >{{ post.status }}</text
+        >
       </view>
       <view class="content">{{ post.content }}</view>
 
+      <view class="image-grid" v-if="postImages.length > 0">
+        <image
+          v-for="(img, idx) in postImages"
+          :key="img.id"
+          :src="img.imageUrl"
+          mode="aspectFill"
+          class="post-image"
+          @click="previewPostImage(idx)"
+        ></image>
+      </view>
+
       <view class="actions">
-        <button class="cu-btn sm round" :disabled="!canInteract" @click="toggleLike">
-          {{ liked ? '已赞' : '点赞' }}（{{ post.likeCount || 0 }}）
+        <button
+          class="cu-btn sm round"
+          :disabled="!canInteract"
+          @click="toggleLike"
+        >
+          {{ liked ? "已赞" : "点赞" }}（{{ post.likeCount || 0 }}）
         </button>
-        <button class="cu-btn sm round" :disabled="!canInteract" @click="toggleBookmark">
-          {{ bookmarked ? '已收藏' : '收藏' }}
+        <button
+          class="cu-btn sm round"
+          :disabled="!canInteract"
+          @click="toggleBookmark"
+        >
+          {{ bookmarked ? "已收藏" : "收藏" }}
         </button>
         <button class="cu-btn sm round" @click="handleReport">举报</button>
       </view>
 
-      <view class="pending-tip" v-if="post.status && post.status !== 'PUBLISHED'">
+      <view
+        class="pending-tip"
+        v-if="post.status && post.status !== 'PUBLISHED'"
+      >
         <text>该帖子处于审核状态，暂不支持评论/点赞/收藏。</text>
       </view>
     </view>
@@ -28,7 +54,9 @@
     <view class="comment-card">
       <view class="comment-header">
         <text class="comment-title">评论</text>
-        <text class="comment-count">{{ (post && post.commentCount) || 0 }}</text>
+        <text class="comment-count">{{
+          (post && post.commentCount) || 0
+        }}</text>
       </view>
 
       <view v-if="comments.length === 0" class="empty-comment">
@@ -38,11 +66,31 @@
 
       <view class="comment-item" v-for="c in comments" :key="c.id">
         <view class="c-meta">
-          <text class="c-author">{{ c.authorDisplayName || '用户' }}</text>
+          <text class="c-author">{{ c.authorDisplayName || "用户" }}</text>
           <text class="dot">·</text>
           <text class="c-time">{{ formatTime(c.createdAt) }}</text>
         </view>
         <view class="c-content">{{ c.content }}</view>
+        <view class="c-actions" v-if="!c.parentCommentId">
+          <text class="c-reply-btn" @click="startReply(c)">回复</text>
+        </view>
+        <view class="reply-wrap" v-if="replyingTo && replyingTo.id === c.id">
+          <input
+            v-model="replyText"
+            class="reply-input"
+            type="text"
+            maxlength="5000"
+            placeholder="回复..."
+          />
+          <button
+            class="cu-btn sm round bg-blue"
+            :disabled="submittingComment"
+            @click="submitReply"
+          >
+            发送
+          </button>
+          <button class="cu-btn sm round" @click="cancelReply">取消</button>
+        </view>
       </view>
 
       <view class="load-more text-center">
@@ -52,15 +100,37 @@
     </view>
 
     <view class="comment-editor" v-if="post && post.status === 'PUBLISHED'">
-      <input v-model="commentText" class="comment-input" type="text" maxlength="5000" placeholder="写下你的评论..." />
-      <button class="cu-btn sm round bg-blue" :disabled="submittingComment" @click="submitComment">发送</button>
+      <input
+        v-model="commentText"
+        class="comment-input"
+        type="text"
+        maxlength="5000"
+        placeholder="写下你的评论..."
+      />
+      <button
+        class="cu-btn sm round bg-blue"
+        :disabled="submittingComment"
+        @click="submitComment"
+      >
+        发送
+      </button>
     </view>
   </view>
 </template>
 
 <script>
-import { bookmarkPost, createComment, createReport, getPost, likePost, listComments, unbookmarkPost, unlikePost } from '@/api/community'
-import { getTocUserId } from '@/utils/auth'
+import {
+  bookmarkPost,
+  createComment,
+  createReport,
+  getPost,
+  likePost,
+  listComments,
+  listPostImages,
+  unbookmarkPost,
+  unlikePost,
+} from "@/api/community";
+import { getTocUserId } from "@/utils/auth";
 
 export default {
   data() {
@@ -70,202 +140,273 @@ export default {
       liked: false,
       bookmarked: false,
       comments: [],
-      commentText: '',
+      commentText: "",
       submittingComment: false,
       commentPage: 0,
       commentSize: 20,
       commentTotal: 0,
       loadingComments: false,
-      finishedComments: false
-    }
+      finishedComments: false,
+      postImages: [],
+      replyingTo: null,
+      replyText: "",
+    };
   },
   computed: {
     canInteract() {
-      return this.post && this.post.status === 'PUBLISHED'
-    }
+      return this.post && this.post.status === "PUBLISHED";
+    },
   },
   onLoad(options) {
-    const postId = options && options.postId ? Number(options.postId) : null
-    this.postId = Number.isFinite(postId) ? postId : null
+    const postId = options && options.postId ? Number(options.postId) : null;
+    this.postId = Number.isFinite(postId) ? postId : null;
     if (!this.postId) {
-      this.$modal.msgError('帖子不存在')
-      return
+      this.$modal.msgError("帖子不存在");
+      return;
     }
-    this.loadPost()
+    this.loadPost();
   },
   onReachBottom() {
-    this.loadMoreComments()
+    this.loadMoreComments();
   },
   methods: {
     formatTime(value) {
       if (!value) {
-        return ''
+        return "";
       }
-      const text = String(value)
-      return text.replace('T', ' ').substring(0, 16)
+      const text = String(value);
+      return text.replace("T", " ").substring(0, 16);
     },
     loadPost() {
       getPost(this.postId)
         .then((res) => {
-          this.post = (res && res.data) || null
-          this.resetComments()
-          this.loadMoreComments()
+          this.post = (res && res.data) || null;
+          this.resetComments();
+          this.loadMoreComments();
+          this.loadPostImages();
         })
         .catch(() => {
-          this.$modal.msgError('加载帖子失败或无权限查看')
+          this.$modal.msgError("加载帖子失败或无权限查看");
+        });
+    },
+    loadPostImages() {
+      listPostImages(this.postId)
+        .then((res) => {
+          this.postImages = (res && res.data) || [];
         })
+        .catch(() => {
+          // ignore
+        });
+    },
+    previewPostImage(index) {
+      const urls = this.postImages.map((img) => img.imageUrl);
+      uni.previewImage({
+        current: urls[index],
+        urls,
+      });
+    },
+    startReply(comment) {
+      this.replyingTo = comment;
+      this.replyText = "";
+    },
+    cancelReply() {
+      this.replyingTo = null;
+      this.replyText = "";
+    },
+    submitReply() {
+      const tocUserId = Number(getTocUserId());
+      if (!Number.isFinite(tocUserId) || tocUserId <= 0) {
+        this.$modal.msgError("登录信息异常，请重新登录");
+        uni.reLaunch({ url: "/pages/login" });
+        return;
+      }
+      const content = String(this.replyText || "").trim();
+      if (!content) {
+        this.$modal.msgError("请输入回复内容");
+        return;
+      }
+      this.submittingComment = true;
+      createComment(this.postId, {
+        authorTocUserId: tocUserId,
+        parentCommentId: this.replyingTo.id,
+        content,
+        anonymousFlag: false,
+      })
+        .then((res) => {
+          const item = (res && res.data) || null;
+          if (item) {
+            this.comments = [item].concat(this.comments);
+            this.replyText = "";
+            this.replyingTo = null;
+            if (this.post) {
+              this.post.commentCount = (this.post.commentCount || 0) + 1;
+            }
+          }
+          uni.showToast({ title: "已发送", icon: "success" });
+        })
+        .catch((error) => {
+          const message = error && error.message ? error.message : "";
+          this.$modal.msgError(message || "回复失败");
+        })
+        .finally(() => {
+          this.submittingComment = false;
+        });
     },
     resetComments() {
-      this.comments = []
-      this.commentPage = 0
-      this.commentTotal = 0
-      this.finishedComments = false
-      this.loadingComments = false
+      this.comments = [];
+      this.commentPage = 0;
+      this.commentTotal = 0;
+      this.finishedComments = false;
+      this.loadingComments = false;
     },
     loadMoreComments() {
       if (!this.postId || this.loadingComments || this.finishedComments) {
-        return
+        return;
       }
-      this.loadingComments = true
-      listComments(this.postId, { page: this.commentPage, size: this.commentSize })
+      this.loadingComments = true;
+      listComments(this.postId, {
+        page: this.commentPage,
+        size: this.commentSize,
+      })
         .then((res) => {
-          const data = (res && res.data) || {}
-          const items = data.items || []
-          const total = data.total || 0
-          this.commentTotal = total
-          this.comments = this.commentPage === 0 ? items : this.comments.concat(items)
-          this.commentPage += 1
-          this.finishedComments = this.comments.length >= this.commentTotal
+          const data = (res && res.data) || {};
+          const items = data.items || [];
+          const total = data.total || 0;
+          this.commentTotal = total;
+          this.comments =
+            this.commentPage === 0 ? items : this.comments.concat(items);
+          this.commentPage += 1;
+          this.finishedComments = this.comments.length >= this.commentTotal;
         })
         .catch(() => {
           // ignore
         })
         .finally(() => {
-          this.loadingComments = false
-        })
+          this.loadingComments = false;
+        });
     },
     submitComment() {
-      const tocUserId = Number(getTocUserId())
+      const tocUserId = Number(getTocUserId());
       if (!Number.isFinite(tocUserId) || tocUserId <= 0) {
-        this.$modal.msgError('登录信息异常，请重新登录')
-        uni.reLaunch({ url: '/pages/login' })
-        return
+        this.$modal.msgError("登录信息异常，请重新登录");
+        uni.reLaunch({ url: "/pages/login" });
+        return;
       }
-      const content = String(this.commentText || '').trim()
+      const content = String(this.commentText || "").trim();
       if (!content) {
-        this.$modal.msgError('请输入评论内容')
-        return
+        this.$modal.msgError("请输入评论内容");
+        return;
       }
-      this.submittingComment = true
+      this.submittingComment = true;
       createComment(this.postId, {
         authorTocUserId: tocUserId,
         content,
-        anonymousFlag: false
+        anonymousFlag: false,
       })
         .then((res) => {
-          const item = (res && res.data) || null
+          const item = (res && res.data) || null;
           if (item) {
-            this.comments = [item].concat(this.comments)
-            this.commentText = ''
+            this.comments = [item].concat(this.comments);
+            this.commentText = "";
             if (this.post) {
-              this.post.commentCount = (this.post.commentCount || 0) + 1
+              this.post.commentCount = (this.post.commentCount || 0) + 1;
             }
           }
-          uni.showToast({ title: '已发送', icon: 'success' })
+          uni.showToast({ title: "已发送", icon: "success" });
         })
         .catch((error) => {
-          const message = error && error.message ? error.message : ''
-          this.$modal.msgError(message || '评论失败')
+          const message = error && error.message ? error.message : "";
+          this.$modal.msgError(message || "评论失败");
         })
         .finally(() => {
-          this.submittingComment = false
-        })
+          this.submittingComment = false;
+        });
     },
     toggleLike() {
-      const tocUserId = Number(getTocUserId())
+      const tocUserId = Number(getTocUserId());
       if (!this.canInteract) {
-        return
+        return;
       }
       if (!Number.isFinite(tocUserId) || tocUserId <= 0) {
-        this.$modal.msgError('登录信息异常，请重新登录')
-        uni.reLaunch({ url: '/pages/login' })
-        return
+        this.$modal.msgError("登录信息异常，请重新登录");
+        uni.reLaunch({ url: "/pages/login" });
+        return;
       }
-      const action = this.liked ? unlikePost : likePost
+      const action = this.liked ? unlikePost : likePost;
       action(this.postId, tocUserId)
         .then((res) => {
-          const changed = (res && res.data && res.data.changed) || false
+          const changed = (res && res.data && res.data.changed) || false;
           if (this.liked) {
             if (changed && this.post) {
-              this.post.likeCount = Math.max(0, (this.post.likeCount || 0) - 1)
+              this.post.likeCount = Math.max(0, (this.post.likeCount || 0) - 1);
             }
-            this.liked = false
-            return
+            this.liked = false;
+            return;
           }
           if (changed && this.post) {
-            this.post.likeCount = (this.post.likeCount || 0) + 1
+            this.post.likeCount = (this.post.likeCount || 0) + 1;
           }
-          this.liked = true
+          this.liked = true;
         })
         .catch(() => {
-          this.$modal.msgError('操作失败')
-        })
+          this.$modal.msgError("操作失败");
+        });
     },
     toggleBookmark() {
-      const tocUserId = Number(getTocUserId())
+      const tocUserId = Number(getTocUserId());
       if (!this.canInteract) {
-        return
+        return;
       }
       if (!Number.isFinite(tocUserId) || tocUserId <= 0) {
-        this.$modal.msgError('登录信息异常，请重新登录')
-        uni.reLaunch({ url: '/pages/login' })
-        return
+        this.$modal.msgError("登录信息异常，请重新登录");
+        uni.reLaunch({ url: "/pages/login" });
+        return;
       }
-      const action = this.bookmarked ? unbookmarkPost : bookmarkPost
+      const action = this.bookmarked ? unbookmarkPost : bookmarkPost;
       action(this.postId, tocUserId)
         .then(() => {
-          this.bookmarked = !this.bookmarked
+          this.bookmarked = !this.bookmarked;
         })
         .catch(() => {
-          this.$modal.msgError('操作失败')
-        })
+          this.$modal.msgError("操作失败");
+        });
     },
     handleReport() {
-      const tocUserId = Number(getTocUserId())
+      const tocUserId = Number(getTocUserId());
       if (!Number.isFinite(tocUserId) || tocUserId <= 0) {
-        this.$modal.msgError('登录信息异常，请重新登录')
-        uni.reLaunch({ url: '/pages/login' })
-        return
+        this.$modal.msgError("登录信息异常，请重新登录");
+        uni.reLaunch({ url: "/pages/login" });
+        return;
       }
-      const options = ['垃圾广告', '隐私泄露', '不实信息', '其他']
-      const codes = ['SPAM', 'PRIVACY', 'MISINFO', 'OTHER']
+      const options = ["垃圾广告", "隐私泄露", "不实信息", "其他"];
+      const codes = ["SPAM", "PRIVACY", "MISINFO", "OTHER"];
       uni.showActionSheet({
         itemList: options,
         success: (res) => {
-          const idx = res && res.tapIndex !== undefined ? res.tapIndex : -1
+          const idx = res && res.tapIndex !== undefined ? res.tapIndex : -1;
           if (idx < 0) {
-            return
+            return;
           }
           createReport({
             reporterTocUserId: tocUserId,
             postId: this.postId,
             reasonCode: codes[idx],
-            reasonText: options[idx]
+            reasonText: options[idx],
           })
             .then(() => {
-              uni.showToast({ title: '已举报', icon: 'success' })
+              uni.showToast({ title: "已举报", icon: "success" });
               if (this.post) {
-                this.post.reportCount = (this.post.reportCount || 0) + 1
+                this.post.reportCount = (this.post.reportCount || 0) + 1;
               }
             })
             .catch(() => {
-              this.$modal.msgError('举报失败')
-            })
-        }
-      })
-    }
-  }
-}
+              this.$modal.msgError("举报失败");
+            });
+        },
+      });
+    },
+  },
+};
 </script>
 
 <style lang="scss" scoped>
@@ -406,5 +547,50 @@ export default {
   padding: 0 16rpx;
   font-size: 26rpx;
 }
-</style>
 
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.post-image {
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 12rpx;
+  background: #f5f6f7;
+}
+
+.c-actions {
+  margin-top: 10rpx;
+}
+
+.c-reply-btn {
+  font-size: 24rpx;
+  color: #2b85e4;
+  padding: 4rpx 12rpx;
+  background: rgba(43, 133, 228, 0.08);
+  border-radius: 8rpx;
+}
+
+.reply-wrap {
+  display: flex;
+  gap: 10rpx;
+  align-items: center;
+  margin-top: 12rpx;
+  padding: 12rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+}
+
+.reply-input {
+  flex: 1;
+  height: 64rpx;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 0 14rpx;
+  font-size: 26rpx;
+  border: 1rpx solid #e8e8e8;
+}
+</style>

@@ -11,14 +11,20 @@
           @change="handleBoardChange"
         >
           <view class="picker-value">
-            {{ selectedBoardName || '请选择板块' }}
+            {{ selectedBoardName || "请选择板块" }}
           </view>
         </picker>
       </view>
 
       <view class="form-item">
         <text class="label">标题</text>
-        <input v-model="title" class="input" type="text" maxlength="200" placeholder="请输入标题（200字以内）" />
+        <input
+          v-model="title"
+          class="input"
+          type="text"
+          maxlength="200"
+          placeholder="请输入标题（200字以内）"
+        />
       </view>
 
       <view class="form-item">
@@ -33,19 +39,52 @@
 
       <view class="form-item switch-row">
         <text class="label">匿名发布</text>
-        <switch :checked="anonymousFlag" @change="handleAnonymousChange"></switch>
+        <switch
+          :checked="anonymousFlag"
+          @change="handleAnonymousChange"
+        ></switch>
+      </view>
+
+      <view class="form-item">
+        <text class="label">图片（最多9张）</text>
+        <view class="image-grid">
+          <view class="image-item" v-for="(img, idx) in images" :key="idx">
+            <image
+              :src="img"
+              mode="aspectFill"
+              class="preview-img"
+              @click="previewImage(idx)"
+            ></image>
+            <view class="remove-btn" @click="removeImage(idx)">
+              <text class="cuIcon-close"></text>
+            </view>
+          </view>
+          <view
+            class="image-item add-btn"
+            v-if="images.length < 9"
+            @click="chooseImage"
+          >
+            <text class="cuIcon-add"></text>
+          </view>
+        </view>
       </view>
     </view>
 
     <view class="submit-wrap">
-      <button class="cu-btn block bg-blue lg round" :disabled="submitting" @click="handleSubmit">发布</button>
+      <button
+        class="cu-btn block bg-blue lg round"
+        :disabled="submitting"
+        @click="handleSubmit"
+      >
+        发布
+      </button>
     </view>
   </view>
 </template>
 
 <script>
-import { createPost, listBoards } from '@/api/community'
-import { getTocUserId } from '@/utils/auth'
+import { createPost, listBoards } from "@/api/community";
+import { getTocUserId } from "@/utils/auth";
 
 export default {
   data() {
@@ -53,109 +92,137 @@ export default {
       initialBoardId: null,
       boards: [],
       boardIndex: 0,
-      title: '',
-      content: '',
+      title: "",
+      content: "",
       anonymousFlag: false,
-      submitting: false
-    }
+      submitting: false,
+      images: [],
+    };
   },
   onLoad(options) {
-    const boardId = options && options.boardId ? Number(options.boardId) : null
-    this.initialBoardId = Number.isFinite(boardId) ? boardId : null
-    this.loadBoards()
+    const boardId = options && options.boardId ? Number(options.boardId) : null;
+    this.initialBoardId = Number.isFinite(boardId) ? boardId : null;
+    this.loadBoards();
   },
   computed: {
     selectedBoardId() {
-      const board = this.boards[this.boardIndex]
-      return board ? board.id : null
+      const board = this.boards[this.boardIndex];
+      return board ? board.id : null;
     },
     selectedBoardName() {
-      const board = this.boards[this.boardIndex]
-      return board ? board.boardName : ''
-    }
+      const board = this.boards[this.boardIndex];
+      return board ? board.boardName : "";
+    },
   },
   methods: {
     loadBoards() {
       listBoards()
         .then((res) => {
-          this.boards = (res && res.data) || []
+          this.boards = (res && res.data) || [];
           if (this.boards.length === 0) {
-            this.$modal.msgError('暂无可用板块，请联系管理员创建')
-            return
+            this.$modal.msgError("暂无可用板块，请联系管理员创建");
+            return;
           }
           if (this.initialBoardId) {
-            const idx = this.boards.findIndex((b) => b.id === this.initialBoardId)
+            const idx = this.boards.findIndex(
+              (b) => b.id === this.initialBoardId
+            );
             if (idx >= 0) {
-              this.boardIndex = idx
+              this.boardIndex = idx;
             }
           }
         })
         .catch(() => {
-          this.$modal.msgError('加载板块失败')
-        })
+          this.$modal.msgError("加载板块失败");
+        });
     },
     handleBoardChange(e) {
-      const value = e && e.detail ? Number(e.detail.value) : 0
-      this.boardIndex = Number.isFinite(value) ? value : 0
+      const value = e && e.detail ? Number(e.detail.value) : 0;
+      this.boardIndex = Number.isFinite(value) ? value : 0;
     },
     handleAnonymousChange(e) {
-      this.anonymousFlag = !!(e && e.detail ? e.detail.value : false)
+      this.anonymousFlag = !!(e && e.detail ? e.detail.value : false);
+    },
+    chooseImage() {
+      const remain = 9 - this.images.length;
+      if (remain <= 0) {
+        uni.showToast({ title: "最多9张图片", icon: "none" });
+        return;
+      }
+      uni.chooseImage({
+        count: remain,
+        sizeType: ["compressed"],
+        sourceType: ["album", "camera"],
+        success: (res) => {
+          const paths = (res && res.tempFilePaths) || [];
+          this.images = this.images.concat(paths);
+        },
+      });
+    },
+    removeImage(index) {
+      this.images.splice(index, 1);
+    },
+    previewImage(index) {
+      uni.previewImage({
+        current: this.images[index],
+        urls: this.images,
+      });
     },
     handleSubmit() {
       if (!this.selectedBoardId) {
-        this.$modal.msgError('请选择板块')
-        return
+        this.$modal.msgError("请选择板块");
+        return;
       }
-      const tocUserId = Number(getTocUserId())
+      const tocUserId = Number(getTocUserId());
       if (!Number.isFinite(tocUserId) || tocUserId <= 0) {
-        this.$modal.msgError('登录信息异常，请重新登录')
-        uni.reLaunch({ url: '/pages/login' })
-        return
+        this.$modal.msgError("登录信息异常，请重新登录");
+        uni.reLaunch({ url: "/pages/login" });
+        return;
       }
-      const title = String(this.title || '').trim()
-      const content = String(this.content || '').trim()
+      const title = String(this.title || "").trim();
+      const content = String(this.content || "").trim();
       if (!title) {
-        this.$modal.msgError('请输入标题')
-        return
+        this.$modal.msgError("请输入标题");
+        return;
       }
       if (!content) {
-        this.$modal.msgError('请输入正文')
-        return
+        this.$modal.msgError("请输入正文");
+        return;
       }
 
-      this.submitting = true
-      uni.showLoading({ title: '发布中...' })
+      this.submitting = true;
+      uni.showLoading({ title: "发布中..." });
       createPost({
         boardId: this.selectedBoardId,
         authorTocUserId: tocUserId,
         title,
         content,
-        anonymousFlag: !!this.anonymousFlag
+        anonymousFlag: !!this.anonymousFlag,
       })
         .then((res) => {
-          const data = (res && res.data) || {}
-          const status = String(data.status || '')
-          if (status === 'PUBLISHED') {
-            uni.showToast({ title: '已发布', icon: 'success' })
+          const data = (res && res.data) || {};
+          const status = String(data.status || "");
+          if (status === "PUBLISHED") {
+            uni.showToast({ title: "已发布", icon: "success" });
           } else {
-            uni.showToast({ title: '已提交审核', icon: 'none' })
+            uni.showToast({ title: "已提交审核", icon: "none" });
           }
           if (data.id) {
             uni.navigateTo({
-              url: `/pages/community/post-detail?postId=${data.id}`
-            })
+              url: `/pages/community/post-detail?postId=${data.id}`,
+            });
           }
         })
         .catch(() => {
-          this.$modal.msgError('发布失败，请稍后重试')
+          this.$modal.msgError("发布失败，请稍后重试");
         })
         .finally(() => {
-          uni.hideLoading()
-          this.submitting = false
-        })
-    }
-  }
-}
+          uni.hideLoading();
+          this.submitting = false;
+        });
+    },
+  },
+};
 </script>
 
 <style lang="scss" scoped>
@@ -214,5 +281,51 @@ export default {
 
 .submit-wrap {
   margin-top: 24rpx;
+}
+
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.image-item {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: #f5f6f7;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 4rpx;
+  right: 4rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 20rpx;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24rpx;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx dashed #ccc;
+  background: #fafafa;
+  color: #999;
+  font-size: 48rpx;
 }
 </style>

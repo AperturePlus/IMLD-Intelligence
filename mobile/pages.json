@@ -1,253 +1,249 @@
 {
-	//这是注册的普通页面
+  //这是注册的普通页面
   "pages": [
     {
       "path": "pages/login",
-      "style": {  "navigationStyle":"custom"  
-      }
+      "style": { "navigationStyle": "custom" }
     },
-	
-	
-//**************************登录注册等页面开始*************************************
+
+    //**************************登录注册等页面开始*************************************
     {
       "path": "pages/register",
       "style": {
-         "navigationStyle":"custom"  
+        "navigationStyle": "custom"
       }
     },
-	
-	{
-	  "path": "pages/appeal",
-	  "style": {
-	     "navigationStyle":"custom"  
-	  }
-	},
-	  
-	  {
-	  "path": "pages/forgot-password",
-	  "style": {
-	     "navigationStyle":"custom"  
-	  }
-	  },
-	  
-	  {
-	    "path": "pages/reset-password",
-	   "style": {
-	      "navigationStyle":"custom"  
-	   }
-	  },
-	  {
-	    "path": "pages/login-admin",
-	   "style": {
-	      "navigationStyle":"custom"  
-	   }
-	  },
-	  
-	  {
-	    "path": "pages/login-doctor",
-	   "style": {
-	      "navigationStyle":"custom"  
-	   }
-	  },
-	  
-	    {
-	      "path": "pages/index",
-	      "style": {
-	        "navigationBarTitleText": "社群",
-	        "navigationStyle": "custom"
-	      }
-	    },
-	    {
-	      "path": "pages/community/post-create",
-	      "style": {
-	        "navigationBarTitleText": "发帖"
-	      }
-	    },
-		    {
-		      "path": "pages/community/post-detail",
-		      "style": {
-		        "navigationBarTitleText": "帖子详情"
-		      }
-		    },
-		    {
-		      "path": "pages/community/my-posts",
-		      "style": {
-		        "navigationBarTitleText": "我的帖子"
-		      }
-		    },
-		//***************************登录注册等页面结束*************************************
-	
-	
-	
-	
-	
-	//---------------------------管理员主界面开始--------------------------------
-	{
-	  "path": "pages/admin/index",
-	 "style": {
-	    "navigationStyle":"custom"  
-	 }
-	},
-	//------资讯发布系列页面开始--------
-	{
-	  "path": "pages/admin/publish",
-	 "style": {
-	    "navigationStyle":"custom"  
-	 }
-	},
-	
-	{
-	  "path": "pages/admin/publish-edit",
-	 "style": {
-	    "navigationStyle":"custom"  
-	 }
-	},
-	{
-	  "path": "pages/admin/profile-edit",
-	 "style": {
-	    "navigationStyle":"custom"  
-	 }
-	},
-	
-	{
-	  "path": "pages/admin/post-review",
-	 "style": {
-	    "navigationStyle":"custom"  ,
-		"navigationBarTitleText": "帖子审核"
-	 }
-	},
-	
-	{
-	  "path": "pages/admin/report-review",
-	 "style": {
-	    "navigationStyle":"custom"  ,
-		"navigationBarTitleText": "举报审核"
-	 }
-	},
-	//------资讯发布系列页面结束--------
-	//---------------------------管理员主界面结束--------------------------------
-	
-	
-	
-	
-	
-	//*****************主页页面***************************
-   
-	{ 
+
+    {
+      "path": "pages/appeal",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/forgot-password",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/reset-password",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/login-admin",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/login-doctor",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/index",
+      "style": {
+        "navigationBarTitleText": "社群",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/community/post-create",
+      "style": {
+        "navigationBarTitleText": "发帖"
+      }
+    },
+    {
+      "path": "pages/community/post-detail",
+      "style": {
+        "navigationBarTitleText": "帖子详情"
+      }
+    },
+    {
+      "path": "pages/community/my-posts",
+      "style": {
+        "navigationBarTitleText": "我的帖子"
+      }
+    },
+    {
+      "path": "pages/community/my-bookmarks",
+      "style": {
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
+      "path": "pages/community/notifications",
+      "style": {
+        "navigationBarTitleText": "通知中心"
+      }
+    },
+    //***************************登录注册等页面结束*************************************
+
+    //---------------------------管理员主界面开始--------------------------------
+    {
+      "path": "pages/admin/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    //------资讯发布系列页面开始--------
+    {
+      "path": "pages/admin/publish",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/admin/publish-edit",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/admin/profile-edit",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/admin/post-review",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "帖子审核"
+      }
+    },
+
+    {
+      "path": "pages/admin/report-review",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "举报审核"
+      }
+    },
+    //------资讯发布系列页面结束--------
+    //---------------------------管理员主界面结束--------------------------------
+
+    //*****************主页页面***************************
+
+    {
       "path": "pages/question/index",
       "style": {
         "navigationBarTitleText": "对话"
       }
     },
-	
-	{
-	  "path": "pages/articles/all",
-	  "style": {
-	    "navigationBarTitleText": "全部资讯"
-	  }
-	},
-	
-	
-	//*****************个人中心页面***************************
+
+    {
+      "path": "pages/articles/all",
+      "style": {
+        "navigationBarTitleText": "全部资讯"
+      }
+    },
+
+    //*****************个人中心页面***************************
     {
       "path": "pages/mine/index",
       "style": {
         "navigationBarTitleText": "个人中心"
       }
     },
-	{
-	  "path": "pages/mine/settings/index",
-	  "style": {
-	    "navigationBarTitleText": "账号设置"
-	  }
-	},
-	{
-	  "path": "pages/user-detail",
-	  "style": {
-	    "navigationBarTitleText": "用户详情"
-	  }
-	},
+    {
+      "path": "pages/mine/settings/index",
+      "style": {
+        "navigationBarTitleText": "账号设置"
+      }
+    },
+    {
+      "path": "pages/user-detail",
+      "style": {
+        "navigationBarTitleText": "用户详情"
+      }
+    },
     {
       "path": "pages/mine/info/index",
       "style": {
         "navigationBarTitleText": "个人信息"
       }
     },
-	{
-	  "path": "pages/mine/search/index",
-	  "style": {
-	    "navigationBarTitleText": "用户搜索"
-	  }
-	},
-	
-	{
-	  "path": "pages/mine/search/detail",
-	  "style": {
-	    "navigationBarTitleText": "用户详情"
-	  }
-	},
-	{
-	  "path": "pages/mine/search/report",
-	  "style": {
-	    "navigationBarTitleText": "用户举报"
-	  }
-	},
-	
-	{
-	  "path": "pages/mine/search/evaluate",
-	  "style": {
-	    "navigationBarTitleText": "用户评价"
-	  }
-	},
-	
+    {
+      "path": "pages/mine/search/index",
+      "style": {
+        "navigationBarTitleText": "用户搜索"
+      }
+    },
+
+    {
+      "path": "pages/mine/search/detail",
+      "style": {
+        "navigationBarTitleText": "用户详情"
+      }
+    },
+    {
+      "path": "pages/mine/search/report",
+      "style": {
+        "navigationBarTitleText": "用户举报"
+      }
+    },
+
+    {
+      "path": "pages/mine/search/evaluate",
+      "style": {
+        "navigationBarTitleText": "用户评价"
+      }
+    },
+
     {
       "path": "pages/mine/info/edit",
       "style": {
         "navigationBarTitleText": "编辑个人信息"
       }
     },
-	
-	{
-	      "path": "pages/mine/info/confirm-page",
-	      "style": {
-	        "navigationBarTitleText": "确认信息"
-	      }
-	},
-	
+
+    {
+      "path": "pages/mine/info/confirm-page",
+      "style": {
+        "navigationBarTitleText": "确认信息"
+      }
+    },
+
     {
       "path": "pages/mine/pwd/index",
       "style": {
         "navigationBarTitleText": "修改密码"
       }
     },
-	
-	{
-	  "path": "pages/assessment-form",
-	  "style": {
-	    "navigationBarTitleText": "我的指标"
-	  }
-	},
-	
-	{
-	  "path": "pages/assessment-result",
-	  "style": {
-	    "navigationBarTitleText": "我的数据"
-	  }
-	},
-	
-	{
-	  "path": "pages/recipe/index",
-	  "style": {
-	    "navigationBarTitleText": "我的食谱"
-	  }
-	},
-	
-	//*****************************其他不重要的页面***************************************
-	
 
-	
-	
+    {
+      "path": "pages/assessment-form",
+      "style": {
+        "navigationBarTitleText": "我的指标"
+      }
+    },
 
+    {
+      "path": "pages/assessment-result",
+      "style": {
+        "navigationBarTitleText": "我的数据"
+      }
+    },
+
+    {
+      "path": "pages/recipe/index",
+      "style": {
+        "navigationBarTitleText": "我的食谱"
+      }
+    },
+
+    //*****************************其他不重要的页面***************************************
 
     {
       "path": "pages/common/webview/index",
@@ -262,10 +258,7 @@
       }
     }
   ],
-  
-  
-  
-  
+
   //--------------------这是注册页面的下面的导航栏----------------------
   "tabBar": {
     "color": "#96563e",
@@ -277,7 +270,7 @@
         "pagePath": "pages/index",
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/tabbar/home.png",
-	        "text": "社群"
+        "text": "社群"
       },
       {
         "pagePath": "pages/assessment-result",
@@ -285,12 +278,12 @@
         "selectedIconPath": "static/images/tabbar/basics.png",
         "text": "评估"
       },
-	 {
-	   "pagePath": "pages/assessment-form",
-	   "iconPath": "static/images/tabbar/release.png",
-	   "selectedIconPath": "static/images/tabbar/release.png",
-	   "text": "指标"
-	 },
+      {
+        "pagePath": "pages/assessment-form",
+        "iconPath": "static/images/tabbar/release.png",
+        "selectedIconPath": "static/images/tabbar/release.png",
+        "text": "指标"
+      },
       {
         "pagePath": "pages/recipe/index",
         "iconPath": "static/images/tabbar/component.png",
@@ -305,10 +298,10 @@
       }
     ]
   },
-  
+
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "饮食管理",
-    "navigationBarBackgroundColor":  "#ffffff"
+    "navigationBarBackgroundColor": "#ffffff"
   }
 }

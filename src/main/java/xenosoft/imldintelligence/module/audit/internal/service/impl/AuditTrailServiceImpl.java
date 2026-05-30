@@ -59,7 +59,7 @@ public class AuditTrailServiceImpl implements AuditTrailService {
             isolation = Isolation.READ_COMMITTED
     )
     public AuditLog recordAudit(AuditRecordCommand command) {
-        requireNonNull(command, "command is required");
+        requireNonNull(command);
         ResolvedContext context = resolveContext(
                 command.getTenantId(),
                 command.getUserId(),
@@ -104,7 +104,7 @@ public class AuditTrailServiceImpl implements AuditTrailService {
             isolation = Isolation.READ_COMMITTED
     )
     public SensitiveDataAccessLog recordSensitiveAccess(SensitiveAccessRecordCommand command) {
-        requireNonNull(command, "command is required");
+        requireNonNull(command);
         ResolvedContext context = resolveContext(
                 command.getTenantId(),
                 command.getUserId(),
@@ -142,7 +142,7 @@ public class AuditTrailServiceImpl implements AuditTrailService {
             isolation = Isolation.READ_COMMITTED
     )
     public ModelInvocationLog recordModelInvocation(ModelInvocationRecordCommand command) {
-        requireNonNull(command, "command is required");
+        requireNonNull(command);
         ResolvedContext context = resolveContext(
                 command.getTenantId(),
                 null,
@@ -240,9 +240,9 @@ public class AuditTrailServiceImpl implements AuditTrailService {
         return null;
     }
 
-    private void requireNonNull(Object value, String message) {
+    private void requireNonNull(Object value) {
         if (value == null) {
-            throw new IllegalArgumentException(message);
+            throw new IllegalArgumentException("command is required");
         }
     }
 
