@@ -36,7 +36,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional
 @DisabledInAotMode
 class AuditTrailServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

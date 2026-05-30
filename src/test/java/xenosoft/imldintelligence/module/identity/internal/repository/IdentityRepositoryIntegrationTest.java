@@ -145,7 +145,8 @@ class IdentityRepositoryIntegrationTest extends AbstractPostgresIntegrationTest 
 
         userRoleRel.setGrantedAt(OffsetDateTime.now().plusMinutes(1).withNano(0));
         userRoleRelRepository.update(userRoleRel);
-        assertThat(userRoleRelRepository.findById(tenant.getId(), userRoleRel.getId())).get().extracting(UserRoleRel::getGrantedAt).isEqualTo(userRoleRel.getGrantedAt());
+        assertThat(userRoleRelRepository.findById(tenant.getId(), userRoleRel.getId())).get()
+                .satisfies(actual -> assertThat(actual.getGrantedAt().toInstant()).isEqualTo(userRoleRel.getGrantedAt().toInstant()));
 
         assertThat(userRoleRelRepository.deleteByUserIdAndRoleId(tenant.getId(), userAccount.getId(), role.getId())).isTrue();
         assertThat(userRoleRelRepository.findById(tenant.getId(), userRoleRel.getId())).isEmpty();
