@@ -8,7 +8,7 @@ spring:
       dev-private-bridge: dev,private,private-bridge
   datasource:
     driver-class-name: ${IMLD_DB_DRIVER:org.postgresql.Driver}
-    url: ${IMLD_DB_URL:jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8}
+    url: ${IMLD_DB_URL:jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8}
     username: ${IMLD_DB_USERNAME:imld_user}
     password: ${IMLD_DB_PASSWORD:system}
   flyway:

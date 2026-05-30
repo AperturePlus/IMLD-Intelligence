@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8
+    url: jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8
     username: imld_user
     password: system
   sql:
