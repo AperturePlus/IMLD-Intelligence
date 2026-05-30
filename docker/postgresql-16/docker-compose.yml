@@ -1,3 +1,9 @@
+# ── Invocation ──────────────────────────────────────────────
+# This compose file MUST be run from the docker/postgresql-16/ directory:
+#   cd docker/postgresql-16 && docker compose up -d
+# The Flyway volume mount (../../src/…) is relative to this directory.
+# ────────────────────────────────────────────────────────────
+
 services:
   postgresql:
     image: postgres:16
@@ -9,13 +15,39 @@ services:
       POSTGRES_PASSWORD: system
       TZ: Asia/Shanghai
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - ./data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U imld_user -d imld_core"]
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - imld-net
 
+  flyway:
+    image: flyway/flyway:11
+    container_name: imld-flyway-migrator
+    restart: on-failure
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    volumes:
+      - ../../src/main/resources/db/migration:/flyway/sql:ro
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgresql:5432/imld_core
+      FLYWAY_USER: imld_user
+      FLYWAY_PASSWORD: system
+      FLYWAY_SCHEMAS: public
+      FLYWAY_TABLE: flyway_schema_history
+      FLYWAY_BASELINE_ON_MIGRATE: "true"
+      FLYWAY_BASELINE_VERSION: "1"
+      FLYWAY_CONNECT_RETRIES: 60
+    command: migrate
+    networks:
+      - imld-net
+
+networks:
+  imld-net:
+    driver: bridge

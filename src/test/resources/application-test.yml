@@ -1,8 +1,9 @@
 spring:
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema/01-identity.sql,classpath:schema/02-clinical.sql,classpath:schema/03-diagnosis-report.sql,classpath:schema/04-careplan-screening-payment.sql,classpath:schema/05-notify-integration-audit.sql,classpath:schema/99-comments.sql
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    clean-disabled: false
 
 mybatis:
   mapper-locations: classpath*:xenosoft/imldintelligence/module/**/internal/repository/*.xml

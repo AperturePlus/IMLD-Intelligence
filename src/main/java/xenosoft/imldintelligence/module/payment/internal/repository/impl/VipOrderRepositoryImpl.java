@@ -8,6 +8,7 @@ import xenosoft.imldintelligence.module.payment.internal.model.VipOrder;
 import xenosoft.imldintelligence.module.payment.internal.repository.VipOrderRepository;
 import xenosoft.imldintelligence.module.payment.internal.repository.mybatis.VipOrderMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,6 +61,36 @@ public class VipOrderRepositoryImpl implements VipOrderRepository {
                 .eq(VipOrder::getTenantId, vipOrder.getTenantId())
                 .eq(VipOrder::getId, vipOrder.getId()));
         return vipOrder;
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         OffsetDateTime paidAt) {
+        LambdaUpdateWrapper<VipOrder> wrapper = new LambdaUpdateWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .eq(VipOrder::getId, id)
+                .eq(VipOrder::getOrderStatus, expectedStatus)
+                .set(VipOrder::getOrderStatus, targetStatus)
+                .set(VipOrder::getPaidAt, paidAt);
+        return vipOrderMapper.update(null, wrapper) > 0;
+    }
+
+    @Override
+    public boolean updateStatusByOrderNoIfCurrent(Long tenantId,
+                                                  String orderNo,
+                                                  String expectedStatus,
+                                                  String targetStatus,
+                                                  OffsetDateTime paidAt) {
+        LambdaUpdateWrapper<VipOrder> wrapper = new LambdaUpdateWrapper<VipOrder>()
+                .eq(VipOrder::getTenantId, tenantId)
+                .eq(VipOrder::getOrderNo, orderNo)
+                .eq(VipOrder::getOrderStatus, expectedStatus)
+                .set(VipOrder::getOrderStatus, targetStatus)
+                .set(VipOrder::getPaidAt, paidAt);
+        return vipOrderMapper.update(null, wrapper) > 0;
     }
 
     @Override

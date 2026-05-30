@@ -62,6 +62,14 @@ class NotifyRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {
         notificationMessageRepository.update(message);
         assertThat(notificationMessageRepository.findById(tenantA.getId(), message.getId())).get().extracting(NotificationMessage::getStatus).isEqualTo("SENT");
 
+        OffsetDateTime finalSentAt = OffsetDateTime.now().plusMinutes(1).withNano(0);
+        assertThat(notificationMessageRepository.updateStatusIfCurrent(
+                tenantA.getId(), message.getId(), "SENT", "FAILED", finalSentAt)).isTrue();
+        assertThat(notificationMessageRepository.updateStatusIfCurrent(
+                tenantA.getId(), message.getId(), "SENT", "FAILED", finalSentAt)).isFalse();
+        assertThat(notificationMessageRepository.findById(tenantA.getId(), message.getId())).get()
+                .extracting(NotificationMessage::getStatus).isEqualTo("FAILED");
+
         assertThat(notificationMessageRepository.deleteById(tenantA.getId(), message.getId())).isTrue();
         assertThat(notificationMessageRepository.findById(tenantA.getId(), message.getId())).isEmpty();
     }

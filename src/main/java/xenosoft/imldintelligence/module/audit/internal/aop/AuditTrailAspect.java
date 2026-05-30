@@ -10,6 +10,7 @@ import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import xenosoft.imldintelligence.module.audit.internal.service.AuditTrailService;
 import xenosoft.imldintelligence.module.audit.internal.service.command.AuditRecordCommand;
@@ -29,7 +30,7 @@ import java.lang.reflect.Method;
 public class AuditTrailAspect {
     private final AuditTrailService auditTrailService;
     private final ExpressionParser expressionParser = new SpelExpressionParser();
-    private final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
+    private final @NonNull ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 
     public AuditTrailAspect(AuditTrailService auditTrailService) {
         this.auditTrailService = auditTrailService;
@@ -42,6 +43,7 @@ public class AuditTrailAspect {
     public Object aroundAuditedOperation(ProceedingJoinPoint joinPoint, AuditedOperation auditedOperation) throws Throwable {
         Object result = null;
         Throwable businessError = null;
+        Object[] args = joinPoint.getArgs() == null ? new Object[0] : joinPoint.getArgs();
 
         try {
             result = joinPoint.proceed();
@@ -51,7 +53,7 @@ public class AuditTrailAspect {
 
         if (businessError == null || !auditedOperation.successOnly()) {
             Method method = resolveMethod(joinPoint);
-            String resourceId = evaluateExpression(auditedOperation.resourceIdExpression(), method, joinPoint.getArgs(), result, businessError);
+            String resourceId = evaluateExpression(auditedOperation.resourceIdExpression(), method, args, result, businessError);
 
             AuditRecordCommand command = new AuditRecordCommand();
             command.setAction(auditedOperation.action());
@@ -82,6 +84,7 @@ public class AuditTrailAspect {
     public Object aroundSensitiveAccess(ProceedingJoinPoint joinPoint, SensitiveAccessed sensitiveAccessed) throws Throwable {
         Object result = null;
         Throwable businessError = null;
+        Object[] args = joinPoint.getArgs() == null ? new Object[0] : joinPoint.getArgs();
 
         try {
             result = joinPoint.proceed();
@@ -90,8 +93,11 @@ public class AuditTrailAspect {
         }
 
         Method method = resolveMethod(joinPoint);
-        String resourceId = evaluateExpression(sensitiveAccessed.resourceIdExpression(), method, joinPoint.getArgs(), result, businessError);
-        String reason = evaluateExpression(sensitiveAccessed.reasonExpression(), method, joinPoint.getArgs(), result, businessError);
+        String resourceId = evaluateExpression(sensitiveAccessed.resourceIdExpression(), method, args != null ? args : new Object[0], result, businessError);
+        String reason = null;
+        if (args != null) {
+            reason = evaluateExpression(sensitiveAccessed.reasonExpression(), method, args, result, businessError);
+        }
 
         SensitiveAccessRecordCommand command = new SensitiveAccessRecordCommand();
         command.setSensitiveType(sensitiveAccessed.sensitiveType());
@@ -118,7 +124,7 @@ public class AuditTrailAspect {
     /**
      * Evaluates a SpEL expression against method arguments and execution result/error variables.
      */
-    private String evaluateExpression(String expression, Method method, Object[] args, Object result, Throwable error) {
+    private String evaluateExpression(String expression, Method method, @NonNull Object[] args, Object result, Throwable error) {
         if (expression == null || expression.isBlank()) {
             return null;
         }

@@ -22,14 +22,18 @@
               <el-avatar :size="46" :src="patient.avatar" />
               <div class="item-info">
                 <div class="item-header">
-                  <span class="name">{{ patient.name }}</span>
+                  <div class="patient-identity">
+                    <span class="patient-no-label">病号</span>
+                    <span class="patient-no-value">{{ patient.id }}</span>
+                    <span class="patient-name">{{ patient.name }}</span>
+                  </div>
                   <el-tag 
                     v-if="patient.aiStatus === '已诊断'" 
                     size="small" type="success" effect="dark" round
                   >已出报告</el-tag>
                 </div>
                 <div class="item-sub">
-                  {{ patient.gender }} | {{ patient.age }} 岁 | ID: {{ patient.id }}
+                  {{ patient.gender }} | {{ patient.age }} 岁
                 </div>
               </div>
             </div>
@@ -41,13 +45,29 @@
         <el-card 
           class="right-panel" 
           shadow="never"
-          v-loading="isDiagnosing"
-          element-loading-text="IMLD 早筛诊辅 AI 正在解析临床表型与多模态数据，请稍候..."
+          v-loading="isBusy"
+          :element-loading-text="loadingText"
           element-loading-background="rgba(255, 255, 255, 0.9)"
         >
           
           <div v-if="!selectedPatient" class="empty-state">
             <el-empty description="请从左侧列表选择一位患者进行 AI 辅助诊断" />
+          </div>
+
+          <div
+            v-else-if="selectedPatient && !diagnosisResult && selectedPatient.aiStatus === diagnosedStatus"
+            class="ready-state"
+          >
+            <el-avatar :size="80" :src="selectedPatient.avatar" style="margin-bottom: 20px;" />
+            <el-text size="large" tag="b" style="font-size: 22px; display: block; margin-bottom: 12px;">
+              {{ selectedPatient.name }} 已完成 AI 报告
+            </el-text>
+            <el-text type="info" style="margin-bottom: 30px; display: block;">
+              已出报告患者无需再次启动大模型，系统将直接展示历史报告。
+            </el-text>
+            <el-button type="primary" plain size="large" :icon="Download" @click="loadSelectedPatientReport">
+              重新调取已出报告
+            </el-button>
           </div>
 
           <div v-else-if="selectedPatient && !diagnosisResult" class="ready-state">
@@ -58,7 +78,14 @@
             <el-text type="info" style="margin-bottom: 30px; display: block;">
               系统已提取该患者的基础档案、生化指标及临床表征数据。
             </el-text>
-            <el-button type="primary" size="large" :icon="Cpu" class="pulsing-btn" @click="startDiagnosis">
+            <el-button
+              type="primary"
+              size="large"
+              :icon="Cpu"
+              class="pulsing-btn"
+              :disabled="isBusy"
+              @click="startDiagnosis"
+            >
               启动 AI 智能筛查大模型
             </el-button>
           </div>
@@ -170,17 +197,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { Cpu, Aim, Download, Microphone, Food } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import diagnosisApi from '../../api/diagnosis'
 import type { DiagnosisQueuePatient, DiagnosisResult } from '../../api/types'
 
+const DIAGNOSED_STATUS = '已诊断'
+const UNDIAGNOSED_STATUS = '未诊断'
+const MAX_REPORTED_PATIENT_COUNT = 3
+
 const isDiagnosing = ref(false)
+const isLoadingReportedResult = ref(false)
 const loadingQueue = ref(false)
 const selectedPatient = ref<DiagnosisQueuePatient | null>(null)
 const diagnosisResult = ref<DiagnosisResult | null>(null)
 const patients = ref<DiagnosisQueuePatient[]>([])
+const seedReportedPatientIds = ref<string[]>([])
+const diagnosedStatus = DIAGNOSED_STATUS
+
+const isBusy = computed(() => isDiagnosing.value || isLoadingReportedResult.value)
+
+const loadingText = computed(() => {
+  if (isDiagnosing.value) {
+    return 'IMLD 早筛诊辅 AI 正在解析临床表型与数据，请稍候...'
+  }
+  return '正在调取该患者的历史 AI 报告，请稍候...'
+})
 
 const customColors = [
   { color: '#67c23a', percentage: 30 },
@@ -188,11 +231,72 @@ const customColors = [
   { color: '#f56c6c', percentage: 100 }
 ]
 
+const resolveSeedReportedPatientIds = (items: DiagnosisQueuePatient[]): string[] => {
+  return items
+    .filter((item) => item.aiStatus === DIAGNOSED_STATUS)
+    .slice(0, MAX_REPORTED_PATIENT_COUNT)
+    .map((item) => item.id)
+}
+
+const applySeedStatus = (items: DiagnosisQueuePatient[]): DiagnosisQueuePatient[] => {
+  if (seedReportedPatientIds.value.length === 0) {
+    seedReportedPatientIds.value = resolveSeedReportedPatientIds(items)
+  }
+  if (seedReportedPatientIds.value.length === 0) {
+    return items
+  }
+
+  const reportedSet = new Set(seedReportedPatientIds.value)
+  return items.map((item) => ({
+    ...item,
+    aiStatus: reportedSet.has(item.id) ? DIAGNOSED_STATUS : UNDIAGNOSED_STATUS
+  }))
+}
+
+const syncSelectedPatientFromQueue = () => {
+  if (!selectedPatient.value) {
+    return
+  }
+  selectedPatient.value = patients.value.find((item) => item.id === selectedPatient.value?.id) || null
+}
+
+const resetMockQueueStatuses = () => {
+  patients.value = applySeedStatus(patients.value)
+  syncSelectedPatientFromQueue()
+}
+
+const loadReportedDiagnosis = async (patient: DiagnosisQueuePatient) => {
+  isLoadingReportedResult.value = true
+  try {
+    const res = await diagnosisApi.getLatestDiagnosisResultByPatient(patient.id)
+    if (!res.data) {
+      seedReportedPatientIds.value = seedReportedPatientIds.value.filter((id) => id !== patient.id)
+      resetMockQueueStatuses()
+      ElMessage.warning('该患者暂无已出报告，请点击“启动 AI 智能筛查大模型”')
+      return
+    }
+    diagnosisResult.value = res.data
+  } catch {
+    ElMessage.error('加载历史报告失败，请稍后重试')
+  } finally {
+    isLoadingReportedResult.value = false
+  }
+}
+
+const loadSelectedPatientReport = async () => {
+  const patient = selectedPatient.value
+  if (!patient || isBusy.value) {
+    return
+  }
+  await loadReportedDiagnosis(patient)
+}
+
 const fetchQueue = async () => {
   loadingQueue.value = true
   try {
     const res = await diagnosisApi.getAiQueue()
-    patients.value = res.data.items || []
+    patients.value = applySeedStatus(res.data.items || [])
+    syncSelectedPatientFromQueue()
   } catch {
     ElMessage.error('加载待诊队列失败，请稍后重试')
   } finally {
@@ -200,19 +304,28 @@ const fetchQueue = async () => {
   }
 }
 
-const handleSelectPatient = (patient: DiagnosisQueuePatient) => {
-  if (isDiagnosing.value) {
-    ElMessage.warning('AI 正在诊断中，请稍后再切换患者')
+const handleSelectPatient = async (patient: DiagnosisQueuePatient) => {
+  if (isBusy.value) {
+    ElMessage.warning('当前正在处理任务，请稍后再切换患者')
     return
   }
 
   selectedPatient.value = patient
   diagnosisResult.value = null
+
+  if (patient.aiStatus === DIAGNOSED_STATUS) {
+    await loadReportedDiagnosis(patient)
+  }
 }
 
 const startDiagnosis = async () => {
   const patient = selectedPatient.value
-  if (!patient || isDiagnosing.value) {
+  if (!patient || isBusy.value) {
+    return
+  }
+
+  if (patient.aiStatus === DIAGNOSED_STATUS) {
+    await loadReportedDiagnosis(patient)
     return
   }
 
@@ -220,8 +333,8 @@ const startDiagnosis = async () => {
   try {
     const res = await diagnosisApi.runAiDiagnosis(patient.id)
     diagnosisResult.value = res.data
-    patient.aiStatus = '已诊断'
-    ElMessage.success('AI 辅助诊断已完成')
+    resetMockQueueStatuses()
+    ElMessage.success('AI 辅助诊断已完成，患者队列状态已重置')
   } catch {
     ElMessage.error('AI 诊断失败，请稍后重试')
   } finally {
@@ -290,10 +403,32 @@ onMounted(() => {
   margin-bottom: 6px;
 }
 
-.item-header .name {
-  font-size: 16px;
-  font-weight: bold;
+.patient-identity {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.patient-no-label {
+  font-size: 12px;
+  color: #909399;
+  letter-spacing: 1px;
+}
+
+.patient-no-value {
+  font-size: 17px;
+  font-weight: 700;
   color: #303133;
+}
+
+.patient-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-sub {

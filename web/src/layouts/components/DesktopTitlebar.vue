@@ -1,63 +1,62 @@
 <template>
   <header class="desktop-titlebar" :class="{ 'is-maximized': windowState.isMaximized }">
-    <div class="titlebar-brand drag-region">
-      <span class="brand-mark">
-        <span class="brand-mark__dot"></span>
-      </span>
-      <div class="brand-copy">
-        <span class="brand-copy__eyebrow">{{ BRANDING.shortName }}</span>
-        <strong class="brand-copy__name">{{ BRANDING.workspaceName }}</strong>
-      </div>
+    <div class="titlebar-start drag-region">
+      <span class="brand-indicator"></span>
+      <span class="brand-name">{{ BRANDING.workspaceName }}</span>
     </div>
 
-    <div class="titlebar-context drag-region" @dblclick="toggleMaximize">
-      <span class="context-section">{{ currentSectionTitle }}</span>
-      <strong class="context-title">{{ currentPageTitle }}</strong>
+    <div class="titlebar-center drag-region" @dblclick="toggleMaximize">
+      <span class="context-label">{{ currentPageTitle }}</span>
     </div>
 
-    <div class="titlebar-actions no-drag">
+    <div class="titlebar-end no-drag">
       <button
         v-if="showHomeShortcut"
         type="button"
-        class="home-shortcut"
+        class="home-btn"
         :class="{ 'is-active': route.path === homePath }"
         @click="goHome"
       >
-        <span class="home-shortcut__icon"></span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 6L8 2L14 6V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M6 14V9H10V14" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
         <span>首页</span>
       </button>
 
       <div class="window-controls">
         <button
           type="button"
-          class="window-control"
+          class="wc-btn"
           aria-label="最小化"
           @click="minimizeWindow"
         >
-          <span class="window-control__icon window-control__icon--minimize"></span>
+          <svg width="12" height="12" viewBox="0 0 12 12"><line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         </button>
         <button
           type="button"
-          class="window-control"
+          class="wc-btn"
           :aria-label="windowState.isMaximized ? '还原窗口' : '最大化窗口'"
           @click="toggleMaximize"
         >
-          <span
-            class="window-control__icon"
-            :class="
-              windowState.isMaximized
-                ? 'window-control__icon--restore'
-                : 'window-control__icon--maximize'
-            "
-          ></span>
+          <svg v-if="!windowState.isMaximized" width="12" height="12" viewBox="0 0 12 12">
+            <rect x="2" y="2" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/>
+          </svg>
+          <svg v-else width="12" height="12" viewBox="0 0 12 12">
+            <rect x="3.5" y="1" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <rect x="1.5" y="3.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2" fill="var(--electron-titlebar-bg, #fff)"/>
+          </svg>
         </button>
         <button
           type="button"
-          class="window-control window-control--close"
+          class="wc-btn wc-btn--close"
           aria-label="关闭窗口"
           @click="closeWindow"
         >
-          <span class="window-control__icon window-control__icon--close"></span>
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <line x1="2.5" y1="2.5" x2="9.5" y2="9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <line x1="9.5" y1="2.5" x2="2.5" y2="9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -78,7 +77,6 @@ const windowState = ref<ElectronWindowState>({
   isFullscreen: false
 })
 
-const currentSectionTitle = computed(() => route.meta.sectionTitle ?? '临床工作台')
 const currentPageTitle = computed(() => route.meta.title ?? '首页')
 const showHomeShortcut = computed(() => route.path.startsWith('/center'))
 
@@ -138,16 +136,17 @@ watch(
   right: 0;
   z-index: 2000;
   display: grid;
-  grid-template-columns: minmax(220px, auto) minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
+  gap: 0;
   height: var(--electron-titlebar-safe-top);
-  padding: 0 10px 0 14px;
+  padding: 0;
   background: var(--electron-titlebar-bg);
   border-bottom: 1px solid var(--electron-titlebar-border);
   box-shadow: var(--electron-titlebar-shadow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px) saturate(1.6);
   user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .desktop-titlebar.is-maximized {
@@ -162,242 +161,139 @@ watch(
   -webkit-app-region: no-drag;
 }
 
-.titlebar-brand {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: linear-gradient(160deg, rgba(15, 109, 141, 0.16), rgba(34, 163, 159, 0.28));
-  border: 1px solid rgba(15, 109, 141, 0.16);
-}
-
-.brand-mark__dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(155deg, #0f6d8d, #22a39f);
-  box-shadow: 0 0 0 4px rgba(34, 163, 159, 0.12);
-}
-
-.brand-copy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.brand-copy__eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #6c7a89;
-}
-
-.brand-copy__name {
-  font-size: 13px;
-  color: #203143;
-  white-space: nowrap;
-}
-
-.titlebar-context {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-}
-
-.context-section {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #718295;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.context-title {
-  font-size: 14px;
-  color: #1f2f41;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.titlebar-actions {
+.titlebar-start {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 0 8px 0 14px;
+  height: 100%;
 }
 
-.home-shortcut {
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #2f4257;
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.home-shortcut:hover {
-  background: #ffffff;
-  border-color: rgba(34, 163, 159, 0.32);
-  transform: translateY(-1px);
-}
-
-.home-shortcut.is-active {
-  background: rgba(15, 109, 141, 0.1);
-  border-color: rgba(15, 109, 141, 0.22);
-}
-
-.home-shortcut__icon {
+.brand-indicator {
   width: 10px;
   height: 10px;
-  display: inline-block;
-  border: 1.4px solid currentColor;
-  border-bottom-width: 0;
-  transform: translateY(1px) rotate(45deg);
-  border-radius: 2px 2px 0 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  box-shadow: 0 0 6px rgba(15, 109, 141, 0.35);
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.titlebar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 12px;
+  overflow: hidden;
+}
+
+.context-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+.titlebar-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 0;
+  height: 100%;
+}
+
+.home-btn {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.home-btn:hover {
+  background: rgba(15, 109, 141, 0.06);
+  color: var(--brand-primary);
+  border-color: rgba(15, 109, 141, 0.2);
+}
+
+.home-btn.is-active {
+  background: rgba(15, 109, 141, 0.1);
+  color: var(--brand-primary);
+  border-color: rgba(15, 109, 141, 0.24);
 }
 
 .window-controls {
   display: inline-flex;
-  align-items: stretch;
-  margin-left: 2px;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  background: rgba(255, 255, 255, 0.56);
+  align-items: center;
+  height: 100%;
+  gap: 0;
 }
 
-.window-control {
+.wc-btn {
   position: relative;
-  width: 46px;
-  height: calc(var(--electron-titlebar-safe-top) - 10px);
+  width: 40px;
+  height: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 0;
   background: transparent;
-  color: #32475b;
+  color: #94a3b8;
   cursor: pointer;
-  transition:
-    background-color 0.16s ease,
-    color 0.16s ease;
+  transition: all 0.12s ease;
 }
 
-.window-control:hover {
+.wc-btn:hover {
+  background: rgba(15, 23, 42, 0.05);
+  color: #334155;
+}
+
+.wc-btn:active {
   background: rgba(15, 23, 42, 0.08);
 }
 
-.window-control--close:hover {
-  background: #e5484d;
+.wc-btn--close:hover {
+  background: #ef4444;
   color: #ffffff;
 }
 
-.window-control__icon {
-  position: relative;
-  width: 10px;
-  height: 10px;
-  display: inline-block;
-}
-
-.window-control__icon--minimize::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1.4px;
-  background: currentColor;
-  transform: translateY(-50%);
-}
-
-.window-control__icon--maximize {
-  border: 1.4px solid currentColor;
-}
-
-.window-control__icon--restore::before,
-.window-control__icon--restore::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border: 1.4px solid currentColor;
-  background: transparent;
-}
-
-.window-control__icon--restore::before {
-  top: 1px;
-  right: 0;
-}
-
-.window-control__icon--restore::after {
-  left: 0;
-  bottom: 0;
-  background: var(--electron-titlebar-bg);
-}
-
-.window-control__icon--close::before,
-.window-control__icon--close::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 1.4px;
-  background: currentColor;
-}
-
-.window-control__icon--close::before {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.window-control__icon--close::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
+.wc-btn--close:active {
+  background: #dc2626;
 }
 
 @media (max-width: 960px) {
-  .desktop-titlebar {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 12px;
-  }
-
-  .brand-copy__eyebrow {
-    display: none;
-  }
-
-  .context-section {
+  .brand-name {
     display: none;
   }
 }
 
 @media (max-width: 720px) {
-  .brand-copy__name,
-  .home-shortcut {
+  .brand-name,
+  .home-btn {
     display: none;
   }
 
-  .window-control {
-    width: 42px;
+  .wc-btn {
+    width: 36px;
   }
 }
 </style>

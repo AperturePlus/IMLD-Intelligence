@@ -1,6 +1,8 @@
 package xenosoft.imldintelligence.module.identity.internal.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import xenosoft.imldintelligence.module.identity.api.dto.IdentityApiDtos;
 import xenosoft.imldintelligence.module.identity.internal.model.Patient;
@@ -14,6 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
@@ -37,6 +40,7 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Patient createPatient(Long tenantId, IdentityApiDtos.Request.CreatePatientRequest request) {
         Patient patient = new Patient();
         patient.setTenantId(tenantId);
@@ -59,6 +63,7 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Patient bindExternalId(Long tenantId, Long patientId,
                                    IdentityApiDtos.Request.BindExternalIdRequest request) {
         Patient patient = patientRepository.findById(tenantId, patientId)

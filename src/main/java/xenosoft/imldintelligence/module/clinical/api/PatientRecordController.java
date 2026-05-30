@@ -1,14 +1,28 @@
 package xenosoft.imldintelligence.module.clinical.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.RequiredArgsConstructor;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import lombok.RequiredArgsConstructor;
 import xenosoft.imldintelligence.common.CheckPermission;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
+import xenosoft.imldintelligence.module.clinical.api.dto.PatientRecordApiDtos;
 import xenosoft.imldintelligence.module.clinical.internal.model.ClinicalHistoryEntry;
 import xenosoft.imldintelligence.module.clinical.internal.model.GeneticReport;
 import xenosoft.imldintelligence.module.clinical.internal.model.GeneticVariant;
@@ -29,19 +43,6 @@ import xenosoft.imldintelligence.module.identity.internal.repository.EncounterRe
 import xenosoft.imldintelligence.module.identity.internal.repository.PatientRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
 import xenosoft.imldintelligence.module.identity.internal.service.PatientService;
-import xenosoft.imldintelligence.module.clinical.api.dto.PatientRecordApiDtos;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @RestController
 @RequiredArgsConstructor
@@ -66,7 +67,7 @@ public class PatientRecordController implements PatientRecordControllerContract 
     private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     @CheckPermission(resource = "PATIENT", action = "CREATE")
     public ApiResponse<PatientRecordApiDtos.Response.PatientRecordCreateResponse> createPatientRecord(
             Long tenantId,
@@ -191,11 +192,20 @@ public class PatientRecordController implements PatientRecordControllerContract 
             return;
         }
         if (node.isObject()) {
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
-                String nextPath = path.isEmpty() ? field.getKey() : path + "." + field.getKey();
-                persistLabResultsRecursive(tenantId, patientId, encounterId, field.getValue(), sourceType, visitDate, nextPath);
+            for (Map.Entry<String, JsonNode> field : node.properties()) {
+                String nextPath = path.isEmpty()
+                        ? field.getKey()
+                        : path + "." + field.getKey();
+
+                persistLabResultsRecursive(
+                        tenantId,
+                        patientId,
+                        encounterId,
+                        field.getValue(),
+                        sourceType,
+                        visitDate,
+                        nextPath
+                );
             }
             return;
         }
@@ -475,7 +485,7 @@ public class PatientRecordController implements PatientRecordControllerContract 
 
     private Double parseDouble(String value) {
         try {
-            return value == null || value.isBlank() ? null : Double.parseDouble(value.trim());
+            return isBlank(value) ? null : Double.valueOf(value.trim());
         } catch (NumberFormatException ex) {
             return null;
         }
@@ -483,7 +493,7 @@ public class PatientRecordController implements PatientRecordControllerContract 
 
     private Long parseLong(String value) {
         try {
-            return value == null || value.isBlank() ? null : Long.parseLong(value.trim());
+            return value == null || value.isBlank() ? null : Long.valueOf(value.trim());
         } catch (NumberFormatException ex) {
             return null;
         }

@@ -92,6 +92,34 @@ const routes: MockRoute[] = [
   },
   {
     method: 'POST',
+    match: /^\/api\/v1\/app\/toc\/auth\/phone\/send-code$/,
+    handler: () =>
+      success({
+        purpose: 'LOGIN',
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        resendAfterSeconds: 60
+      })
+  },
+  {
+    method: 'POST',
+    match: /^\/api\/v1\/app\/toc\/auth\/phone\/login$/,
+    handler: () => {
+      const targetUser = mockState.users.find((user) => user.nickname === '李晓华') || mockState.users[0]
+      mockState.currentUserNickname = targetUser.nickname
+      const token = `mock-toc-phone-${Date.now()}`
+      mockState.token = token
+      return success({
+        accessToken: token,
+        refreshToken: `mock-refresh-${Date.now()}`,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        tenantId: 1,
+        tocUserId: 10001,
+        nickname: '李晓华'
+      })
+    }
+  },
+  {
+    method: 'POST',
     match: /^\/user\/password\/send-code$/,
     handler: (context) => {
       const phone = getStringValue(context, 'phone')

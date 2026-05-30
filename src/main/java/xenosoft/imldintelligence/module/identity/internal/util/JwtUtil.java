@@ -82,6 +82,7 @@ public class JwtUtil {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put(CLAIM_USER_ID, refreshTokenSubject.userId());
         claims.put(CLAIM_TENANT_ID, refreshTokenSubject.tenantId());
+        claims.put(CLAIM_USER_TYPE, trimToNull(refreshTokenSubject.userType()));
 
         return buildToken(JwtTokenType.REFRESH, claims, String.valueOf(refreshTokenSubject.userId()), properties.getJwt().getRefreshTokenTtl());
     }
@@ -115,7 +116,8 @@ public class JwtUtil {
         Claims claims = parseClaims(token, JwtTokenType.REFRESH);
         return new RefreshTokenSubject(
                 parseRequiredLong(claims, CLAIM_USER_ID),
-                parseRequiredLong(claims, CLAIM_TENANT_ID)
+                parseRequiredLong(claims, CLAIM_TENANT_ID),
+                trimToNull(claims.get(CLAIM_USER_TYPE, String.class))
         );
     }
 

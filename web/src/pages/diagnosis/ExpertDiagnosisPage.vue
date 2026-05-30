@@ -7,7 +7,7 @@
           <div class="panel-header">
             <el-input
               v-model="searchQuery"
-              placeholder="搜索患者姓名或门诊号"
+              placeholder="搜索病号、姓名或门诊号"
               :prefix-icon="Search"
               clearable
               size="large"
@@ -29,7 +29,11 @@
             >
               <div class="item-main">
                 <div class="item-title">
-                  <span class="name">{{ report.patientName }}</span>
+                  <div class="patient-primary">
+                    <span class="patient-no-label">病号</span>
+                    <span class="patient-no-value">{{ report.patientId }}</span>
+                    <span class="patient-name">{{ report.patientName }}</span>
+                  </div>
                   <el-tag 
                     :type="report.status === '已签发' ? 'success' : 'warning'" 
                     size="default" 
@@ -39,8 +43,8 @@
                   </el-tag>
                 </div>
                 <div class="item-sub">
-                  <span>{{ report.gender }} | {{ report.age }}岁</span>
-                  <span style="margin-left: 8px;">门诊号: {{ report.visitId }}</span>
+                  <span class="patient-meta">{{ report.gender }} | {{ report.age }}岁</span>
+                  <span class="visit-no">门诊号: {{ report.visitId }}</span>
                 </div>
                 <div class="item-time">筛查时间: {{ report.date }}</div>
               </div>
@@ -130,7 +134,7 @@
                         <p><strong>关键生化异常：</strong>{{ selectedReport.aiFindings.biochemical }}</p>
                         <p><strong>临床表型特征：</strong>{{ selectedReport.aiFindings.clinical }}</p>
                         <p>
-                          <strong>多模态数据提示：</strong>模型预测患病概率 {{ selectedReport.aiFindings.probability }}%，
+                          <strong>数据提示：</strong>模型预测患病概率 {{ selectedReport.aiFindings.probability }}%，
                           高度指向 <span class="highlight-disease">{{ selectedReport.aiFindings.disease }}</span>。
                         </p>
                       </div>
@@ -241,7 +245,10 @@ const filteredReports = computed(() => {
   return reports.value.filter((report) => {
     const matchStatus = report.status === reportStatusFilter.value
     const keyword = searchQuery.value.trim()
-    const matchSearch = !keyword || report.patientName.includes(keyword) || report.visitId.includes(keyword)
+    const matchSearch = !keyword
+      || report.patientId.includes(keyword)
+      || report.patientName.includes(keyword)
+      || report.visitId.includes(keyword)
     return matchStatus && matchSearch
   })
 })
@@ -358,16 +365,46 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
-.item-title .name {
-  font-size: 20px; /* 姓名显著放大 */
+.patient-primary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.patient-no-label {
+  font-size: 12px;
+  color: #909399;
+  letter-spacing: 1px;
+}
+
+.patient-no-value {
+  font-size: 22px;
   font-weight: bold;
   color: #303133;
 }
 
+.patient-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .item-sub {
-  font-size: 15px; /* 副标题放大 */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
   color: #606266;
   margin-bottom: 6px;
+}
+
+.item-sub .visit-no {
+  color: #909399;
 }
 
 .item-time {

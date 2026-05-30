@@ -1,41 +1,28 @@
-export interface Agreement {
-  title: string
-  url: string
+import baseConfig, { AppConfig } from './config.base'
+import localConfig from './config.local'
+
+const resolveMockMode = (
+  value: unknown,
+  fallback: AppConfig['mockMode']
+): AppConfig['mockMode'] => {
+  if (value === 'full' || value === 'off') {
+    return value
+  }
+  return fallback
 }
 
-export interface AppInfo {
-  name: string
-  version: string
-  logo: string
-  site_url: string
-  agreements: Agreement[]
-}
-
-export interface AppConfig {
-  baseUrl: string
-  mockMode: 'full' | 'off'
-  appInfo: AppInfo
-}
+const localAppInfo = localConfig.appInfo || {}
 
 const config: AppConfig = {
-  baseUrl: 'http://localhost:9090',
-  mockMode: 'full',
+  ...baseConfig,
+  ...localConfig,
+  mockMode: resolveMockMode(localConfig.mockMode, baseConfig.mockMode),
   appInfo: {
-    name: 'ruoyi-app',
-    version: '1.1.0',
-    logo: '/static/logo.png',
-    site_url: 'http://ruoyi.vip',
-    agreements: [
-      {
-        title: '隐私政策',
-        url: 'https://ruoyi.vip/protocol.html'
-      },
-      {
-        title: '用户服务协议',
-        url: 'https://ruoyi.vip/protocol.html'
-      }
-    ]
+    ...baseConfig.appInfo,
+    ...localAppInfo,
+    agreements: localAppInfo.agreements || baseConfig.appInfo.agreements
   }
 }
 
+export type { Agreement, AppInfo, AppConfig, AppConfigOverride } from './config.base'
 export default config

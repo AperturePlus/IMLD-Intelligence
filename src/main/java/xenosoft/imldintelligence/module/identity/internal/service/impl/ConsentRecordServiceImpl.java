@@ -2,6 +2,8 @@ package xenosoft.imldintelligence.module.identity.internal.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import xenosoft.imldintelligence.module.identity.api.dto.IdentityApiDtos;
 import xenosoft.imldintelligence.module.identity.internal.model.ConsentRecord;
 import xenosoft.imldintelligence.module.identity.internal.repository.ConsentRecordRepository;
@@ -11,6 +13,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class ConsentRecordServiceImpl implements ConsentRecordService {
 
     private final ConsentRecordRepository consentRecordRepository;
@@ -31,6 +34,7 @@ public class ConsentRecordServiceImpl implements ConsentRecordService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ConsentRecord upsertConsent(Long tenantId,
                                         IdentityApiDtos.Request.UpsertConsentRecordRequest request) {
         ConsentRecord record = new ConsentRecord();

@@ -2,6 +2,7 @@ package xenosoft.imldintelligence.module.careplan.internal.repository;
 
 import xenosoft.imldintelligence.module.careplan.internal.model.AlertEvent;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +60,26 @@ public interface AlertEventRepository {
      * @return 更新后的预警事件
      */
     AlertEvent update(AlertEvent alertEvent);
+
+    /**
+     * 仅当当前状态匹配 expectedStatus 时推进状态，避免并发重复迁移。
+     *
+     * @param tenantId 租户标识
+     * @param id 预警事件主键
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param resolvedAt 解决时间
+     * @param resolutionNote 解决说明
+     * @param assignedTo 指派人
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusIfCurrent(Long tenantId,
+                                  Long id,
+                                  String expectedStatus,
+                                  String targetStatus,
+                                  OffsetDateTime resolvedAt,
+                                  String resolutionNote,
+                                  Long assignedTo);
 
     /**
      * 按租户和预警事件主键删除预警事件。

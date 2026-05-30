@@ -135,6 +135,7 @@ class AccountCredentialServiceImplTest {
         when(emailVerificationCodeRepository.findLatestPending(
                 eq(1L), eq("REGISTER"), eq("doctor02@example.com"), eq("doctor02"), any())
         ).thenReturn(Optional.of(code));
+        when(emailVerificationCodeRepository.consumePendingCode(eq(1L), eq(10L), any())).thenReturn(true);
 
         when(passwordEncoder.matches("123456", "encoded-code")).thenReturn(true);
         when(passwordEncoder.encode("StrongPass_123")).thenReturn("encoded-password");
@@ -156,7 +157,7 @@ class AccountCredentialServiceImplTest {
         ));
 
         assertThat(token.accessToken()).isEqualTo("access-token");
-        verify(emailVerificationCodeRepository).consume(eq(1L), eq(10L), any());
+        verify(emailVerificationCodeRepository).consumePendingCode(eq(1L), eq(10L), any());
     }
 
     @Test

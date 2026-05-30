@@ -8,6 +8,7 @@ import xenosoft.imldintelligence.module.integration.internal.model.IntegrationJo
 import xenosoft.imldintelligence.module.integration.internal.repository.IntegrationJobRepository;
 import xenosoft.imldintelligence.module.integration.internal.repository.mybatis.IntegrationJobMapper;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,6 +79,23 @@ public class IntegrationJobRepositoryImpl implements IntegrationJobRepository {
                 .eq(IntegrationJob::getTenantId, integrationJob.getTenantId())
                 .eq(IntegrationJob::getId, integrationJob.getId()));
         return integrationJob;
+    }
+
+    @Override
+    public boolean updateStatusIfCurrent(Long tenantId,
+                                         Long id,
+                                         String expectedStatus,
+                                         String targetStatus,
+                                         OffsetDateTime finishedAt,
+                                         String errorMessage) {
+        LambdaUpdateWrapper<IntegrationJob> wrapper = new LambdaUpdateWrapper<IntegrationJob>()
+                .eq(IntegrationJob::getTenantId, tenantId)
+                .eq(IntegrationJob::getId, id)
+                .eq(IntegrationJob::getStatus, expectedStatus)
+                .set(IntegrationJob::getStatus, targetStatus)
+                .set(IntegrationJob::getFinishedAt, finishedAt)
+                .set(IntegrationJob::getErrorMessage, errorMessage);
+        return integrationJobMapper.update(null, wrapper) > 0;
     }
 
     /**

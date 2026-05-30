@@ -46,7 +46,6 @@ public class EmailVerificationCodeRepositoryImpl implements EmailVerificationCod
                 .eq(EmailVerificationCode::getEmail, email)
                 .eq(EmailVerificationCode::getUsername, username)
                 .eq(EmailVerificationCode::getStatus, "PENDING")
-                .gt(EmailVerificationCode::getExpiresAt, now)
                 .set(EmailVerificationCode::getStatus, "REPLACED")
                 .set(EmailVerificationCode::getConsumedAt, now)
                 .set(EmailVerificationCode::getUpdatedAt, now));
@@ -64,13 +63,15 @@ public class EmailVerificationCodeRepositoryImpl implements EmailVerificationCod
     }
 
     @Override
-    public void consume(Long tenantId, Long id, OffsetDateTime now) {
-        mapper.update(null, new LambdaUpdateWrapper<EmailVerificationCode>()
+    public boolean consumePendingCode(Long tenantId, Long id, OffsetDateTime now) {
+        return mapper.update(null, new LambdaUpdateWrapper<EmailVerificationCode>()
                 .eq(EmailVerificationCode::getTenantId, tenantId)
                 .eq(EmailVerificationCode::getId, id)
+                .eq(EmailVerificationCode::getStatus, "PENDING")
+                .gt(EmailVerificationCode::getExpiresAt, now)
                 .set(EmailVerificationCode::getStatus, "CONSUMED")
                 .set(EmailVerificationCode::getConsumedAt, now)
-                .set(EmailVerificationCode::getUpdatedAt, now));
+                .set(EmailVerificationCode::getUpdatedAt, now)) > 0;
     }
 
     private LambdaQueryWrapper<EmailVerificationCode> baseQuery(Long tenantId, String purpose, String email, String username) {

@@ -96,6 +96,14 @@ class PaymentRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {
         vipOrderRepository.update(vipOrder);
         assertThat(vipOrderRepository.findById(tenant.getId(), vipOrder.getId())).get().extracting(VipOrder::getOrderStatus).isEqualTo("PAID");
 
+        OffsetDateTime callbackPaidAt = OffsetDateTime.now().plusMinutes(1).withNano(0);
+        assertThat(vipOrderRepository.updateStatusByOrderNoIfCurrent(
+                tenant.getId(), vipOrder.getOrderNo(), "PAID", "SETTLED", callbackPaidAt)).isTrue();
+        assertThat(vipOrderRepository.updateStatusByOrderNoIfCurrent(
+                tenant.getId(), vipOrder.getOrderNo(), "PAID", "SETTLED", callbackPaidAt)).isFalse();
+        assertThat(vipOrderRepository.findById(tenant.getId(), vipOrder.getId())).get()
+                .extracting(VipOrder::getOrderStatus).isEqualTo("SETTLED");
+
         assertThat(vipOrderRepository.deleteById(tenant.getId(), vipOrder.getId())).isTrue();
         assertThat(vipOrderRepository.findById(tenant.getId(), vipOrder.getId())).isEmpty();
     }
@@ -126,6 +134,14 @@ class PaymentRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {
         vipSubscription.setSubscriptionStatus("EXPIRED");
         vipSubscriptionRepository.update(vipSubscription);
         assertThat(vipSubscriptionRepository.findById(tenant.getId(), vipSubscription.getId())).get().extracting(VipSubscription::getSubscriptionStatus).isEqualTo("EXPIRED");
+
+        OffsetDateTime newEndAt = OffsetDateTime.now().plusDays(60).withNano(0);
+        assertThat(vipSubscriptionRepository.updateStatusIfCurrent(
+                tenant.getId(), vipSubscription.getId(), "EXPIRED", "CANCELLED", newEndAt)).isTrue();
+        assertThat(vipSubscriptionRepository.updateStatusIfCurrent(
+                tenant.getId(), vipSubscription.getId(), "EXPIRED", "CANCELLED", newEndAt)).isFalse();
+        assertThat(vipSubscriptionRepository.findById(tenant.getId(), vipSubscription.getId())).get()
+                .extracting(VipSubscription::getSubscriptionStatus).isEqualTo("CANCELLED");
 
         assertThat(vipSubscriptionRepository.deleteById(tenant.getId(), vipSubscription.getId())).isTrue();
         assertThat(vipSubscriptionRepository.findById(tenant.getId(), vipSubscription.getId())).isEmpty();

@@ -3,6 +3,8 @@ package xenosoft.imldintelligence.module.identity.internal.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import xenosoft.imldintelligence.module.identity.internal.dto.AuthToken;
 import xenosoft.imldintelligence.module.identity.internal.dto.LoginRequest;
 import xenosoft.imldintelligence.module.identity.internal.model.Role;
@@ -23,6 +25,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class AuthServiceImpl implements AuthService {
 
     private final UserAccountRepository userAccountRepository;
@@ -33,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklistService tokenBlacklistService;
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public AuthToken login(LoginRequest loginRequest) {
         Tenant tenant = resolveTenant(loginRequest.tenantCode());
 
@@ -57,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken = jwtUtil.generateAccessToken(subject);
         String refreshToken = jwtUtil.generateRefreshToken(
-                new RefreshTokenSubject(user.getId(), tenant.getId()));
+                new RefreshTokenSubject(user.getId(), tenant.getId(), user.getUserType()));
 
         user.setLastLoginAt(OffsetDateTime.now());
         userAccountRepository.update(user);
@@ -68,6 +72,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthToken refreshToken(String token) {
         RefreshTokenSubject refreshSubject = jwtUtil.parseRefreshToken(token);
+        if ("TOC".equalsIgnoreCase(refreshSubject.userType())) {
+            throw new IllegalArgumentException("Refresh token type is not allowed for this endpoint");
+        }
 
         String jti = jwtUtil.extractJti(token);
         if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
@@ -78,6 +85,9 @@ public class AuthServiceImpl implements AuthService {
                 refreshSubject.tenantId(), refreshSubject.userId());
         if (subject == null) {
             throw new IllegalArgumentException("User not found or inactive");
+        }
+        if (refreshSubject.userType() != null && !refreshSubject.userType().equalsIgnoreCase(subject.userType())) {
+            throw new IllegalArgumentException("Refresh token subject type mismatch");
         }
 
         String accessToken = jwtUtil.generateAccessToken(subject);
@@ -95,11 +105,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void revokeToken(String token) {
         blacklistToken(token);
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void logout(String refreshToken) {
         blacklistToken(refreshToken);
     }
@@ -118,7 +130,7 @@ public class AuthServiceImpl implements AuthService {
         );
         String accessToken = jwtUtil.generateAccessToken(subject);
         String refreshToken = jwtUtil.generateRefreshToken(
-                new RefreshTokenSubject(0L, role.getTenantId()));
+                new RefreshTokenSubject(0L, role.getTenantId(), "SYSTEM"));
         return AuthToken.bearer(accessToken, refreshToken, jwtUtil.getAccessTokenExpiresInSeconds());
     }
 

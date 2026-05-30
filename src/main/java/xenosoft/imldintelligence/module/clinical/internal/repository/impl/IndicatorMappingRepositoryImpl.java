@@ -53,6 +53,16 @@ public class IndicatorMappingRepositoryImpl implements IndicatorMappingRepositor
     }
 
     @Override
+    public IndicatorMapping upsertByNaturalKey(IndicatorMapping indicatorMapping) {
+        indicatorMappingMapper.upsertByNaturalKey(indicatorMapping);
+        return findBySourceSystemAndSourceCode(
+                indicatorMapping.getTenantId(),
+                indicatorMapping.getSourceSystem(),
+                indicatorMapping.getSourceCode()
+        ).orElseThrow(() -> new IllegalStateException("Upserted indicator mapping not found"));
+    }
+
+    @Override
     public IndicatorMapping update(IndicatorMapping indicatorMapping) {
         indicatorMappingMapper.update(indicatorMapping, new LambdaUpdateWrapper<IndicatorMapping>()
                 .eq(IndicatorMapping::getTenantId, indicatorMapping.getTenantId())

@@ -19,6 +19,37 @@ RuoYi App 移动解决方案，采用uniapp框架，一份代码多终端适配�
 * 阿里云折扣场：[点我进入](http://aly.ruoyi.vip)，腾讯云秒杀场：[点我进入](http://txy.ruoyi.vip)&nbsp;&nbsp;
 * 阿里云优惠券：[点我领取](https://www.aliyun.com/minisite/goods?userCode=brki8iof&share_source=copy_link)，腾讯云优惠券：[点我领取](https://cloud.tencent.com/redirect.php?redirect=1025&cps_key=198c8df2ed259157187173bc7f4f32fd&from=console)&nbsp;&nbsp;
 
+## 本地调试配置（mockMode）
+
+项目默认配置在 `config.base.ts`，本地覆盖配置在 `config.local.ts`。
+
+- 开启 mock：在 `config.local.ts` 中设置 `mockMode: 'full'`。
+- 关闭 mock：删除该字段或设置为 `mockMode: 'off'`。
+- `config.base.ts` 只保留仓库默认值，不放个人本地配置。
+
+示例：
+
+```ts
+import type { AppConfigOverride } from './config.base'
+
+const localConfig: AppConfigOverride = {
+  mockMode: 'full'
+}
+
+export default localConfig
+```
+
+建议对本地覆盖文件启用 `skip-worktree`，避免误提交：
+
+```bash
+git update-index --skip-worktree mobile/config.local.ts
+```
+
+恢复跟踪：
+
+```bash
+git update-index --no-skip-worktree mobile/config.local.ts
+```
 
 ## 技术文档
 

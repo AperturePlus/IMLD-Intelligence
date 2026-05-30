@@ -51,13 +51,31 @@
 	  },
 	  
 	    {
-      "path": "pages/index",
-      "style": {
-        "navigationBarTitleText": "若依移动端框架",
-        "navigationStyle": "custom"
-      }
-    },
-	//***************************登录注册等页面结束*************************************
+	      "path": "pages/index",
+	      "style": {
+	        "navigationBarTitleText": "社群",
+	        "navigationStyle": "custom"
+	      }
+	    },
+	    {
+	      "path": "pages/community/post-create",
+	      "style": {
+	        "navigationBarTitleText": "发帖"
+	      }
+	    },
+		    {
+		      "path": "pages/community/post-detail",
+		      "style": {
+		        "navigationBarTitleText": "帖子详情"
+		      }
+		    },
+		    {
+		      "path": "pages/community/my-posts",
+		      "style": {
+		        "navigationBarTitleText": "我的帖子"
+		      }
+		    },
+		//***************************登录注册等页面结束*************************************
 	
 	
 	
@@ -259,7 +277,7 @@
         "pagePath": "pages/index",
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/tabbar/home.png",
-        "text": "首页"
+	        "text": "社群"
       },
       {
         "pagePath": "pages/assessment-result",

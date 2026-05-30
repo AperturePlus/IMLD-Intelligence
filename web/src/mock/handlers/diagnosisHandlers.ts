@@ -4,16 +4,17 @@ import {
   buildDiagnosisPayload,
   loadPatients,
   loadReports,
-  savePatients,
   saveReports,
   toAiFinding
 } from '../core/mockState'
+import { wait } from '../core/mockUtils'
 
 const SUCCESS_CODE = 200
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 200
 const DEFAULT_DOCTOR_ID = 1
 const DEFAULT_MODEL_REGISTRY_ID = 1
+const AI_DIAGNOSIS_EXTRA_DELAY_MS = Number(import.meta.env.VITE_MOCK_AI_DIAGNOSIS_DELAY_MS ?? 1800)
 
 const successEnvelope = (data, message = 'success') => ({
   code: SUCCESS_CODE,
@@ -340,9 +341,9 @@ export const diagnosisExactHandlers = {
       return failEnvelope(404, '患者不存在')
     }
 
+    await wait(AI_DIAGNOSIS_EXTRA_DELAY_MS)
+
     const diagnosisPayload = buildDiagnosisPayload(patient)
-    patient.aiStatus = '已诊断'
-    savePatients(patients)
 
     const doctorId = parsePositiveInt(data.doctorId, DEFAULT_DOCTOR_ID)
     const report = upsertDiagnosisReport(patient, diagnosisPayload, doctorId)
@@ -424,9 +425,9 @@ export const diagnosisExactHandlers = {
       return { status: 404, statusText: 'Not Found', data: { detail: '患者不存在' } }
     }
 
+    await wait(AI_DIAGNOSIS_EXTRA_DELAY_MS)
+
     const diagnosisPayload = buildDiagnosisPayload(patient)
-    patient.aiStatus = '已诊断'
-    savePatients(patients)
 
     upsertDiagnosisReport(patient, diagnosisPayload)
 

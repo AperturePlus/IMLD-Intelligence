@@ -8,13 +8,16 @@ spring:
       dev-private-bridge: dev,private,private-bridge
   datasource:
     driver-class-name: ${IMLD_DB_DRIVER:org.postgresql.Driver}
-    url: ${IMLD_DB_URL:jdbc:postgresql://localhost:5432/imld_core?sslmode=disable&characterEncoding=utf8}
+    url: ${IMLD_DB_URL:jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8}
     username: ${IMLD_DB_USERNAME:imld_user}
     password: ${IMLD_DB_PASSWORD:system}
-  sql:
-    init:
-      mode: ${IMLD_SQL_INIT_MODE:never}
-      schema-locations: classpath:schema/01-identity.sql,classpath:schema/02-clinical.sql,classpath:schema/03-diagnosis-report.sql,classpath:schema/04-careplan-screening-payment.sql,classpath:schema/05-notify-integration-audit.sql,classpath:schema/99-comments.sql
+  flyway:
+    enabled: ${IMLD_FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    schemas: public
+    table: flyway_schema_history
+    baseline-on-migrate: true
+    baseline-version: 1
   data:
     redis:
       host: ${IMLD_REDIS_HOST:localhost}
@@ -104,6 +107,7 @@ imld:
       - /api/v1/auth/**
       - /api/v1/app/auth/**
       - /api/v1/web/auth/**
+      - /api/v1/app/toc/auth/**
       - /api/v1/identity/auth/**
       - /api/v1/app/identity/auth/**
       - /api/v1/web/identity/auth/**

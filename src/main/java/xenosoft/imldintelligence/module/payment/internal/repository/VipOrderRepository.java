@@ -2,6 +2,7 @@ package xenosoft.imldintelligence.module.payment.internal.repository;
 
 import xenosoft.imldintelligence.module.payment.internal.model.VipOrder;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +60,38 @@ public interface VipOrderRepository {
      * @return 更新后的VIP订单
      */
     VipOrder update(VipOrder vipOrder);
+
+    /**
+     * 仅当当前状态匹配 expectedStatus 时推进订单状态，避免并发回调重复处理。
+     *
+     * @param tenantId 租户标识
+     * @param id 订单主键
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param paidAt 支付时间
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusIfCurrent(Long tenantId,
+                                  Long id,
+                                  String expectedStatus,
+                                  String targetStatus,
+                                  OffsetDateTime paidAt);
+
+    /**
+     * 仅当订单号和当前状态匹配时推进订单状态，适配支付回调幂等场景。
+     *
+     * @param tenantId 租户标识
+     * @param orderNo 订单号
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param paidAt 支付时间
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusByOrderNoIfCurrent(Long tenantId,
+                                           String orderNo,
+                                           String expectedStatus,
+                                           String targetStatus,
+                                           OffsetDateTime paidAt);
 
     /**
      * 按租户和VIP订单主键删除VIP订单。

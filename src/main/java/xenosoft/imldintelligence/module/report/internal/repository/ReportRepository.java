@@ -1,7 +1,9 @@
 package xenosoft.imldintelligence.module.report.internal.repository;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import xenosoft.imldintelligence.module.report.internal.model.Report;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,6 +70,51 @@ public interface ReportRepository {
      * @return 更新后的报告
      */
     Report update(Report report);
+
+    /**
+     * 以悲观锁方式读取报告行，需在事务内调用。
+     *
+     * @param tenantId 租户标识
+     * @param id 报告主键
+     * @return 加锁读取到的报告，不存在时返回空
+     */
+    Optional<Report> lockByIdForUpdate(Long tenantId, Long id);
+
+    /**
+     * 仅当当前状态匹配 expectedStatus 时推进状态。
+     *
+     * @param tenantId 租户标识
+     * @param id 报告主键
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param signedBy 签署人
+     * @param signedAt 签署时间
+     * @param signatureData 签名数据
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusIfCurrent(Long tenantId,
+                                  Long id,
+                                  String expectedStatus,
+                                  String targetStatus,
+                                  Long signedBy,
+                                  OffsetDateTime signedAt,
+                                  JsonNode signatureData);
+
+    /**
+     * 乐观推进报告当前版本号，仅在 expectedVersion 命中时更新。
+     *
+     * @param tenantId 租户标识
+     * @param id 报告主键
+     * @param expectedVersion 期望当前版本
+     * @param targetVersion 目标版本
+     * @param updatedAt 更新时间
+     * @return 版本推进成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateCurrentVersionIfMatches(Long tenantId,
+                                          Long id,
+                                          Integer expectedVersion,
+                                          Integer targetVersion,
+                                          OffsetDateTime updatedAt);
 
     /**
      * 按租户和报告主键删除报告。

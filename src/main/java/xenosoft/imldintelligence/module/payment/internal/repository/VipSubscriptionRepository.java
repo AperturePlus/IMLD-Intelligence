@@ -2,6 +2,7 @@ package xenosoft.imldintelligence.module.payment.internal.repository;
 
 import xenosoft.imldintelligence.module.payment.internal.model.VipSubscription;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +60,22 @@ public interface VipSubscriptionRepository {
      * @return 更新后的VIP订阅
      */
     VipSubscription update(VipSubscription vipSubscription);
+
+    /**
+     * 仅当当前状态匹配 expectedStatus 时推进订阅状态。
+     *
+     * @param tenantId 租户标识
+     * @param id 订阅主键
+     * @param expectedStatus 期望当前状态
+     * @param targetStatus 目标状态
+     * @param endAt 新的结束时间
+     * @return 状态迁移成功时返回 {@code true}，否则返回 {@code false}
+     */
+    boolean updateStatusIfCurrent(Long tenantId,
+                                  Long id,
+                                  String expectedStatus,
+                                  String targetStatus,
+                                  OffsetDateTime endAt);
 
     /**
      * 按租户和VIP订阅主键删除VIP订阅。

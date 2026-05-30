@@ -181,6 +181,28 @@ class ScreeningRepositoryIntegrationTest extends AbstractPostgresIntegrationTest
         tocClinicalTransferRepository.update(transfer);
         assertThat(tocClinicalTransferRepository.findById(tenant.getId(), transfer.getId())).get().extracting(TocClinicalTransfer::getTransferStatus).isEqualTo("COMPLETED");
 
+        OffsetDateTime approvedAt = OffsetDateTime.now().plusMinutes(1).withNano(0);
+        assertThat(tocClinicalTransferRepository.updateStatusIfCurrent(
+                tenant.getId(),
+                transfer.getId(),
+                "COMPLETED",
+                "ARCHIVED",
+                doctor.getId(),
+                approvedAt,
+                "archived for close"
+        )).isTrue();
+        assertThat(tocClinicalTransferRepository.updateStatusIfCurrent(
+                tenant.getId(),
+                transfer.getId(),
+                "COMPLETED",
+                "ARCHIVED",
+                doctor.getId(),
+                approvedAt,
+                "archived for close"
+        )).isFalse();
+        assertThat(tocClinicalTransferRepository.findById(tenant.getId(), transfer.getId())).get()
+                .extracting(TocClinicalTransfer::getTransferStatus).isEqualTo("ARCHIVED");
+
         assertThat(tocClinicalTransferRepository.deleteById(tenant.getId(), transfer.getId())).isTrue();
         assertThat(tocClinicalTransferRepository.findById(tenant.getId(), transfer.getId())).isEmpty();
     }

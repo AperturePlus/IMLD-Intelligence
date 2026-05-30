@@ -1,6 +1,5 @@
-import store from '@/store'
 import config from '@/config'
-import { getToken } from '@/utils/auth'
+import { clearTocSession, getTenantId, getToken } from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import { toast, showConfirm, serializeParams } from '@/utils/common'
 import { handleMockUpload } from '@/mock'
@@ -21,14 +20,19 @@ const baseUrl = config.baseUrl
 
 const upload = (options: UploadOptions): Promise<any> => {
   const isToken = (options.headers || {}).isToken === false
+  const uploadHeader: Record<string, any> = options.header ?? {}
   const uploadConfig: UploadOptions = {
     ...options,
-    header: options.header || {}
+    header: uploadHeader
   }
 
   if (getToken() && !isToken) {
-    uploadConfig.header = uploadConfig.header || {}
-    uploadConfig.header.Authorization = `Bearer ${getToken()}`
+    uploadHeader.Authorization = `Bearer ${getToken()}`
+  }
+
+  const tenantId = getTenantId()
+  if (tenantId && !uploadHeader['X-Tenant-Id']) {
+    uploadHeader['X-Tenant-Id'] = tenantId
   }
 
   if (uploadConfig.params) {
@@ -61,12 +65,12 @@ const upload = (options: UploadOptions): Promise<any> => {
       url: `${baseUrl}${uploadConfig.url}`,
       filePath: uploadConfig.filePath,
       name: uploadConfig.name || 'file',
-      header: uploadConfig.header,
+      header: uploadHeader,
       formData: uploadConfig.formData,
       success: (res: any) => {
         const result = JSON.parse(res.data || '{}')
         const code = Number(result.code || 200)
-        const msg = errorCode[String(code)] || result.msg || errorCode.default
+	        const msg = errorCode[String(code)] || result.message || result.msg || errorCode.default
 
         if (code === 200) {
           resolve(result)
@@ -76,11 +80,10 @@ const upload = (options: UploadOptions): Promise<any> => {
         if (code === 401) {
           showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then((modalRes: any) => {
             if (modalRes.confirm) {
-              store.dispatch('LogOut').then(() => {
-                uni.reLaunch({
-                  url: '/pages/login'
-                })
-              })
+	              clearTocSession()
+	              uni.reLaunch({
+	                url: '/pages/login'
+	              })
             }
           })
           reject('无效的会话，或者会话已过期，请重新登录。')

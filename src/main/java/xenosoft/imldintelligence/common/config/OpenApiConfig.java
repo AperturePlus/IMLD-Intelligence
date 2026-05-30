@@ -73,32 +73,27 @@ public class OpenApiConfig {
     }
 
     private String buildDescription() {
-        StringBuilder desc = new StringBuilder();
-        desc.append("IMLD Intelligence is a modular medical health platform designed for ");
-        desc.append("primary healthcare institutions, individual users, and privacy-focused hospitals.\n\n");
-        desc.append("**Deployment Mode**: ").append(normalizedDeploymentMode().toUpperCase(Locale.ROOT)).append("\n");
-        desc.append("**Cloud Bridge Enabled**: ").append(cloudBridgeEnabled).append("\n\n");
 
-        desc.append("### Key Features\n\n");
-        desc.append("- **Identity & Access Management**: User authentication, patient management, consent tracking\n");
-        desc.append("- **Clinical Operations**: Patient care, diagnosis, and clinical workflows\n");
-        desc.append("- **Audit & Compliance**: Comprehensive audit logging for regulatory compliance\n");
-        desc.append("- **Care Planning & Screening**: Questionnaires, care plans, and health screening\n");
-        desc.append("- **Payment & Subscriptions**: Payment processing and VIP membership management\n");
-        desc.append("- **Notifications & Integration**: Multi-channel notifications and external system integration\n\n");
-
-        desc.append("### Security\n\n");
-        desc.append("- All API endpoints (except auth) require JWT Bearer token authentication\n");
-        desc.append("- Multi-tenant operations require X-Tenant-Id header\n");
-        desc.append("- Role-based access control (RBAC) and attribute-based access control (ABAC)\n");
-        desc.append("- Sensitive data access is audited and logged\n\n");
-
-        desc.append("### Deployment Modes\n\n");
-        desc.append("- **SaaS**: Public cloud deployment for community healthcare institutions and individual users\n");
-        desc.append("- **Private**: On-premise deployment for privacy-focused hospitals\n");
-        desc.append("- **Private + Cloud Bridge**: Private mode with controlled outbound communication for allowlisted scenarios only\n");
-
-        return desc.toString();
+        return "IMLD Intelligence is a modular medical health platform designed for " +
+                "primary healthcare institutions, individual users, and privacy-focused hospitals.\n\n" +
+                "**Deployment Mode**: " + normalizedDeploymentMode().toUpperCase(Locale.ROOT) + "\n" +
+                "**Cloud Bridge Enabled**: " + cloudBridgeEnabled + "\n\n" +
+                "### Key Features\n\n" +
+                "- **Identity & Access Management**: User authentication, patient management, consent tracking\n" +
+                "- **Clinical Operations**: Patient care, diagnosis, and clinical workflows\n" +
+                "- **Audit & Compliance**: Comprehensive audit logging for regulatory compliance\n" +
+                "- **Care Planning & Screening**: Questionnaires, care plans, and health screening\n" +
+                "- **Payment & Subscriptions**: Payment processing and VIP membership management\n" +
+                "- **Notifications & Integration**: Multi-channel notifications and external system integration\n\n" +
+                "### Security\n\n" +
+                "- All API endpoints (except auth) require JWT Bearer token authentication\n" +
+                "- Multi-tenant operations require X-Tenant-Id header\n" +
+                "- Role-based access control (RBAC) and attribute-based access control (ABAC)\n" +
+                "- Sensitive data access is audited and logged\n\n" +
+                "### Deployment Modes\n\n" +
+                "- **SaaS**: Public cloud deployment for community healthcare institutions and individual users\n" +
+                "- **Private**: On-premise deployment for privacy-focused hospitals\n" +
+                "- **Private + Cloud Bridge**: Private mode with controlled outbound communication for allowlisted scenarios only\n";
     }
 
     private List<Server> buildServers() {
