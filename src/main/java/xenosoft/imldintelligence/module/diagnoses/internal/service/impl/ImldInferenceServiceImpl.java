@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Service
+@ConditionalOnProperty(prefix = "imld.inference.imld", name = "engine", havingValue = "xgboost-java", matchIfMissing = true)
 public class ImldInferenceServiceImpl implements ImldInferenceService {
     private static final Logger logger = LoggerFactory.getLogger(ImldInferenceServiceImpl.class);
 

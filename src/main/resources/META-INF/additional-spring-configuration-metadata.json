@@ -28,7 +28,7 @@
 		{
 			"name": "imld.identity.verification",
 			"type": "java.util.Map<java.lang.String, java.lang.Object>",
-			"description": "Identity email verification and code policy settings."
+			"description": "Identity verification code and SMS provider settings."
 		}
 	],
 	"properties": [
@@ -36,7 +36,7 @@
 			"name": "imld.deployment.mode",
 			"type": "java.lang.String",
 			"description": "Deployment mode identifier.",
-			"defaultValue": "private"
+			"defaultValue": "saas"
 		},
 		{
 			"name": "imld.cloud-bridge.enabled",
@@ -153,7 +153,7 @@
 		{
 			"name": "imld.inference.imld.engine",
 			"type": "java.lang.String",
-			"description": "Inference engine label exposed by health endpoint.",
+			"description": "Inference engine selector and health endpoint label.",
 			"defaultValue": "xgboost-java"
 		},
 		{
@@ -208,20 +208,41 @@
 			"name": "imld.identity.verification.from-address",
 			"type": "java.lang.String",
 			"description": "Optional sender address; when blank, spring.mail.username is used."
+		},
+		{
+			"name": "imld.identity.verification.sms.enabled",
+			"type": "java.lang.Boolean",
+			"description": "Enable verification SMS delivery pipeline.",
+			"defaultValue": true
+		},
+		{
+			"name": "imld.identity.verification.sms.provider",
+			"type": "java.lang.String",
+			"description": "Verification SMS provider selector.",
+			"defaultValue": "mock"
 		}
 	],
 	"hints": [
 		{
 			"name": "imld.deployment.mode",
-			"values": [
-				{
-					"value": "saas"
-				},
-				{
-					"value": "private"
-				}
-			]
-		},
+				"values": [
+					{
+						"value": "saas"
+					},
+					{
+						"value": "develop"
+					},
+					{
+						"value": "dev"
+					},
+					{
+						"value": "private"
+					},
+					{
+						"value": "hybrid"
+					}
+				]
+			},
 		{
 			"name": "imld.cloud-bridge.scenario-allowlist",
 			"values": [
@@ -243,11 +264,25 @@
 		},
 		{
 			"name": "imld.inference.imld.engine",
-			"values": [
-				{
-					"value": "xgboost-java"
-				}
-			]
-		}
-	]
-}
+				"values": [
+					{
+						"value": "xgboost-java"
+					},
+					{
+						"value": "mock"
+					}
+				]
+			},
+			{
+				"name": "imld.identity.verification.sms.provider",
+				"values": [
+					{
+						"value": "mock"
+					},
+					{
+						"value": "real"
+					}
+				]
+			}
+		]
+	}

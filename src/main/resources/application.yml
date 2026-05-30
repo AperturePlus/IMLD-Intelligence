@@ -18,6 +18,9 @@ spring:
     table: flyway_schema_history
     baseline-on-migrate: true
     baseline-version: 1
+    validate-on-migrate: ${IMLD_FLYWAY_VALIDATE_ON_MIGRATE:true}
+    out-of-order: ${IMLD_FLYWAY_OUT_OF_ORDER:false}
+    clean-disabled: ${IMLD_FLYWAY_CLEAN_DISABLED:true}
   data:
     redis:
       host: ${IMLD_REDIS_HOST:localhost}
@@ -133,6 +136,9 @@ imld:
       max-verify-attempts: ${IMLD_EMAIL_CODE_MAX_VERIFY_ATTEMPTS:5}
       email-subject-prefix: ${IMLD_EMAIL_SUBJECT_PREFIX:[IMLD]}
       from-address: ${IMLD_SMTP_FROM:}
+      sms:
+        enabled: ${IMLD_SMS_ENABLED:true}
+        provider: ${IMLD_SMS_PROVIDER:mock}
   cloud-bridge:
     enabled: ${IMLD_CLOUD_BRIDGE_ENABLED:false}
     scenario-allowlist:

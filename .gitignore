@@ -44,7 +44,8 @@ failures/
 .gradle-home/
 
 plans/
-docs/
+docs/superpowers/
+docs/testme.md
 .claude/
 
 build-codex/
@@ -55,6 +56,6 @@ vendors/
 
 *.venv
 
-src\main\resources\models\imld\
+src/main/resources/models/imld/
 
 *README.md

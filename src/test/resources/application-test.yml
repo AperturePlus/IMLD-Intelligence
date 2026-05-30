@@ -12,6 +12,8 @@ mybatis:
     map-underscore-to-camel-case: true
 
 imld:
+  deployment:
+    mode: develop
   security:
     enabled: false
     jwt:

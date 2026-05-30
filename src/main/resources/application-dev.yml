@@ -1,4 +1,8 @@
 spring:
+  flyway:
+    validate-on-migrate: true
+    out-of-order: true
+    clean-disabled: false
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8
@@ -45,3 +49,11 @@ imld:
   security:
     public-paths:
       - /api/v1/app/toc/auth/dev/login
+  identity:
+    verification:
+      sms:
+        enabled: true
+        provider: mock
+  inference:
+    imld:
+      engine: mock

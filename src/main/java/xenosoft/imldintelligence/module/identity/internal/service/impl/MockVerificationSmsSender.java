@@ -1,21 +1,22 @@
 package xenosoft.imldintelligence.module.identity.internal.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import xenosoft.imldintelligence.module.identity.internal.service.VerificationSmsSender;
 
 import java.time.Duration;
 
 /**
- * Dev-only SMS sender implementation.
+ * Mock SMS sender implementation.
  *
- * <p>It logs verification codes for local debugging and must never be enabled in production.</p>
+ * <p>It logs verification codes for local debugging and must never be enabled in production modes.</p>
  */
 @Slf4j
 @Component
-@Profile("dev")
-public class LoggingVerificationSmsSender implements VerificationSmsSender {
+@ConditionalOnProperty(prefix = "imld.identity.verification.sms", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "imld.identity.verification.sms", name = "provider", havingValue = "mock", matchIfMissing = true)
+public class MockVerificationSmsSender implements VerificationSmsSender {
 
     @Override
     public void sendVerificationCode(String mobile, String scenario, String code, Duration ttl) {

@@ -29,4 +29,37 @@ class DeploymentPropertiesTest {
         assertEquals("saas", properties.normalizedMode());
         assertTrue(properties.isSupportedMode());
     }
+
+    @Test
+    void shouldTreatDevAliasAsDevelopMode() {
+        DeploymentProperties properties = new DeploymentProperties();
+        properties.setMode("dev");
+
+        assertEquals("dev", properties.normalizedMode());
+        assertTrue(properties.isDevelopMode());
+        assertTrue(properties.isSupportedMode());
+    }
+
+    @Test
+    void shouldTreatDevelopModeAsSupported() {
+        DeploymentProperties properties = new DeploymentProperties();
+        properties.setMode("develop");
+
+        assertEquals("develop", properties.normalizedMode());
+        assertTrue(properties.isDevelopMode());
+        assertTrue(properties.isSupportedMode());
+    }
+
+    @Test
+    void shouldExposeSaasAndPrivatePredicates() {
+        DeploymentProperties properties = new DeploymentProperties();
+
+        properties.setMode("saas");
+        assertTrue(properties.isSaasMode());
+        assertFalse(properties.isPrivateMode());
+
+        properties.setMode("private");
+        assertTrue(properties.isPrivateMode());
+        assertFalse(properties.isSaasMode());
+    }
 }

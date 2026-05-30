@@ -18,4 +18,12 @@ public class IdentityVerificationProperties {
     private int maxVerifyAttempts = 5;
     private String emailSubjectPrefix = "[IMLD]";
     private String fromAddress = "";
+    private Sms sms = new Sms();
+
+    @Getter
+    @Setter
+    public static class Sms {
+        private boolean enabled = true;
+        private String provider = "mock";
+    }
 }
