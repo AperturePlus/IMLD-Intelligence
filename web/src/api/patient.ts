@@ -76,6 +76,14 @@ const patientApi = {
     }).then(unwrapIfEnvelope)
   },
 
+  getRecord(patientNo: string): Promise<AxiosResponse<PatientRecordPayload>> {
+    return service<PatientRecordPayload | ApiEnvelope<PatientRecordPayload>>({
+      url: `/api/v1/web/patient-records/${encodeURIComponent(patientNo)}`,
+      method: 'get',
+      headers: tenantHeaders()
+    }).then(unwrapIfEnvelope)
+  },
+
   createRecord(data: PatientRecordPayload): Promise<AxiosResponse<CreatePatientRecordResponse>> {
     return service<CreatePatientRecordResponse | ApiEnvelope<CreatePatientRecordResponse>>({
       url: '/api/v1/web/patient-records/',
