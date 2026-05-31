@@ -188,6 +188,60 @@ public final class ScreeningApiDtos {
                 OffsetDateTime createdAt
         ) {
         }
+
+        /**
+         * Web 筛查总览响应。
+         */
+        public record ScreeningOverviewResponse(
+                String updatedAt,
+                List<StatCardItem> statCards,
+                List<RiskDistributionItem> riskDistribution,
+                List<TopGeneItem> topGenes,
+                AiEfficiencyMetrics aiEfficiency,
+                List<HighRiskPatientItem> highRiskPatients
+        ) {
+        }
+
+        public record StatCardItem(
+                String title,
+                BigDecimal value,
+                String color,
+                String icon,
+                BigDecimal trend,
+                String suffix
+        ) {
+        }
+
+        public record RiskDistributionItem(
+                String level,
+                Integer count,
+                BigDecimal percentage,
+                String color
+        ) {
+        }
+
+        public record TopGeneItem(
+                String name,
+                String desc,
+                BigDecimal percentage
+        ) {
+        }
+
+        public record AiEfficiencyMetrics(
+                BigDecimal diagnosisMatchRate,
+                String missRate,
+                String avgDuration
+        ) {
+        }
+
+        public record HighRiskPatientItem(
+                String date,
+                String name,
+                Integer age,
+                String clue,
+                String aiSuggest
+        ) {
+        }
     }
 
     /**
