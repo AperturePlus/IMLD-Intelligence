@@ -76,7 +76,7 @@
               <el-descriptions-item
                 v-for="item in sec.items"
                 :key="item.key"
-                :label="item.unit ? `${item.label}(${item.unit})` : item.label"
+                :label="fieldLabel(item)"
               >
                 {{ labValue(group.key, sec.key, item.key) }}
               </el-descriptions-item>
@@ -137,6 +137,9 @@ const display = (value: unknown): string => {
   }
   return String(value)
 }
+
+const fieldLabel = (item: { label: string; unit?: string }): string =>
+  item.unit ? `${item.label}(${item.unit})` : item.label
 
 const FLAG_LABELS: Record<TernaryFlag, string> = { YES: '有', NO: '无', UNKNOWN: '未查' }
 const flagLabel = (value: TernaryFlag): string => FLAG_LABELS[value] || '未查'
