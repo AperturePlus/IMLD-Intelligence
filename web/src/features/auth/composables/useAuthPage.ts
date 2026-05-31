@@ -204,6 +204,9 @@ export const useAuthPage = () => {
     localStorage.setItem('token', session.accessToken)
     localStorage.setItem('refreshToken', session.refreshToken ?? '')
     localStorage.setItem('username', session.user?.username || fallbackUsername)
+    localStorage.setItem('userDisplayName', session.user?.displayName || session.user?.username || fallbackUsername)
+    localStorage.setItem('userType', session.user?.userType || '')
+    localStorage.setItem('roleCodes', JSON.stringify(session.user?.roleCodes || []))
     const avatar = resolveUserAvatar(session.user)
     if (avatar) {
       localStorage.setItem('userAvatar', avatar)

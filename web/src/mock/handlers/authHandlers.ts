@@ -45,17 +45,45 @@ const resolveRoleCodes = (role = '') => {
   return ['DOCTOR']
 }
 
+const resolveUserType = (role = '') => {
+  const normalized = normalizeText(role).toLowerCase()
+  if (normalized === 'admin') {
+    return 'ADMIN'
+  }
+  return 'DOCTOR'
+}
+
+const maskMobile = (value = '') => {
+  const mobile = normalizeText(value)
+  if (!mobile) {
+    return null
+  }
+  if (mobile.length <= 7) {
+    return `${mobile.slice(0, 2)}****${mobile.slice(-1)}`
+  }
+  return `${mobile.slice(0, 3)}****${mobile.slice(-4)}`
+}
+
+const buildAccountProfile = (user, userIndex) => ({
+  userId: userIndex + 1,
+  tenantId: 1,
+  userNo: user.userNo || `USR-${String(userIndex + 1).padStart(3, '0')}`,
+  username: user.username,
+  displayName: user.displayName || user.username,
+  userType: user.userType || resolveUserType(user.role),
+  deptName: user.deptName || (resolveUserType(user.role) === 'ADMIN' ? '系统管理部' : '肝病医学科'),
+  email: user.email || null,
+  mobileMasked: maskMobile(user.mobile),
+  roleCodes: resolveRoleCodes(user.role),
+  lastLoginAt: user.lastLoginAt || new Date().toISOString()
+})
+
 const buildAuthSession = (user, token, userIndex) => ({
   accessToken: token,
   refreshToken: `refresh_${token}`,
   expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
   user: {
-    userId: userIndex + 1,
-    tenantId: 1,
-    username: user.username,
-    displayName: user.username,
-    userType: 'DOCTOR',
-    roleCodes: resolveRoleCodes(user.role),
+    ...buildAccountProfile(user, userIndex),
     avatar: defaultDoctorAvatar
   }
 })
@@ -140,6 +168,27 @@ const loginWithUsernamePassword = (usernameInput, passwordInput) => {
   saveTokens(tokens)
 
   return success(buildAuthSession(users[userIndex], token, userIndex))
+}
+
+const resolveAuthorizedUser = (headers) => {
+  const token = readAuthorizationToken(headers)
+  if (!token) {
+    return { ok: false, error: fail(401, '未认证') }
+  }
+
+  const tokenMap = loadTokens()
+  const username = tokenMap[token]
+  if (!username) {
+    return { ok: false, error: fail(401, '凭证无效或已过期') }
+  }
+
+  const users = loadUsers()
+  const userIndex = users.findIndex((item) => item.username === username)
+  if (userIndex < 0) {
+    return { ok: false, error: fail(404, '用户不存在') }
+  }
+
+  return { ok: true, token, tokenMap, users, user: users[userIndex], userIndex }
 }
 
 export const authExactHandlers = {
@@ -246,6 +295,95 @@ export const authExactHandlers = {
     }
   },
 
+  'GET /api/v1/web/identity/account/me': async ({ headers }) => {
+    const resolved = resolveAuthorizedUser(headers)
+    if (!resolved.ok) {
+      return resolved.error
+    }
+
+    return success(buildAccountProfile(resolved.user, resolved.userIndex))
+  },
+
+  'PATCH /api/v1/web/identity/account/me': async ({ headers, data }) => {
+    const resolved = resolveAuthorizedUser(headers)
+    if (!resolved.ok) {
+      return resolved.error
+    }
+
+    const users = resolved.users
+    const user = { ...resolved.user }
+    const nextEmail = data.email == null ? user.email : normalizeEmail(data.email)
+    const nextMobile = normalizeText(data.mobilePlaintext)
+    const emailChanged = normalizeEmail(nextEmail || '') !== normalizeEmail(user.email || '')
+    const mobileChanged = Boolean(nextMobile)
+
+    if ((emailChanged || mobileChanged) && String(data.currentPassword || '') !== user.password) {
+      return fail(403, '当前密码错误')
+    }
+    if (emailChanged && users.some((item, index) => index !== resolved.userIndex && normalizeEmail(item.email) === nextEmail)) {
+      return fail(409, '邮箱已存在')
+    }
+
+    if (data.displayName !== undefined) {
+      const displayName = normalizeText(data.displayName)
+      if (!displayName) {
+        return fail(400, '姓名不能为空')
+      }
+      user.displayName = displayName
+    }
+    if (data.deptName !== undefined) {
+      user.deptName = normalizeText(data.deptName)
+    }
+    if (data.email !== undefined) {
+      if (!nextEmail) {
+        return fail(400, '邮箱不能为空')
+      }
+      user.email = nextEmail
+    }
+    if (nextMobile) {
+      user.mobile = nextMobile
+    }
+
+    users[resolved.userIndex] = user
+    saveUsers(users)
+    return success(buildAccountProfile(user, resolved.userIndex))
+  },
+
+  'POST /api/v1/web/identity/account/password': async ({ headers, data }) => {
+    const resolved = resolveAuthorizedUser(headers)
+    if (!resolved.ok) {
+      return resolved.error
+    }
+
+    const currentPassword = String(data.currentPassword || '')
+    const newPassword = String(data.newPassword || '')
+    const confirmPassword = String(data.confirmPassword || '')
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return fail(400, '请填写完整密码信息')
+    }
+    if (currentPassword !== resolved.user.password) {
+      return fail(403, '当前密码错误')
+    }
+    if (newPassword !== confirmPassword) {
+      return fail(400, '两次新密码不一致')
+    }
+
+    const users = resolved.users
+    users[resolved.userIndex] = {
+      ...resolved.user,
+      password: newPassword
+    }
+    saveUsers(users)
+
+    delete resolved.tokenMap[resolved.token]
+    saveTokens(resolved.tokenMap)
+
+    return {
+      status: 200,
+      data: envelope(SUCCESS_CODE, 'success')
+    }
+  },
+
   // Backward compatibility for old auth endpoints in mock mode.
   'POST /dj-rest-auth/login/': async ({ data }) =>
     loginWithUsernamePassword(data.username, data.password),
@@ -336,5 +474,26 @@ export const authRouteDocs = [
     path: '/api/v1/web/identity/auth/password/reset',
     kind: 'exact',
     description: '使用邮箱验证码重置密码。'
+  },
+  {
+    module: 'identity',
+    method: 'GET',
+    path: '/api/v1/web/identity/account/me',
+    kind: 'exact',
+    description: '查询当前登录账号资料。'
+  },
+  {
+    module: 'identity',
+    method: 'PATCH',
+    path: '/api/v1/web/identity/account/me',
+    kind: 'exact',
+    description: '更新当前登录账号资料。'
+  },
+  {
+    module: 'identity',
+    method: 'POST',
+    path: '/api/v1/web/identity/account/password',
+    kind: 'exact',
+    description: '修改当前登录账号密码。'
   }
 ]

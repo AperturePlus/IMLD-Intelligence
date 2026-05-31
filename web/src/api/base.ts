@@ -38,7 +38,14 @@ service.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('username')
+      localStorage.removeItem('userDisplayName')
+      localStorage.removeItem('userType')
+      localStorage.removeItem('roleCodes')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('tenantId')
+      localStorage.removeItem('userAvatar')
 
       if (router.currentRoute.value.path !== '/') {
         alert('Login expired, please sign in again.')

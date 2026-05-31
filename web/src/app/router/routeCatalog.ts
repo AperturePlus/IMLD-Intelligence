@@ -111,6 +111,14 @@ export const centerRouteDefinitions = {
     title: '账号权限',
     sectionTitle: '系统设置',
     component: () => import('@/pages/system/AccountManagePage.vue')
+  },
+  accountSettings: {
+    name: 'account-settings',
+    path: 'account-settings',
+    fullPath: '/center/account-settings',
+    title: '账户设置',
+    sectionTitle: '系统设置',
+    component: () => import('@/pages/system/AccountSettingsPage.vue')
   }
 } satisfies Record<string, CenterRouteDefinition>
 
