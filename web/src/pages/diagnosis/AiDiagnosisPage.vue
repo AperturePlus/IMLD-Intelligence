@@ -63,7 +63,7 @@
               {{ selectedPatient.name }} 已完成 AI 报告
             </el-text>
             <el-text type="info" style="margin-bottom: 30px; display: block;">
-              已出报告患者无需再次启动大模型，系统将直接展示历史报告。
+              已出报告患者无需再次启动 AI，系统将直接展示历史报告。
             </el-text>
             <el-button type="primary" plain size="large" :icon="Download" @click="loadSelectedPatientReport">
               重新调取已出报告
@@ -86,7 +86,7 @@
               :disabled="isBusy"
               @click="startDiagnosis"
             >
-              启动 AI 智能筛查大模型
+              启动 AI 智能筛查
             </el-button>
           </div>
 
@@ -111,9 +111,9 @@
                     :stroke-width="12"
                   >
                     <template #default="{ percentage }">
-                      <span class="percentage-value">{{ percentage }}%</span>
+                      <span class="percentage-value" :style="{ color: riskBand.color }">{{ percentage }}%</span>
                       <br>
-                      <span class="percentage-label">极高危</span>
+                      <span class="percentage-label">{{ riskBand.label }}</span>
                     </template>
                   </el-progress>
                 </div>
@@ -220,7 +220,7 @@ const isBusy = computed(() => isDiagnosing.value || isLoadingReportedResult.valu
 
 const loadingText = computed(() => {
   if (isDiagnosing.value) {
-    return 'IMLD 早筛诊辅 AI 正在解析临床表型与数据，请稍候...'
+    return 'IMLD AI 正在解析临床表型与数据，请稍候...'
   }
   return '正在调取该患者的历史 AI 报告，请稍候...'
 })
@@ -230,6 +230,18 @@ const customColors = [
   { color: '#e6a23c', percentage: 70 },
   { color: '#f56c6c', percentage: 100 }
 ]
+
+const RISK_BANDS = [
+  { min: 85, label: '极高危', color: '#f56c6c' },
+  { min: 70, label: '高危', color: '#f56c6c' },
+  { min: 30, label: '中危', color: '#e6a23c' },
+  { min: 0, label: '低危', color: '#67c23a' }
+]
+
+const riskBand = computed(() => {
+  const probability = diagnosisResult.value?.probability ?? 0
+  return RISK_BANDS.find((band) => probability >= band.min) ?? RISK_BANDS[RISK_BANDS.length - 1]
+})
 
 const resolveSeedReportedPatientIds = (items: DiagnosisQueuePatient[]): string[] => {
   return items
@@ -272,7 +284,7 @@ const loadReportedDiagnosis = async (patient: DiagnosisQueuePatient) => {
     if (!res.data) {
       seedReportedPatientIds.value = seedReportedPatientIds.value.filter((id) => id !== patient.id)
       resetMockQueueStatuses()
-      ElMessage.warning('该患者暂无已出报告，请点击“启动 AI 智能筛查大模型”')
+      ElMessage.warning('该患者暂无已出报告，请点击“启动 AI 智能筛查”')
       return
     }
     diagnosisResult.value = res.data
@@ -503,7 +515,6 @@ onMounted(() => {
 .percentage-value {
   font-size: 28px;
   font-weight: bold;
-  color: #f56c6c;
 }
 
 .percentage-label {
