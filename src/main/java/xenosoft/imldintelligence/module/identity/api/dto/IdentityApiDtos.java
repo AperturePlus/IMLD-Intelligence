@@ -178,6 +178,41 @@ public final class IdentityApiDtos {
         }
 
         /**
+         * Update the current authenticated account profile.
+         */
+        public record UpdateAccountProfileCommand(
+                @Size(max = 100, message = "displayName must be at most 100 characters")
+                String displayName,
+                @Size(max = 100, message = "deptName must be at most 100 characters")
+                String deptName,
+                @Size(max = 128, message = "email must be at most 128 characters")
+                String email,
+                @Size(max = 32, message = "mobilePlaintext must be at most 32 characters")
+                String mobilePlaintext,
+                @Size(max = 255, message = "currentPassword must be at most 255 characters")
+                String currentPassword
+        ) {
+        }
+
+        /**
+         * Change the current authenticated account password.
+         */
+        public record ChangePasswordCommand(
+                @NotBlank(message = "currentPassword must not be blank")
+                @Size(max = 255, message = "currentPassword must be at most 255 characters")
+                String currentPassword,
+                @NotBlank(message = "newPassword must not be blank")
+                @Size(min = 6, max = 255, message = "newPassword must be between 6 and 255 characters")
+                String newPassword,
+                @NotBlank(message = "confirmPassword must not be blank")
+                @Size(max = 255, message = "confirmPassword must be at most 255 characters")
+                String confirmPassword,
+                @NotBlank(message = "refreshToken must not be blank")
+                String refreshToken
+        ) {
+        }
+
+        /**
          * 新增或补录患者。
          *
          * <p>明文字段只用于边界层接收，后续实现必须完成加密与脱敏。</p>
@@ -308,6 +343,24 @@ public final class IdentityApiDtos {
                 String purpose,
                 OffsetDateTime expiresAt,
                 long resendAfterSeconds
+        ) {
+        }
+
+        /**
+         * Current authenticated account profile.
+         */
+        public record AccountProfileResponse(
+                Long userId,
+                Long tenantId,
+                String userNo,
+                String username,
+                String displayName,
+                String userType,
+                String deptName,
+                String email,
+                String mobileMasked,
+                List<String> roleCodes,
+                OffsetDateTime lastLoginAt
         ) {
         }
 

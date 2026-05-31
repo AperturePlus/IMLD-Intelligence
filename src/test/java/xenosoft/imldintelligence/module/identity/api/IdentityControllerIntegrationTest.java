@@ -70,6 +70,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -202,6 +203,40 @@ class IdentityControllerIntegrationTest {
     }
 
     @Test
+    void accountProfileSucceedsForDoctorWithoutSystemAdminRole() throws Exception {
+        mockMvc.perform(get("/api/v1/web/identity/account/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + doctorToken)
+                        .header("X-Tenant-Id", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.userId").value(2))
+                .andExpect(jsonPath("$.data.username").value("doctor"));
+    }
+
+    @Test
+    void accountProfileRejectsMismatchedTenantHeader() throws Exception {
+        mockMvc.perform(get("/api/v1/web/identity/account/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + doctorToken)
+                        .header("X-Tenant-Id", "2"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void updateAccountProfileSucceedsForDoctor() throws Exception {
+        mockMvc.perform(patch("/api/v1/web/identity/account/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + doctorToken)
+                        .header("X-Tenant-Id", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"displayName":"Doctor Ren","deptName":"Liver Center"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.displayName").value("Doctor Ren"))
+                .andExpect(jsonPath("$.data.deptName").value("Liver Center"));
+    }
+
+    @Test
     void listConsentsWithValidToken() throws Exception {
         mockMvc.perform(get("/api/v1/identity/consents")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
@@ -240,7 +275,8 @@ class IdentityControllerIntegrationTest {
             IdentityController.class,
             IdentityResponseAssembler.class,
             xenosoft.imldintelligence.module.identity.internal.aop.PermissionAspect.class,
-            xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider.class
+            xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider.class,
+            xenosoft.imldintelligence.module.identity.internal.service.impl.AccountSettingsServiceImpl.class
     })
     static class TestApplication {
 
@@ -278,6 +314,7 @@ class IdentityControllerIntegrationTest {
             admin.setId(1L);
             admin.setTenantId(1L);
             admin.setUsername("admin");
+            admin.setDisplayName("Admin");
             admin.setUserType("ADMIN");
             admin.setStatus("ACTIVE");
             when(repo.findById(1L, 1L)).thenReturn(Optional.of(admin));
@@ -286,9 +323,12 @@ class IdentityControllerIntegrationTest {
             doctor.setId(2L);
             doctor.setTenantId(1L);
             doctor.setUsername("doctor");
+            doctor.setDisplayName("Doctor");
             doctor.setUserType("DOCTOR");
             doctor.setStatus("ACTIVE");
+            doctor.setPasswordHash("$2a$10$known");
             when(repo.findById(1L, 2L)).thenReturn(Optional.of(doctor));
+            when(repo.update(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
             return repo;
         }
