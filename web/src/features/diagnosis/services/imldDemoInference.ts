@@ -1,5 +1,7 @@
 import modelMetadataUrl from '@/assets/models/imld/imld_model_meta.json?url'
 import modelUrl from '@/assets/models/imld/imld_xgboost_model.onnx?url'
+import type { PatientRecordPayload } from '@/types/patient'
+import { buildFeatureVectorFromRecord, buildIndicatorsFromRecord } from './emrFeatureMapping'
 
 type ProgressStatus = '' | 'success' | 'warning' | 'exception'
 
@@ -226,6 +228,9 @@ const readRiskProbability = (outputs: Record<string, OrtTensor>): number => {
 }
 
 const diseaseGenes = (diseaseName: string): string[] => {
+  if (diseaseName.includes('Gilbert') || diseaseName.includes('吉尔伯特')) {
+    return []
+  }
   if (diseaseName.includes('血色')) {
     return ['HFE (C282Y)', 'HFE (H63D)']
   }
@@ -239,6 +244,9 @@ const diseaseGenes = (diseaseName: string): string[] => {
 }
 
 const dietAdvice = (diseaseName: string): string => {
+  if (diseaseName.includes('Gilbert') || diseaseName.includes('吉尔伯特')) {
+    return '良性高胆红素血症，无需特殊忌口，建议规律作息、避免饥饿与过度疲劳。'
+  }
   if (diseaseName.includes('血色')) {
     return '建议限制红肉和动物内脏，避免随餐补充维生素C，餐后可饮茶抑制铁吸收。'
   }
@@ -252,6 +260,9 @@ const dietAdvice = (diseaseName: string): string => {
 }
 
 const sequencingAdvice = (diseaseName: string): string => {
+  if (diseaseName.includes('Gilbert') || diseaseName.includes('吉尔伯特')) {
+    return '可结合 UGT1A1 基因多态性检测，通常为良性病程，定期随访即可。'
+  }
   if (diseaseName.includes('血色')) {
     return '建议进行 HFE 基因检测，并对一级亲属开展家系筛查。'
   }
@@ -264,52 +275,68 @@ const sequencingAdvice = (diseaseName: string): string => {
   return '建议 ATP7B 靶向测序，并开展一级亲属筛查。'
 }
 
-export const predictImldDemoDiagnosis = async (patient: DemoPatient): Promise<DiagnosisPayload | null> => {
+const buildIndicatorsFromOverrides = (
+  patient: DemoPatient,
+  probability: number
+): DiagnosisPayload['indicators'] => {
+  const overrides = patientOverrides(patient)
+  return [
+    {
+      name: 'TBIL',
+      value: Number(overrides['TBIL(μmol/L)'] ?? 0),
+      unit: 'μmol/L',
+      normal: '3.4-17.1',
+      percentage: clamp(Math.round(Number(overrides['TBIL(μmol/L)'] ?? 0) / 0.6), 20, 95),
+      status: probability >= 70 ? 'exception' : 'warning'
+    },
+    {
+      name: 'ALT',
+      value: Number(overrides['ALT(U/L)'] ?? 0),
+      unit: 'U/L',
+      normal: '0-40',
+      percentage: clamp(Math.round(Number(overrides['ALT(U/L)'] ?? 0) / 1.4), 20, 95),
+      status: probability >= 70 ? 'exception' : 'warning'
+    },
+    {
+      name: 'ceruloplasmin',
+      value: Number(overrides.ceruloplasmin ?? 0),
+      unit: 'mg/L',
+      normal: '200-600',
+      percentage: clamp(Math.round(Number(overrides.ceruloplasmin ?? 0) / 6), 15, 95),
+      status: Number(overrides.ceruloplasmin ?? 0) < 200 ? 'exception' : ''
+    }
+  ]
+}
+
+export const predictImldDemoDiagnosis = async (
+  patient: DemoPatient,
+  record?: PatientRecordPayload | null
+): Promise<DiagnosisPayload | null> => {
   if (!isDemoInferenceEnabled()) {
     return null
   }
 
   try {
     const [metadata, session, ort] = await Promise.all([loadMetadata(), loadSession(), loadOrtRuntime()])
-    const features = buildFeatureVector(metadata, patient)
+    const features = record
+      ? buildFeatureVectorFromRecord(metadata, record)
+      : buildFeatureVector(metadata, patient)
     const inputName = session.inputNames[0] || 'features'
     const outputs = await session.run({
       [inputName]: new ort.Tensor('float32', features, [1, features.length])
     })
     const riskProbability = readRiskProbability(outputs)
     const probability = Math.round(riskProbability * 100)
-    const overrides = patientOverrides(patient)
-    const diseaseName = patient.disease || '遗传代谢性肝病风险提示'
+    const diseaseName = record?.clinicalDecision?.diagnosis || patient.disease || '遗传代谢性肝病风险提示'
+
+    const indicators = record
+      ? buildIndicatorsFromRecord(record, diseaseName)
+      : buildIndicatorsFromOverrides(patient, probability)
 
     return {
       diseaseName,
       probability,
-      indicators: [
-        {
-          name: 'TBIL',
-          value: Number(overrides['TBIL(μmol/L)'] ?? 0),
-          unit: 'μmol/L',
-          normal: '3.4-17.1',
-          percentage: clamp(Math.round(Number(overrides['TBIL(μmol/L)'] ?? 0) / 0.6), 20, 95),
-          status: probability >= 70 ? 'exception' : 'warning'
-        },
-        {
-          name: 'ALT',
-          value: Number(overrides['ALT(U/L)'] ?? 0),
-          unit: 'U/L',
-          normal: '0-40',
-          percentage: clamp(Math.round(Number(overrides['ALT(U/L)'] ?? 0) / 1.4), 20, 95),
-          status: probability >= 70 ? 'exception' : 'warning'
-        },
-        {
-          name: 'ceruloplasmin',
-          value: Number(overrides.ceruloplasmin ?? 0),
-          unit: 'mg/L',
-          normal: '200-600',
-          percentage: clamp(Math.round(Number(overrides.ceruloplasmin ?? 0) / 6), 15, 95),
-          status: Number(overrides.ceruloplasmin ?? 0) < 200 ? 'exception' : ''
-        }
-      ],
+      indicators,
       genes: diseaseGenes(diseaseName),
       diet: dietAdvice(diseaseName),
       sequencing: sequencingAdvice(diseaseName)
