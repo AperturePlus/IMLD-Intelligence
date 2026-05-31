@@ -8,6 +8,7 @@ import {
   toAiFinding
 } from '../core/mockState'
 import { wait } from '../core/mockUtils'
+import { predictImldDemoDiagnosis } from '@/features/diagnosis/services/imldDemoInference'
 
 const SUCCESS_CODE = 200
 const DEFAULT_PAGE_SIZE = 20
@@ -15,6 +16,11 @@ const MAX_PAGE_SIZE = 200
 const DEFAULT_DOCTOR_ID = 1
 const DEFAULT_MODEL_REGISTRY_ID = 1
 const AI_DIAGNOSIS_EXTRA_DELAY_MS = Number(import.meta.env.VITE_MOCK_AI_DIAGNOSIS_DELAY_MS ?? 1800)
+
+const buildMockDiagnosisPayload = async (patient) => {
+  const inferredPayload = await predictImldDemoDiagnosis(patient)
+  return inferredPayload || buildDiagnosisPayload(patient)
+}
 
 const successEnvelope = (data, message = 'success') => ({
   code: SUCCESS_CODE,
@@ -343,7 +349,7 @@ export const diagnosisExactHandlers = {
 
     await wait(AI_DIAGNOSIS_EXTRA_DELAY_MS)
 
-    const diagnosisPayload = buildDiagnosisPayload(patient)
+    const diagnosisPayload = await buildMockDiagnosisPayload(patient)
 
     const doctorId = parsePositiveInt(data.doctorId, DEFAULT_DOCTOR_ID)
     const report = upsertDiagnosisReport(patient, diagnosisPayload, doctorId)
@@ -427,7 +433,7 @@ export const diagnosisExactHandlers = {
 
     await wait(AI_DIAGNOSIS_EXTRA_DELAY_MS)
 
-    const diagnosisPayload = buildDiagnosisPayload(patient)
+    const diagnosisPayload = await buildMockDiagnosisPayload(patient)
 
     upsertDiagnosisReport(patient, diagnosisPayload)
 
