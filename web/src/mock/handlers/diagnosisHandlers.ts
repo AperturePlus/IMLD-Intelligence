@@ -2,6 +2,7 @@
 
 import {
   buildDiagnosisPayload,
+  findRecordPayloadByPatientNo,
   loadPatients,
   loadReports,
   saveReports,
@@ -18,7 +19,8 @@ const DEFAULT_MODEL_REGISTRY_ID = 1
 const AI_DIAGNOSIS_EXTRA_DELAY_MS = Number(import.meta.env.VITE_MOCK_AI_DIAGNOSIS_DELAY_MS ?? 1800)
 
 const buildMockDiagnosisPayload = async (patient) => {
-  const inferredPayload = await predictImldDemoDiagnosis(patient)
+  const record = findRecordPayloadByPatientNo(patient.id)
+  const inferredPayload = await predictImldDemoDiagnosis(patient, record)
   return inferredPayload || buildDiagnosisPayload(patient)
 }
 
