@@ -4,8 +4,8 @@ spring:
   profiles:
     group:
       dev-saas: dev,saas
-      dev-private: dev,private
-      dev-private-bridge: dev,private,private-bridge
+      dev-private: dev,private,dev-license-bypass
+      dev-private-bridge: dev,private,private-bridge,dev-license-bypass
   datasource:
     driver-class-name: ${IMLD_DB_DRIVER:org.postgresql.Driver}
     url: ${IMLD_DB_URL:jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8}

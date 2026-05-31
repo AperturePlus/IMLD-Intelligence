@@ -1,0 +1,4 @@
+imld:
+  licensing:
+    private-edition:
+      startup-validation-enabled: ${IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED:false}

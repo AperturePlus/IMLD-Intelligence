@@ -24,6 +24,10 @@
   - `dev-saas`：`.\gradlew.bat bootRun --args="--spring.profiles.active=dev-saas"`
   - `dev-private`：`.\gradlew.bat bootRun --args="--spring.profiles.active=dev-private"`
   - `dev-private-bridge`：`.\gradlew.bat bootRun --args="--spring.profiles.active=dev-private-bridge"`
+- `dev-private` 与 `dev-private-bridge` 默认加载 `dev-license-bypass`，本地开发不做许可证启动验签。
+- 若开发环境需要显式验证真实许可证，可通过启动参数开启：
+  - `.\gradlew.bat bootRun --args="--spring.profiles.active=dev-private --imld.licensing.private-edition.startup-validation-enabled=true --imld.licensing.private-edition.public-key-file-path=C:\imld\license\public.pem --imld.licensing.private-edition.license-file-path=C:\imld\license\license.json --imld.licensing.private-edition.activation-state-file-path=C:\imld\license\activation-state.json"`
+  - 或设置环境变量 `IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED=true` 后再启动 `dev-private`。
 - 交付环境建议使用部署形态 profile：
   - `saas`
   - `private`
@@ -32,7 +36,7 @@
   - `IMLD_LICENSE_FILE_PATH`
   - `IMLD_LICENSE_PUBLIC_KEY_FILE_PATH`
   - `IMLD_ACTIVATION_STATE_FILE_PATH`
-- 若仅用于本地联调且不做授权验签，可临时设置 `IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED=false`，但不得作为生产配置。
+- 若仅用于本地联调且不做授权验签，只允许使用开发 profile 默认跳过或临时设置 `IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED=false`；不得作为生产配置。
 - 当 profile 名称、激活参数、启动方式变更时，必须同时更新 `README.md` 启动命令章节与本节内容。
 
 ## 工作总原则
