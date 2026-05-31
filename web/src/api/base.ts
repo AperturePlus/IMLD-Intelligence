@@ -5,7 +5,7 @@ import { createMockAdapter, isMockEnabled } from '../mock/httpMock'
 
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://115.190.101.111:10001/',
-  withCredentials: true,
+  withCredentials: false,
   timeout: 15000
 })
 
