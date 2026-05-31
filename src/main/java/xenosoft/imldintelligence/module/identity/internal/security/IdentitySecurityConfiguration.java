@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -122,20 +123,17 @@ public class IdentitySecurityConfiguration {
         return new JsonAccessDeniedHandler(objectMapper);
     }
 
-    /**
-     * 创建 CORS 配置源 Bean（安全关闭时启用，便于本地开发跨域请求）。
-     *
-     * @return CORS 配置源实例
-     */
     @Bean
-    @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "false", matchIfMissing = true)
-    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource(IdentitySecurityProperties properties) {
+        IdentitySecurityProperties.Cors cors = properties.getCors();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(false);
-        configuration.setMaxAge(3600L);
+        configuration.setAllowedOrigins(nonBlankList(cors.getAllowedOrigins()));
+        configuration.setAllowedOriginPatterns(nonBlankList(cors.getAllowedOriginPatterns()));
+        configuration.setAllowedMethods(nonBlankList(cors.getAllowedMethods()));
+        configuration.setAllowedHeaders(nonBlankList(cors.getAllowedHeaders()));
+        configuration.setExposedHeaders(nonBlankList(cors.getExposedHeaders()));
+        configuration.setAllowCredentials(cors.isAllowCredentials());
+        configuration.setMaxAge(cors.getMaxAge());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -151,5 +149,15 @@ public class IdentitySecurityConfiguration {
                 .rememberMe(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+    }
+
+    private List<String> nonBlankList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .toList();
     }
 }

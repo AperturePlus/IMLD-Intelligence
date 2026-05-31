@@ -30,6 +30,7 @@ public class IdentitySecurityProperties {
             "/actuator/info"
     ));
     private Jwt jwt = new Jwt();
+    private Cors cors = new Cors();
 
     /**
      * 在启用安全能力时校验 JWT 配置是否完整可用。
@@ -80,5 +81,20 @@ public class IdentitySecurityProperties {
         private Duration accessTokenTtl = Duration.ofMinutes(15);
         private Duration refreshTokenTtl = Duration.ofDays(7);
         private Duration clockSkew = Duration.ofSeconds(30);
+    }
+
+    /**
+     * CORS 参数配置，生产环境默认不开放跨域来源。
+     */
+    @Getter
+    @Setter
+    public static class Cors {
+        private List<String> allowedOrigins = new ArrayList<>();
+        private List<String> allowedOriginPatterns = new ArrayList<>();
+        private List<String> allowedMethods = new ArrayList<>(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        private List<String> allowedHeaders = new ArrayList<>(List.of("*"));
+        private List<String> exposedHeaders = new ArrayList<>();
+        private boolean allowCredentials = false;
+        private long maxAge = 3600L;
     }
 }

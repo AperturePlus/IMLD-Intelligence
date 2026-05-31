@@ -129,6 +129,14 @@ imld:
       access-token-ttl: ${IMLD_JWT_ACCESS_TOKEN_TTL:15m}
       refresh-token-ttl: ${IMLD_JWT_REFRESH_TOKEN_TTL:7d}
       clock-skew: ${IMLD_JWT_CLOCK_SKEW:30s}
+    cors:
+      allowed-origins: ${IMLD_CORS_ALLOWED_ORIGINS:}
+      allowed-origin-patterns: ${IMLD_CORS_ALLOWED_ORIGIN_PATTERNS:}
+      allowed-methods: ${IMLD_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+      allowed-headers: ${IMLD_CORS_ALLOWED_HEADERS:*}
+      exposed-headers: ${IMLD_CORS_EXPOSED_HEADERS:}
+      allow-credentials: ${IMLD_CORS_ALLOW_CREDENTIALS:false}
+      max-age: ${IMLD_CORS_MAX_AGE:3600}
   identity:
     verification:
       code-length: ${IMLD_EMAIL_CODE_LENGTH:6}
