@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
@@ -125,6 +127,14 @@ public class GlobalExceptionHandler {
         ResultCode resultCode = resolveResultCode(statusCode);
         String message = defaultIfBlank(ex.getReason(), resultCode.getMessage());
         return buildResponse(statusCode, resultCode, message);
+    }
+
+    /**
+     * 处理未匹配到控制器或静态资源的请求。
+     */
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleMissingRoute(Exception ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ResultCode.NOT_FOUND, ResultCode.NOT_FOUND.getMessage());
     }
 
     /**
