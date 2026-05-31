@@ -2,7 +2,11 @@
   <el-aside :width="isCollapse ? '64px' : '220px'" class="modern-sidebar">
     <div class="sidebar-header">
       <img v-show="!isCollapse" :src="logoImg" alt="logo" class="logo-img" />
-      <span v-show="!isCollapse" class="product-name">{{ BRANDING.sidebarTitle }}</span>
+      <div v-show="!isCollapse" class="product-name-container">
+        <div class="product-name-main">IMLD</div>
+        <div class="product-name-sub">智能早筛与</div>
+        <div class="product-name-sub">辅助诊断系统</div>
+      </div>
 
       <div
         class="collapse-trigger"
@@ -55,14 +59,14 @@
         <div class="user-profile-card" :class="{ 'is-collapsed': isCollapse }">
           <el-avatar :size="32" :src="doctorAvatar" class="user-avatar" />
           <div v-show="!isCollapse" class="user-info">
-            <div class="user-name">李医生</div>
-            <div class="user-role">主任医师</div>
+            <div class="user-name">{{ userDisplayName }}</div>
+            <div class="user-role">{{ userRoleLabel }}</div>
           </div>
           <el-icon v-show="!isCollapse" class="more-icon"><MoreFilled /></el-icon>
         </div>
         <template #dropdown>
           <el-dropdown-menu class="modern-dropdown-menu">
-            <el-dropdown-item>
+            <el-dropdown-item @click="handleAccountSettings">
               <el-icon><User /></el-icon> 账户设置
             </el-dropdown-item>
             <el-dropdown-item divided class="danger-item" @click="handleLogout">
@@ -76,13 +80,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import logoImg from '@/assets/logo.svg'
 import defaultDoctorAvatar from '@/assets/default-doctor.svg'
+import accountApi from '@/api/account'
 import { navigationGroups } from '@/app/router/routeCatalog'
 import { BRANDING } from '@/constants/branding'
+import type { AccountProfileResponse } from '@/types/account'
 
 const router = useRouter()
 const route = useRoute()
@@ -90,6 +96,8 @@ const isCollapse = ref(false)
 provide('isCollapse', isCollapse)
 
 const activeMenu = ref('/center/patient-list')
+const userDisplayName = ref('医生用户')
+const userRoleLabel = ref('医生')
 
 const doctorAvatar = computed(() => {
   const storedAvatar = localStorage.getItem('userAvatar')
@@ -103,13 +111,93 @@ watchEffect(() => {
   activeMenu.value = route.path
 })
 
+const roleLabelMap: Record<string, string> = {
+  SYSTEM_ADMIN: '系统管理员',
+  COMPLIANCE_AUDITOR: '合规审计员',
+  DOCTOR: '医生',
+  NURSE: '护士',
+  ADMIN: '管理员',
+  PATIENT: '患者'
+}
+
 function toggleCollapse() {
   isCollapse.value = !isCollapse.value
 }
 
-function handleLogout() {
+function parseStoredRoles(): string[] {
+  try {
+    const raw = localStorage.getItem('roleCodes')
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function resolveRoleLabel(roleCodes: string[], userType: string | null): string {
+  const firstRole = roleCodes.find((role) => roleLabelMap[role])
+  if (firstRole) {
+    return roleLabelMap[firstRole]
+  }
+
+  const normalizedType = typeof userType === 'string' ? userType.trim().toUpperCase() : ''
+  return roleLabelMap[normalizedType] || normalizedType || '医生'
+}
+
+function persistProfile(profile: AccountProfileResponse): void {
+  localStorage.setItem('username', profile.username || '')
+  localStorage.setItem('userDisplayName', profile.displayName || profile.username || '')
+  localStorage.setItem('userType', profile.userType || '')
+  localStorage.setItem('roleCodes', JSON.stringify(profile.roleCodes || []))
+  localStorage.setItem('userId', String(profile.userId))
+  localStorage.setItem('tenantId', String(profile.tenantId))
+}
+
+function refreshUserFromStorage(): void {
+  const displayName = localStorage.getItem('userDisplayName') || localStorage.getItem('username') || ''
+  const userType = localStorage.getItem('userType')
+  const roleCodes = parseStoredRoles()
+  userDisplayName.value = displayName.trim() || '医生用户'
+  userRoleLabel.value = resolveRoleLabel(roleCodes, userType)
+}
+
+async function loadCurrentProfile(): Promise<void> {
+  if (!localStorage.getItem('token')) {
+    refreshUserFromStorage()
+    return
+  }
+
+  try {
+    const response = await accountApi.getCurrentProfile()
+    if (response.data?.code === 200 && response.data.data) {
+      persistProfile(response.data.data)
+    }
+  } catch {
+    // The global interceptor handles expired sessions; sidebar identity refresh can fail silently.
+  } finally {
+    refreshUserFromStorage()
+  }
+}
+
+function clearSessionStorage(): void {
   localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('username')
+  localStorage.removeItem('userDisplayName')
+  localStorage.removeItem('userType')
+  localStorage.removeItem('roleCodes')
+  localStorage.removeItem('userId')
+  localStorage.removeItem('tenantId')
   localStorage.removeItem('userAvatar')
+}
+
+function handleAccountSettings() {
+  router.push('/center/account-settings')
+}
+
+function handleLogout() {
+  clearSessionStorage()
+  refreshUserFromStorage()
   ElMessage({
     message: '您已成功退出！',
     type: 'success',
@@ -119,6 +207,16 @@ function handleLogout() {
     router.push('/')
   }, 1000)
 }
+
+onMounted(() => {
+  refreshUserFromStorage()
+  loadCurrentProfile()
+  window.addEventListener('imld:user-profile-updated', refreshUserFromStorage)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('imld:user-profile-updated', refreshUserFromStorage)
+})
 </script>
 
 <style scoped>
@@ -150,14 +248,31 @@ function handleLogout() {
   object-fit: cover;
 }
 
-.product-name {
+.product-name-container {
   margin-left: 12px;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  white-space: nowrap;
-  color: #ffffff;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.product-name-main {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.product-name-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: #a6adb4;
+  margin-top: 1px;
+  line-height: 1.1;
 }
 
 .collapse-trigger {

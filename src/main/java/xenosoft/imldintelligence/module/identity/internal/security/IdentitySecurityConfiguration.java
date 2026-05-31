@@ -15,7 +15,13 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 身份安全配置类，按配置在 JWT 鉴权链与开放访问链之间切换。
@@ -117,14 +123,41 @@ public class IdentitySecurityConfiguration {
         return new JsonAccessDeniedHandler(objectMapper);
     }
 
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(IdentitySecurityProperties properties) {
+        IdentitySecurityProperties.Cors cors = properties.getCors();
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(nonBlankList(cors.getAllowedOrigins()));
+        configuration.setAllowedOriginPatterns(nonBlankList(cors.getAllowedOriginPatterns()));
+        configuration.setAllowedMethods(nonBlankList(cors.getAllowedMethods()));
+        configuration.setAllowedHeaders(nonBlankList(cors.getAllowedHeaders()));
+        configuration.setExposedHeaders(nonBlankList(cors.getExposedHeaders()));
+        configuration.setAllowCredentials(cors.isAllowCredentials());
+        configuration.setMaxAge(cors.getMaxAge());
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     private HttpSecurity applyStatelessDefaults(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .rememberMe(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+    }
+
+    private List<String> nonBlankList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .toList();
     }
 }

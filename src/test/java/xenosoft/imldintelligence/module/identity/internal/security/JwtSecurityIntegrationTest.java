@@ -29,7 +29,9 @@ import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
 import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,7 +46,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "imld.security.jwt.secret=01234567890123456789012345678901",
         "imld.security.jwt.access-token-ttl=15m",
         "imld.security.jwt.refresh-token-ttl=7d",
-        "imld.security.jwt.clock-skew=0s"
+        "imld.security.jwt.clock-skew=0s",
+        "imld.security.cors.allowed-origin-patterns[0]=http://localhost:*",
+        "imld.security.cors.allowed-origin-patterns[1]=http://127.0.0.1:*"
 })
 class JwtSecurityIntegrationTest {
 
@@ -96,6 +100,23 @@ class JwtSecurityIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("forbidden"));
+    }
+
+    @Test
+    void shouldAllowConfiguredLocalCorsPreflight() throws Exception {
+        mockMvc.perform(options("/test/public")
+                        .header(HttpHeaders.ORIGIN, "http://localhost:5173")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:5173"));
+    }
+
+    @Test
+    void shouldRejectUnconfiguredCorsPreflight() throws Exception {
+        mockMvc.perform(options("/test/public")
+                        .header(HttpHeaders.ORIGIN, "https://example.invalid")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+                .andExpect(status().isForbidden());
     }
 
     @SpringBootConfiguration

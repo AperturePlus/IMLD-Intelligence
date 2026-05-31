@@ -1,28 +1,28 @@
 package xenosoft.imldintelligence.module.identity.internal.aop;
 
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import lombok.RequiredArgsConstructor;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
+
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import lombok.RequiredArgsConstructor;
 import xenosoft.imldintelligence.common.CheckPermission;
 import xenosoft.imldintelligence.common.RequireAnyRole;
 import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
 import xenosoft.imldintelligence.module.identity.internal.security.RoleAuthorityUtils;
 import xenosoft.imldintelligence.module.identity.internal.service.PermissionService;
-
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * 权限切面，负责拦截带权限注解的方法并执行授权校验。

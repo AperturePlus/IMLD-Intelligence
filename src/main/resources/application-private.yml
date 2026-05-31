@@ -1,7 +1,23 @@
+spring:
+  flyway:
+    validate-on-migrate: true
+    out-of-order: false
+    clean-disabled: true
+
 imld:
   deployment:
     mode: private
     tenant-mode: single-tenant
+  security:
+    enabled: true
+  identity:
+    verification:
+      sms:
+        enabled: false
+        provider: real
+  inference:
+    imld:
+      engine: xgboost-java
   cloud-bridge:
     enabled: false
     network:
@@ -15,7 +31,7 @@ imld:
     model: private-buyout
     private-edition:
       business-model: buyout
-      startup-validation-enabled: true
+      startup-validation-enabled: ${IMLD_PRIVATE_STARTUP_VALIDATION_ENABLED:true}
       activation-required: true
       activation-code: ${IMLD_ACTIVATION_CODE:}
       activation-state-file-path: ${IMLD_ACTIVATION_STATE_FILE_PATH:/opt/imld/license/activation-state.json}

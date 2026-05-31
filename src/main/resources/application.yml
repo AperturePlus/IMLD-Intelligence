@@ -4,8 +4,8 @@ spring:
   profiles:
     group:
       dev-saas: dev,saas
-      dev-private: dev,private
-      dev-private-bridge: dev,private,private-bridge
+      dev-private: dev,private,dev-license-bypass
+      dev-private-bridge: dev,private,private-bridge,dev-license-bypass
   datasource:
     driver-class-name: ${IMLD_DB_DRIVER:org.postgresql.Driver}
     url: ${IMLD_DB_URL:jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8}
@@ -18,6 +18,9 @@ spring:
     table: flyway_schema_history
     baseline-on-migrate: true
     baseline-version: 1
+    validate-on-migrate: ${IMLD_FLYWAY_VALIDATE_ON_MIGRATE:true}
+    out-of-order: ${IMLD_FLYWAY_OUT_OF_ORDER:false}
+    clean-disabled: ${IMLD_FLYWAY_CLEAN_DISABLED:true}
   data:
     redis:
       host: ${IMLD_REDIS_HOST:localhost}
@@ -112,6 +115,7 @@ imld:
       - /api/v1/app/identity/auth/**
       - /api/v1/web/identity/auth/**
       - /actuator/health
+      - /actuator/health/**
       - /actuator/info
       - /swagger-ui.html
       - /swagger-ui/**
@@ -125,6 +129,14 @@ imld:
       access-token-ttl: ${IMLD_JWT_ACCESS_TOKEN_TTL:15m}
       refresh-token-ttl: ${IMLD_JWT_REFRESH_TOKEN_TTL:7d}
       clock-skew: ${IMLD_JWT_CLOCK_SKEW:30s}
+    cors:
+      allowed-origins: ${IMLD_CORS_ALLOWED_ORIGINS:}
+      allowed-origin-patterns: ${IMLD_CORS_ALLOWED_ORIGIN_PATTERNS:}
+      allowed-methods: ${IMLD_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+      allowed-headers: ${IMLD_CORS_ALLOWED_HEADERS:*}
+      exposed-headers: ${IMLD_CORS_EXPOSED_HEADERS:}
+      allow-credentials: ${IMLD_CORS_ALLOW_CREDENTIALS:false}
+      max-age: ${IMLD_CORS_MAX_AGE:3600}
   identity:
     verification:
       code-length: ${IMLD_EMAIL_CODE_LENGTH:6}
@@ -133,6 +145,9 @@ imld:
       max-verify-attempts: ${IMLD_EMAIL_CODE_MAX_VERIFY_ATTEMPTS:5}
       email-subject-prefix: ${IMLD_EMAIL_SUBJECT_PREFIX:[IMLD]}
       from-address: ${IMLD_SMTP_FROM:}
+      sms:
+        enabled: ${IMLD_SMS_ENABLED:true}
+        provider: ${IMLD_SMS_PROVIDER:mock}
   cloud-bridge:
     enabled: ${IMLD_CLOUD_BRIDGE_ENABLED:false}
     scenario-allowlist:
@@ -196,6 +211,17 @@ springdoc:
     default-models-expand-depth: 1
     default-model-expand-depth: 1
   show-actuator: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
 
 resilience4j:
   circuitbreaker:

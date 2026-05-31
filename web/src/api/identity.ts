@@ -1,34 +1,8 @@
 import type { AxiosResponse } from 'axios'
 import service from './base'
+import { resolveTenantId } from './tenant'
 import type { ApiEnvelope, PagedResult } from '@/types/common'
 import type { UserAccountPageQuery, UserAccountResponse } from '@/types/identity'
-
-const parseTenantId = (value: unknown): number | null => {
-  if (typeof value !== 'string' || !value.trim()) {
-    return null
-  }
-
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return null
-  }
-
-  return parsed
-}
-
-const resolveTenantId = (): number => {
-  const fromStorage = parseTenantId(localStorage.getItem('tenantId'))
-  if (fromStorage) {
-    return fromStorage
-  }
-
-  const fromEnv = parseTenantId(import.meta.env.VITE_TENANT_ID)
-  if (fromEnv) {
-    return fromEnv
-  }
-
-  return 1
-}
 
 const identityApi = {
   listUsers(

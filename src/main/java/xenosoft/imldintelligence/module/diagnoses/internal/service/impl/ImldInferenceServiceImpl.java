@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Service
+@ConditionalOnProperty(prefix = "imld.inference.imld", name = "engine", havingValue = "xgboost-java", matchIfMissing = true)
 public class ImldInferenceServiceImpl implements ImldInferenceService {
     private static final Logger logger = LoggerFactory.getLogger(ImldInferenceServiceImpl.class);
 
@@ -132,7 +134,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
         Objects.requireNonNull(request, "request must not be null");
         ModelMeta meta = loadModelMeta();
         FeaturePreparation prepared = buildFeatureRow(request, meta.featureColumns());
-        float[] aligned = alignFeatures(prepared.featureRow(), meta.featureColumns());
+        float[] aligned = alignFeatures(prepared.featureRow(), meta);
 
         double riskProbability = round4(predictProbability(aligned));
         int riskLabel = riskProbability >= 0.5 ? 1 : 0;
@@ -172,7 +174,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
         int index = 1;
         for (ImldInferenceApiDtos.Request.ImldPredictRequest request : requests) {
             FeaturePreparation prepared = buildFeatureRow(request, meta.featureColumns());
-            float[] aligned = alignFeatures(prepared.featureRow(), meta.featureColumns());
+            float[] aligned = alignFeatures(prepared.featureRow(), meta);
             double riskProbability = round4(predictProbability(aligned));
             results.add(new ImldInferenceApiDtos.Response.BatchPredictItem(
                     index++,
@@ -197,7 +199,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
     private FeaturePreparation buildFeatureRow(ImldInferenceApiDtos.Request.ImldPredictRequest payload,
                                                List<String> featureColumns) {
         List<NormalizedVariant> normalizedVariants = normalizeVariants(payload.geneVariants());
-        boolean includeNasScore = featureColumns.contains("nasScore");
+        boolean includeNasScore = featureColumns.contains("nasScore") || featureColumns.contains("NAS");
         long seed = stableSeed(payload, normalizedVariants, includeNasScore);
         SplittableRandom random = new SplittableRandom(seed);
 
@@ -222,19 +224,23 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
         if (includeNasScore && payload.nasScore() != null) {
             desensitizedClinical.put("nasScore", payload.nasScore());
         }
+        if (payload.clinicalFeatures() != null && !payload.clinicalFeatures().isEmpty()) {
+            desensitizedClinical.put("clinical_features", payload.clinicalFeatures());
+        }
 
         EncodedGeneFeatures encodedGene = encodeGeneVariants(normalizedVariants);
 
         Map<String, Double> row = new LinkedHashMap<>();
-        row.put("age", payload.age().doubleValue());
-        row.put("gender", payload.gender().doubleValue());
-        row.put("ALT", alt);
-        row.put("bilirubin", bilirubin);
-        row.put("ceruloplasmin", ceruloplasmin);
-        row.put("jaundice", payload.jaundice().doubleValue());
+        putFeatureWithAliases(row, "age", payload.age().doubleValue());
+        putFeatureWithAliases(row, "gender", payload.gender().doubleValue());
+        putFeatureWithAliases(row, "ALT", alt);
+        putFeatureWithAliases(row, "bilirubin", bilirubin);
+        putFeatureWithAliases(row, "ceruloplasmin", ceruloplasmin);
+        putFeatureWithAliases(row, "jaundice", payload.jaundice().doubleValue());
         if (includeNasScore && payload.nasScore() != null) {
-            row.put("nasScore", payload.nasScore().doubleValue());
+            putFeatureWithAliases(row, "nasScore", payload.nasScore().doubleValue());
         }
+        putClinicalFeatures(row, payload.clinicalFeatures());
         row.putAll(encodedGene.features());
 
         for (String feature : defaultInferenceFeatureColumns()) {
@@ -258,6 +264,73 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
                 analyzeClinicalAbnormalities(payload),
                 encodedGene.abnormalVariants()
         );
+    }
+
+    private void putClinicalFeatures(Map<String, Double> row, Map<String, Double> clinicalFeatures) {
+        if (clinicalFeatures == null || clinicalFeatures.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Double> entry : clinicalFeatures.entrySet()) {
+            if (entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null
+                    || entry.getValue().isNaN() || entry.getValue().isInfinite()) {
+                continue;
+            }
+            putFeatureWithAliases(row, entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void putFeatureWithAliases(Map<String, Double> row, String feature, double value) {
+        row.put(feature, value);
+        for (String alias : featureAliases(feature)) {
+            row.put(alias, value);
+        }
+    }
+
+    private List<String> featureAliases(String feature) {
+        String normalized = normalizeFeatureName(feature);
+        return switch (normalized) {
+            case "age" -> List.of("age");
+            case "gender" -> List.of("gender");
+            case "smoking", "smokinghistory" -> List.of("Smoking");
+            case "drinking", "drinkinghistory" -> List.of("Drinking");
+            case "diabetes", "diabeteshistory" -> List.of("糖尿病病史");
+            case "hypertension", "hypertensionhistory" -> List.of("高血压病史");
+            case "hyperuricemia", "hyperuricemiahistory" -> List.of("高尿酸血症病史");
+            case "hyperlipidemia", "hyperlipidemiahistory" -> List.of("高脂血症病史");
+            case "hepatitisb", "hepatitisbhistory", "hbv" -> List.of("乙肝病史");
+            case "nas", "nasscore" -> List.of("NAS", "nasScore");
+            case "ste", "stekpa" -> List.of("STE（Kpa）");
+            case "usss" -> List.of("USSS");
+            case "alt", "altul", "gpt" -> List.of("ALT", "ALT(U/L)");
+            case "bilirubin", "tbil", "tbilumoll" -> List.of("bilirubin", "TBIL(μmol/L)");
+            case "dbil", "dbilumoll" -> List.of("DBIL(μmol/L)");
+            case "ibil", "ibilumoll" -> List.of("IBIL(μmol/L)");
+            case "ast", "astul", "got" -> List.of("AST(U/L)");
+            case "tp", "tpgl" -> List.of("TP(g/L)");
+            case "alb", "albgl" -> List.of("ALB(g/L)");
+            case "glb", "glob", "glbgl" -> List.of("GLB(g/L)");
+            case "glu", "glummoll" -> List.of("GLU(mmol/L)");
+            case "uric", "ua", "uricumoll" -> List.of("URIC(μmol/L)");
+            case "tg", "tgmmoll" -> List.of("TG(mmol/L)");
+            case "chol", "tc", "cholmmoll" -> List.of("CHOL(mmol/L)");
+            case "hdlc", "hdlcmmoll" -> List.of("HDL-C(mmol/L)");
+            case "ldlc", "ldlcmmoll" -> List.of("LDL-C(mmol/L)");
+            case "alp", "alpul" -> List.of("ALP(U/L)");
+            case "ggt", "ggtul" -> List.of("GGT(U/L)");
+            case "tba", "tbaumoll" -> List.of("TBA(μmol/L)");
+            case "nh3", "nh3umoll" -> List.of("NH3(μmol/L)");
+            case "plt", "plt109l" -> List.of("PLT(10^9/L)");
+            case "wbc", "wbc109l" -> List.of("WBC(10^9/L)");
+            case "cer", "cp", "ceruloplasmin" -> List.of("ceruloplasmin", "CERULOPLASMIN");
+            case "pivka", "pivkamauml" -> List.of("PIVKA（mAU/mL）");
+            case "pt", "pts" -> List.of("PT(s)");
+            case "inr" -> List.of("INR");
+            case "crp", "crpmgl" -> List.of("CRP(mg/L)");
+            case "igg", "igggl" -> List.of("IgG(g/L)");
+            case "iga", "igagl" -> List.of("IgA(g/L)");
+            case "igm", "igmgl" -> List.of("IgM(g/L)");
+            default -> List.of();
+        };
     }
 
     private Map<String, Object> toHashVariant(NormalizedVariant variant) {
@@ -500,7 +573,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
         String metadataLocation = resolveResourceLocation(properties.getMetadataFilePath());
         Resource metadataResource = resourceLoader.getResource(Objects.requireNonNull(metadataLocation, "metadataLocation"));
         if (!metadataResource.exists()) {
-            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), properties.getModelVersionFallback());
+            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), Map.of(), properties.getModelVersionFallback());
             modelMeta = fallback;
             return fallback;
         }
@@ -526,27 +599,49 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
             if (metrics == null) {
                 metrics = Map.of();
             }
+            Map<String, Double> featureMedians = root.has("feature_medians")
+                    ? parseFeatureMedians(root.get("feature_medians"))
+                    : Map.of();
             String version = root.path("version").asText(properties.getModelVersionFallback());
-            ModelMeta loaded = new ModelMeta(List.copyOf(featureColumns), Map.copyOf(metrics), version);
+            ModelMeta loaded = new ModelMeta(List.copyOf(featureColumns), Map.copyOf(metrics), Map.copyOf(featureMedians), version);
             modelMeta = loaded;
             return loaded;
         } catch (IOException ex) {
             logger.warn("Failed to read or parse model metadata, fallback to defaults. metadataLocation={}", metadataLocation, ex);
-            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), properties.getModelVersionFallback());
+            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), Map.of(), properties.getModelVersionFallback());
             modelMeta = fallback;
             return fallback;
         } catch (RuntimeException ex) {
             logger.warn("Unexpected error while loading model metadata, fallback to defaults. metadataLocation={}", metadataLocation, ex);
-            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), properties.getModelVersionFallback());
+            ModelMeta fallback = new ModelMeta(defaultInferenceFeatureColumns(), Map.of(), Map.of(), properties.getModelVersionFallback());
             modelMeta = fallback;
             return fallback;
         }
     }
 
-    private float[] alignFeatures(Map<String, Double> featureRow, List<String> featureColumns) {
+    private Map<String, Double> parseFeatureMedians(JsonNode featureMediansNode) {
+        if (featureMediansNode == null || !featureMediansNode.isObject()) {
+            return Map.of();
+        }
+        Map<String, Double> featureMedians = new LinkedHashMap<>();
+        featureMediansNode.properties().forEach(entry -> {
+            JsonNode value = entry.getValue();
+            if (value != null && value.isNumber()) {
+                featureMedians.put(entry.getKey(), value.asDouble());
+            }
+        });
+        return featureMedians;
+    }
+
+    private float[] alignFeatures(Map<String, Double> featureRow, ModelMeta meta) {
+        List<String> featureColumns = meta.featureColumns();
         float[] aligned = new float[featureColumns.size()];
         for (int i = 0; i < featureColumns.size(); i++) {
-            Double value = featureRow.get(featureColumns.get(i));
+            String feature = featureColumns.get(i);
+            Double value = featureRow.get(feature);
+            if (value == null) {
+                value = meta.featureMedians().get(feature);
+            }
             if (value == null || value.isNaN() || value.isInfinite()) {
                 aligned[i] = 0F;
             } else {
@@ -693,6 +788,12 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
                         v.pathogenicity(),
                         v.alleleFrequency() == null ? "" : String.valueOf(v.alleleFrequency())))
                 .collect(Collectors.joining(";"));
+        String clinicalFingerprint = payload.clinicalFeatures() == null || payload.clinicalFeatures().isEmpty()
+                ? ""
+                : payload.clinicalFeatures().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(";"));
         String fingerprint = String.join("#",
                 String.valueOf(payload.age()),
                 String.valueOf(payload.gender()),
@@ -702,6 +803,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
                 String.valueOf(payload.jaundice()),
                 includeNasScore ? String.valueOf(payload.nasScore()) : "",
                 nullToEmpty(payload.patientId()),
+                clinicalFingerprint,
                 variantFingerprint
         );
         byte[] digest = sha256Bytes(fingerprint);
@@ -779,6 +881,25 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
         return value.trim().toLowerCase(Locale.ROOT);
     }
 
+    private static String normalizeFeatureName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim()
+                .toLowerCase(Locale.ROOT)
+                .replace("μ", "u")
+                .replace("µ", "u")
+                .replace("（", "(")
+                .replace("）", ")")
+                .replace(" ", "")
+                .replace("_", "")
+                .replace("-", "")
+                .replace("/", "")
+                .replace("^", "")
+                .replace("(", "")
+                .replace(")", "");
+    }
+
     private static double sigmoid(double value) {
         return 1.0 / (1.0 + Math.exp(-value));
     }
@@ -828,6 +949,7 @@ public class ImldInferenceServiceImpl implements ImldInferenceService {
     private record ModelMeta(
             List<String> featureColumns,
             Map<String, Object> metrics,
+            Map<String, Double> featureMedians,
             String version
     ) {
     }

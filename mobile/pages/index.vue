@@ -41,6 +41,21 @@
       </view>
     </view>
 
+    <view class="quick-actions">
+      <view class="quick-item" @tap="goToMyPosts">
+        <text class="cuIcon-file"></text>
+        <text class="quick-label">我的帖子</text>
+      </view>
+      <view class="quick-item" @tap="goToMyBookmarks">
+        <text class="cuIcon-favor"></text>
+        <text class="quick-label">我的收藏</text>
+      </view>
+      <view class="quick-item" @tap="goToNotifications">
+        <text class="cuIcon-notice"></text>
+        <text class="quick-label">通知</text>
+      </view>
+    </view>
+
     <view v-if="boards.length === 0" class="empty-tip">
       <text>暂无板块，请联系管理员创建。</text>
     </view>
@@ -203,6 +218,21 @@ export default {
       uni.switchTab({
         url: '/pages/assessment-result'
       })
+    },
+    goToMyPosts() {
+      uni.navigateTo({
+        url: '/pages/community/my-posts'
+      })
+    },
+    goToMyBookmarks() {
+      uni.navigateTo({
+        url: '/pages/community/my-bookmarks'
+      })
+    },
+    goToNotifications() {
+      uni.navigateTo({
+        url: '/pages/community/notifications'
+      })
     }
   }
 }
@@ -290,6 +320,34 @@ export default {
   justify-content: center;
   color: #ffffff;
   box-shadow: 0 10rpx 24rpx rgba(43, 133, 228, 0.35);
+}
+
+.quick-actions {
+  margin: 16rpx 20rpx;
+  display: flex;
+  gap: 12rpx;
+}
+
+.quick-item {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 22rpx 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.quick-item text:first-child {
+  font-size: 40rpx;
+  color: #2b85e4;
+}
+
+.quick-label {
+  font-size: 24rpx;
+  color: #666;
 }
 </style>
 

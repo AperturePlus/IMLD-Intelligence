@@ -12,11 +12,13 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.http.HttpHeaders;
 import xenosoft.imldintelligence.common.dto.PageQueryRequest;
 import xenosoft.imldintelligence.common.dto.PagedResultResponse;
 import xenosoft.imldintelligence.module.identity.api.dto.IdentityApiDtos;
@@ -152,6 +154,75 @@ public interface IdentityApi {
     })
     xenosoft.imldintelligence.common.dto.ApiResponse<Void> resetPassword(
             @Valid @RequestBody IdentityApiDtos.Request.ResetPasswordCommand request
+    );
+
+    /**
+     * 查询当前登录账号资料。
+     */
+    @GetMapping("/account/me")
+    @Operation(
+            summary = "查询当前账号资料",
+            description = "返回当前登录用户的自助账户资料，普通医生账号可访问",
+            security = {@SecurityRequirement(name = "Bearer Authentication"), @SecurityRequirement(name = "Tenant ID Header")}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "查询成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或令牌无效"),
+            @ApiResponse(responseCode = "403", description = "租户上下文与令牌不一致")
+    })
+    xenosoft.imldintelligence.common.dto.ApiResponse<IdentityApiDtos.Response.AccountProfileResponse> getCurrentAccountProfile(
+            @Parameter(description = "租户 ID", required = true, in = ParameterIn.HEADER)
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId
+    );
+
+    /**
+     * 更新当前登录账号资料。
+     */
+    @PatchMapping("/account/me")
+    @Operation(
+            summary = "更新当前账号资料",
+            description = "允许当前用户修改姓名、科室、邮箱和手机号；修改联系方式必须校验当前密码",
+            security = {@SecurityRequirement(name = "Bearer Authentication"), @SecurityRequirement(name = "Tenant ID Header")}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "更新成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数无效"),
+            @ApiResponse(responseCode = "403", description = "当前密码错误或租户不一致"),
+            @ApiResponse(responseCode = "409", description = "邮箱已被占用")
+    })
+    xenosoft.imldintelligence.common.dto.ApiResponse<IdentityApiDtos.Response.AccountProfileResponse> updateCurrentAccountProfile(
+            @Parameter(description = "租户 ID", required = true, in = ParameterIn.HEADER)
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @Valid @RequestBody IdentityApiDtos.Request.UpdateAccountProfileCommand request
+    );
+
+    /**
+     * 修改当前登录账号密码。
+     */
+    @PostMapping("/account/password")
+    @Operation(
+            summary = "修改当前账号密码",
+            description = "校验当前密码后更新登录密码，并撤销当前访问令牌与刷新令牌",
+            security = {@SecurityRequirement(name = "Bearer Authentication"), @SecurityRequirement(name = "Tenant ID Header")}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "修改成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数无效"),
+            @ApiResponse(responseCode = "403", description = "当前密码错误或租户不一致")
+    })
+    xenosoft.imldintelligence.common.dto.ApiResponse<Void> changeCurrentAccountPassword(
+            @Parameter(description = "租户 ID", required = true, in = ParameterIn.HEADER)
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @Parameter(description = "Bearer access token", in = ParameterIn.HEADER)
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false)
+            String authorizationHeader,
+            @Valid @RequestBody IdentityApiDtos.Request.ChangePasswordCommand request
     );
 
     /**

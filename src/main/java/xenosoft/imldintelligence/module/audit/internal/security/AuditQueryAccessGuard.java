@@ -49,7 +49,7 @@ public class AuditQueryAccessGuard {
     }
 
     private Set<String> resolveRequestRoles(HttpServletRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
             return RoleAuthorityUtils.normalizeRoleCodes(authentication.getAuthorities().stream()
                     .map(grantedAuthority -> grantedAuthority == null ? null : grantedAuthority.getAuthority())

@@ -19,7 +19,9 @@ public class DeploymentProperties {
     private static final String MODE_SAAS = "saas";
     private static final String MODE_PRIVATE = "private";
     private static final String MODE_HYBRID = "hybrid";
-    private static final Set<String> SUPPORTED_MODES = Set.of(MODE_SAAS, MODE_PRIVATE);
+    private static final String MODE_DEVELOP = "develop";
+    private static final String MODE_DEV = "dev";
+    private static final Set<String> SUPPORTED_MODES = Set.of(MODE_SAAS, MODE_PRIVATE, MODE_DEVELOP, MODE_DEV);
 
     private String mode = MODE_SAAS;
     private String tenantMode = "multi-tenant";
@@ -30,6 +32,11 @@ public class DeploymentProperties {
 
     public boolean isSaasMode() {
         return MODE_SAAS.equals(normalizedMode());
+    }
+
+    public boolean isDevelopMode() {
+        String normalized = normalizedMode();
+        return MODE_DEVELOP.equals(normalized) || MODE_DEV.equals(normalized);
     }
 
     public boolean isSupportedMode() {

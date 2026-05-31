@@ -1,4 +1,8 @@
 spring:
+  flyway:
+    validate-on-migrate: true
+    out-of-order: true
+    clean-disabled: false
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:15432/imld_core?sslmode=disable&characterEncoding=utf8
@@ -29,7 +33,7 @@ spring:
 
 imld:
   deployment:
-    mode: saas
+    mode: develop
     tenant-mode: multi-tenant
   community:
     scope: GLOBAL
@@ -42,3 +46,37 @@ imld:
       machine-binding-enabled: false
   upgrade:
     check-enabled: false
+  security:
+    enabled: true
+    jwt:
+      secret: ${IMLD_JWT_SECRET:imld-dev-local-jwt-secret-at-least-32-bytes}
+    cors:
+      allowed-origin-patterns:
+        - http://localhost:*
+        - http://127.0.0.1:*
+    public-paths:
+      - /error
+      - /api/v1/auth/**
+      - /api/v1/app/auth/**
+      - /api/v1/web/auth/**
+      - /api/v1/app/toc/auth/**
+      - /api/v1/app/toc/auth/dev/login
+      - /api/v1/identity/auth/**
+      - /api/v1/app/identity/auth/**
+      - /api/v1/web/identity/auth/**
+      - /actuator/health
+      - /actuator/health/**
+      - /actuator/info
+      - /swagger-ui.html
+      - /swagger-ui/**
+      - /v3/api-docs/**
+      - /swagger-resources/**
+      - /webjars/**
+  identity:
+    verification:
+      sms:
+        enabled: true
+        provider: mock
+  inference:
+    imld:
+      engine: mock

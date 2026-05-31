@@ -155,6 +155,13 @@ public final class CommunityApiDtos {
                 String resultAction
         ) {
         }
+
+        public record SubscribeBoardRequest(
+                @NotNull(message = "tocUserId is required")
+                @Positive(message = "tocUserId must be positive")
+                Long tocUserId
+        ) {
+        }
     }
 
     public static final class Response {
@@ -250,6 +257,35 @@ public final class CommunityApiDtos {
 
         public record ToggleResultResponse(
                 boolean changed
+        ) {
+        }
+
+        public record PostImageResponse(
+                Long id,
+                Long postId,
+                String imageUrl,
+                Integer sortOrder,
+                OffsetDateTime createdAt
+        ) {
+        }
+
+        public record NotificationResponse(
+                Long id,
+                String type,
+                String title,
+                String content,
+                Long relatedPostId,
+                Long relatedCommentId,
+                Boolean isRead,
+                OffsetDateTime createdAt
+        ) {
+        }
+
+        public record BoardSubscriptionResponse(
+                Long id,
+                Long boardId,
+                String boardName,
+                OffsetDateTime createdAt
         ) {
         }
 

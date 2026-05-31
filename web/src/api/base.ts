@@ -5,7 +5,7 @@ import { createMockAdapter, isMockEnabled } from '../mock/httpMock'
 
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://115.190.101.111:10001/',
-  withCredentials: true,
+  withCredentials: false,
   timeout: 15000
 })
 
@@ -38,7 +38,14 @@ service.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('username')
+      localStorage.removeItem('userDisplayName')
+      localStorage.removeItem('userType')
+      localStorage.removeItem('roleCodes')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('tenantId')
+      localStorage.removeItem('userAvatar')
 
       if (router.currentRoute.value.path !== '/') {
         alert('Login expired, please sign in again.')

@@ -6,6 +6,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -188,5 +189,83 @@ public interface CommunityApi {
             @Positive(message = "reportId must be positive")
             Long reportId,
             @Valid @RequestBody CommunityApiDtos.Request.ModerateReportRequest request
+    );
+
+    @GetMapping("/posts/{postId}/images")
+    ApiResponse<List<CommunityApiDtos.Response.PostImageResponse>> listPostImages(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @PathVariable("postId")
+            @Positive(message = "postId must be positive")
+            Long postId
+    );
+
+    @GetMapping("/notifications")
+    ApiResponse<PagedResultResponse<CommunityApiDtos.Response.NotificationResponse>> listMyNotifications(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @RequestParam("tocUserId")
+            @Positive(message = "tocUserId must be positive")
+            Long tocUserId,
+            @RequestParam(name = "isRead", required = false)
+            Boolean isRead,
+            @Valid @ModelAttribute PageQueryRequest pageQuery
+    );
+
+    @PatchMapping("/notifications/{notificationId}/read")
+    ApiResponse<CommunityApiDtos.Response.NotificationResponse> markNotificationRead(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @PathVariable("notificationId")
+            @Positive(message = "notificationId must be positive")
+            Long notificationId
+    );
+
+    @GetMapping("/bookmarks")
+    ApiResponse<PagedResultResponse<CommunityApiDtos.Response.PostSummaryResponse>> listMyBookmarks(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @RequestParam("tocUserId")
+            @Positive(message = "tocUserId must be positive")
+            Long tocUserId,
+            @Valid @ModelAttribute PageQueryRequest pageQuery
+    );
+
+    @PostMapping("/boards/{boardId}/subscriptions")
+    ApiResponse<CommunityApiDtos.Response.BoardSubscriptionResponse> subscribeBoard(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @PathVariable("boardId")
+            @Positive(message = "boardId must be positive")
+            Long boardId,
+            @Valid @RequestBody CommunityApiDtos.Request.SubscribeBoardRequest request
+    );
+
+    @DeleteMapping("/boards/{boardId}/subscriptions")
+    ApiResponse<Boolean> unsubscribeBoard(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @PathVariable("boardId")
+            @Positive(message = "boardId must be positive")
+            Long boardId,
+            @RequestParam("tocUserId")
+            @Positive(message = "tocUserId must be positive")
+            Long tocUserId
+    );
+
+    @GetMapping("/boards/subscribed")
+    ApiResponse<List<CommunityApiDtos.Response.BoardSubscriptionResponse>> listSubscribedBoards(
+            @RequestHeader("X-Tenant-Id")
+            @Positive(message = "tenantId must be positive")
+            Long tenantId,
+            @RequestParam("tocUserId")
+            @Positive(message = "tocUserId must be positive")
+            Long tocUserId
     );
 }

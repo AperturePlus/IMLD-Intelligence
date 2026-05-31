@@ -23,6 +23,7 @@ import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
 import xenosoft.imldintelligence.module.identity.internal.repository.TenantRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
 import xenosoft.imldintelligence.module.identity.internal.service.AccountCredentialService;
+import xenosoft.imldintelligence.module.identity.internal.service.AccountSettingsService;
 import xenosoft.imldintelligence.module.identity.internal.service.AuthService;
 import xenosoft.imldintelligence.module.identity.internal.service.ConsentRecordService;
 import xenosoft.imldintelligence.module.identity.internal.service.PatientService;
@@ -35,6 +36,7 @@ public class IdentityController implements IdentityControllerContract {
 
     private final AuthService authService;
     private final AccountCredentialService accountCredentialService;
+    private final AccountSettingsService accountSettingsService;
     private final PatientService patientService;
     private final UserManagementService userManagementService;
     private final ConsentRecordService consentRecordService;
@@ -96,6 +98,27 @@ public class IdentityController implements IdentityControllerContract {
     @Override
     public ApiResponse<Void> resetPassword(IdentityApiDtos.Request.ResetPasswordCommand request) {
         accountCredentialService.resetPassword(request);
+        return ApiResponse.success();
+    }
+
+    @Override
+    public ApiResponse<IdentityApiDtos.Response.AccountProfileResponse> getCurrentAccountProfile(Long tenantId) {
+        return ApiResponse.success(accountSettingsService.getCurrentProfile(tenantId));
+    }
+
+    @Override
+    public ApiResponse<IdentityApiDtos.Response.AccountProfileResponse> updateCurrentAccountProfile(
+            Long tenantId,
+            IdentityApiDtos.Request.UpdateAccountProfileCommand request) {
+        return ApiResponse.success(accountSettingsService.updateCurrentProfile(tenantId, request));
+    }
+
+    @Override
+    public ApiResponse<Void> changeCurrentAccountPassword(
+            Long tenantId,
+            String authorizationHeader,
+            IdentityApiDtos.Request.ChangePasswordCommand request) {
+        accountSettingsService.changeCurrentPassword(tenantId, request, authorizationHeader);
         return ApiResponse.success();
     }
 

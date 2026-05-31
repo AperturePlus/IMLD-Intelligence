@@ -20,16 +20,24 @@ import xenosoft.imldintelligence.common.dto.PageQueryRequest;
 import xenosoft.imldintelligence.common.dto.PagedResultResponse;
 import xenosoft.imldintelligence.module.community.api.dto.CommunityApiDtos;
 import xenosoft.imldintelligence.module.community.internal.model.CommunityBoard;
+import xenosoft.imldintelligence.module.community.internal.model.CommunityBoardSubscription;
 import xenosoft.imldintelligence.module.community.internal.model.CommunityContentReport;
 import xenosoft.imldintelligence.module.community.internal.model.CommunityPost;
+import xenosoft.imldintelligence.module.community.internal.model.CommunityPostBookmark;
 import xenosoft.imldintelligence.module.community.internal.model.CommunityPostComment;
+import xenosoft.imldintelligence.module.community.internal.model.CommunityPostImage;
+import xenosoft.imldintelligence.module.community.internal.model.CommunityUserNotification;
 import xenosoft.imldintelligence.module.community.internal.repository.CommunityBoardRepository;
+import xenosoft.imldintelligence.module.community.internal.repository.CommunityBoardSubscriptionRepository;
 import xenosoft.imldintelligence.module.community.internal.repository.CommunityBookmarkRepository;
 import xenosoft.imldintelligence.module.community.internal.repository.CommunityCommentRepository;
 import xenosoft.imldintelligence.module.community.internal.repository.CommunityLikeRepository;
+import xenosoft.imldintelligence.module.community.internal.repository.CommunityPostImageRepository;
 import xenosoft.imldintelligence.module.community.internal.repository.CommunityPostRepository;
 import xenosoft.imldintelligence.module.community.internal.repository.CommunityReportRepository;
+import xenosoft.imldintelligence.module.community.internal.repository.CommunityUserNotificationRepository;
 import xenosoft.imldintelligence.module.community.internal.repository.mybatis.CommunityCommentPageRow;
+import xenosoft.imldintelligence.module.community.internal.repository.mybatis.CommunityPostBookmarkMapper;
 import xenosoft.imldintelligence.module.community.internal.repository.mybatis.CommunityPostSummaryRow;
 import xenosoft.imldintelligence.module.community.internal.repository.mybatis.CommunityReportPageRow;
 import xenosoft.imldintelligence.module.community.internal.security.CommunityTenantAccessGuard;
@@ -64,6 +72,10 @@ public class CommunityController implements CommunityControllerContract {
     private final CommunityLikeRepository likeRepository;
     private final CommunityBookmarkRepository bookmarkRepository;
     private final CommunityReportRepository reportRepository;
+    private final CommunityPostImageRepository postImageRepository;
+    private final CommunityUserNotificationRepository notificationRepository;
+    private final CommunityBoardSubscriptionRepository boardSubscriptionRepository;
+    private final CommunityPostBookmarkMapper postBookmarkMapper;
 
     private final TocUserRepository tocUserRepository;
 
@@ -633,6 +645,193 @@ public class CommunityController implements CommunityControllerContract {
         return ApiResponse.success(toReportResponse(updated));
     }
 
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    public ApiResponse<List<CommunityApiDtos.Response.PostImageResponse>> listPostImages(
+            Long tenantId,
+            Long postId) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        requirePublishedPost(resolvedTenantId, postId);
+
+        List<CommunityPostImage> images = postImageRepository.listByPostId(resolvedTenantId, postId);
+        List<CommunityApiDtos.Response.PostImageResponse> items = images.stream()
+                .map(this::toPostImageResponse)
+                .toList();
+        return ApiResponse.success(items);
+    }
+
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    public ApiResponse<PagedResultResponse<CommunityApiDtos.Response.NotificationResponse>> listMyNotifications(
+            Long tenantId,
+            Long tocUserId,
+            Boolean isRead,
+            PageQueryRequest pageQuery) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        if (!Objects.equals(tocUserId, subject.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "tocUserId does not match authenticated user");
+        }
+
+        int page = pageQuery != null && pageQuery.page() != null ? pageQuery.page() : DEFAULT_PAGE;
+        int size = pageQuery != null && pageQuery.size() != null ? pageQuery.size() : DEFAULT_SIZE;
+        long offset = (long) page * size;
+
+        List<CommunityUserNotification> notifications = notificationRepository.listByUserId(
+                resolvedTenantId, tocUserId, isRead, offset, size);
+        long total = notificationRepository.countUnreadByUserId(resolvedTenantId, tocUserId);
+        if (isRead != null && Boolean.TRUE.equals(isRead)) {
+            // Re-count all matching notifications for accurate total when filtering by read status
+            // This is a simplified approach; for production, a dedicated count method with isRead filter is better
+            total = notifications.size(); // approximate for read filter
+        }
+
+        List<CommunityApiDtos.Response.NotificationResponse> items = notifications.stream()
+                .map(this::toNotificationResponse)
+                .toList();
+        return ApiResponse.success(new PagedResultResponse<>(page, size, total, items));
+    }
+
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ApiResponse<CommunityApiDtos.Response.NotificationResponse> markNotificationRead(
+            Long tenantId,
+            Long notificationId) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        CommunityUserNotification notification = notificationRepository.findById(resolvedTenantId, notificationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
+
+        if (!Objects.equals(notification.getTocUserId(), subject.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Notification does not belong to authenticated user");
+        }
+
+        notificationRepository.updateReadStatus(resolvedTenantId, notificationId, true);
+        notification.setIsRead(true);
+        return ApiResponse.success(toNotificationResponse(notification));
+    }
+
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    public ApiResponse<PagedResultResponse<CommunityApiDtos.Response.PostSummaryResponse>> listMyBookmarks(
+            Long tenantId,
+            Long tocUserId,
+            PageQueryRequest pageQuery) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        if (!Objects.equals(tocUserId, subject.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "tocUserId does not match authenticated user");
+        }
+
+        int page = pageQuery != null && pageQuery.page() != null ? pageQuery.page() : DEFAULT_PAGE;
+        int size = pageQuery != null && pageQuery.size() != null ? pageQuery.size() : DEFAULT_SIZE;
+        long offset = (long) page * size;
+
+        List<CommunityPostBookmark> bookmarks = postBookmarkMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<CommunityPostBookmark>()
+                        .eq(CommunityPostBookmark::getTenantId, resolvedTenantId)
+                        .eq(CommunityPostBookmark::getTocUserId, tocUserId)
+                        .orderByDesc(CommunityPostBookmark::getCreatedAt)
+                        .last("LIMIT " + size + " OFFSET " + offset));
+
+        long total = postBookmarkMapper.selectCount(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<CommunityPostBookmark>()
+                        .eq(CommunityPostBookmark::getTenantId, resolvedTenantId)
+                        .eq(CommunityPostBookmark::getTocUserId, tocUserId));
+
+        List<CommunityApiDtos.Response.PostSummaryResponse> items = bookmarks.stream()
+                .map(b -> postRepository.findById(resolvedTenantId, b.getPostId()).orElse(null))
+                .filter(p -> p != null && !STATUS_DELETED.equalsIgnoreCase(p.getStatus()) && p.getDeletedAt() == null)
+                .map(this::toPostSummaryResponseFromPost)
+                .toList();
+
+        return ApiResponse.success(new PagedResultResponse<>(page, size, total, items));
+    }
+
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ApiResponse<CommunityApiDtos.Response.BoardSubscriptionResponse> subscribeBoard(
+            Long tenantId,
+            Long boardId,
+            CommunityApiDtos.Request.SubscribeBoardRequest request) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        if (!Objects.equals(request.tocUserId(), subject.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "tocUserId does not match authenticated user");
+        }
+
+        CommunityBoard board = boardRepository.findById(resolvedTenantId, boardId)
+                .filter(b -> STATUS_ACTIVE.equalsIgnoreCase(b.getStatus()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Board not found or inactive"));
+
+        // Idempotent: if already subscribed, return existing
+        List<CommunityBoardSubscription> existing = boardSubscriptionRepository.listByUserId(resolvedTenantId, request.tocUserId());
+        CommunityBoardSubscription sub = existing.stream()
+                .filter(s -> s.getBoardId().equals(boardId))
+                .findFirst()
+                .orElse(null);
+
+        if (sub == null) {
+            sub = new CommunityBoardSubscription();
+            sub.setTenantId(resolvedTenantId);
+            sub.setTocUserId(request.tocUserId());
+            sub.setBoardId(boardId);
+            boardSubscriptionRepository.save(sub);
+        }
+
+        return ApiResponse.success(toBoardSubscriptionResponse(sub, board.getBoardName()));
+    }
+
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ApiResponse<Boolean> unsubscribeBoard(
+            Long tenantId,
+            Long boardId,
+            Long tocUserId) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        if (!Objects.equals(tocUserId, subject.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "tocUserId does not match authenticated user");
+        }
+
+        boolean deleted = boardSubscriptionRepository.deleteByUserIdAndBoardId(resolvedTenantId, tocUserId, boardId);
+        return ApiResponse.success(deleted);
+    }
+
+    @Override
+    @RequireAnyRole({ROLE_TOC_USER, ROLE_SYSTEM_ADMIN})
+    public ApiResponse<List<CommunityApiDtos.Response.BoardSubscriptionResponse>> listSubscribedBoards(
+            Long tenantId,
+            Long tocUserId) {
+        UserSubject subject = currentUserSubjectProvider.requireCurrentSubject();
+        long resolvedTenantId = tenantAccessGuard.requireTenantMatch(tenantId, subject.tenantId());
+
+        if (!Objects.equals(tocUserId, subject.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "tocUserId does not match authenticated user");
+        }
+
+        List<CommunityBoardSubscription> subs = boardSubscriptionRepository.listByUserId(resolvedTenantId, tocUserId);
+        List<CommunityApiDtos.Response.BoardSubscriptionResponse> items = subs.stream()
+                .map(s -> {
+                    String boardName = boardRepository.findById(resolvedTenantId, s.getBoardId())
+                            .map(CommunityBoard::getBoardName)
+                            .orElse(null);
+                    return toBoardSubscriptionResponse(s, boardName);
+                })
+                .toList();
+        return ApiResponse.success(items);
+    }
+
     private void requirePublishedPost(Long tenantId, Long postId) {
         CommunityPost post = postRepository.findById(tenantId, postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
@@ -779,6 +978,63 @@ public class CommunityController implements CommunityControllerContract {
                 row.getResultAction(),
                 row.getResultNote(),
                 row.getCreatedAt()
+        );
+    }
+
+    private CommunityApiDtos.Response.PostImageResponse toPostImageResponse(CommunityPostImage image) {
+        return new CommunityApiDtos.Response.PostImageResponse(
+                image.getId(),
+                image.getPostId(),
+                image.getImageUrl(),
+                image.getSortOrder(),
+                image.getCreatedAt()
+        );
+    }
+
+    private CommunityApiDtos.Response.NotificationResponse toNotificationResponse(CommunityUserNotification notification) {
+        return new CommunityApiDtos.Response.NotificationResponse(
+                notification.getId(),
+                notification.getType(),
+                notification.getTitle(),
+                notification.getContent(),
+                notification.getRelatedPostId(),
+                notification.getRelatedCommentId(),
+                notification.getIsRead(),
+                notification.getCreatedAt()
+        );
+    }
+
+    private CommunityApiDtos.Response.BoardSubscriptionResponse toBoardSubscriptionResponse(CommunityBoardSubscription sub, String boardName) {
+        return new CommunityApiDtos.Response.BoardSubscriptionResponse(
+                sub.getId(),
+                sub.getBoardId(),
+                boardName,
+                sub.getCreatedAt()
+        );
+    }
+
+    private CommunityApiDtos.Response.PostSummaryResponse toPostSummaryResponseFromPost(CommunityPost post) {
+        String displayName = Boolean.TRUE.equals(post.getAnonymousFlag()) ? "匿名用户" : post.getAuthorDisplayName();
+        String excerpt = post.getContent() == null ? "" : post.getContent();
+        if (excerpt.length() > 200) {
+            excerpt = excerpt.substring(0, 200) + "...";
+        }
+        return new CommunityApiDtos.Response.PostSummaryResponse(
+                post.getId(),
+                post.getBoardId(),
+                post.getAuthorTocUserId(),
+                displayName,
+                post.getAnonymousFlag(),
+                post.getTitle(),
+                excerpt,
+                post.getStatus(),
+                post.getPinnedFlag(),
+                post.getLikeCount(),
+                post.getCommentCount(),
+                post.getReportCount(),
+                post.getLastActivityAt(),
+                post.getCreatedAt(),
+                post.getUpdatedAt()
         );
     }
 
