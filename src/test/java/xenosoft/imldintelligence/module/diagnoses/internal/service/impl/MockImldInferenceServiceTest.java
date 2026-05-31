@@ -82,6 +82,7 @@ class MockImldInferenceServiceTest {
                 1,
                 4,
                 List.of(variant),
+                null,
                 patientId
         );
     }

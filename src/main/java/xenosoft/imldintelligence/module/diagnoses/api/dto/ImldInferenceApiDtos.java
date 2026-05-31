@@ -71,6 +71,8 @@ public final class ImldInferenceApiDtos {
                 Integer nasScore,
                 @JsonProperty("gene_variants")
                 List<@Valid GeneVariant> geneVariants,
+                @JsonProperty("clinical_features")
+                Map<String, Double> clinicalFeatures,
                 @JsonProperty("patient_id")
                 @Size(max = 128)
                 String patientId

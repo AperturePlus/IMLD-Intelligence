@@ -1,6 +1,7 @@
 package xenosoft.imldintelligence.module.diagnoses.internal.service.impl;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,34 @@ class ImldInferenceServiceImplTest {
     }
 
     @Test
+    void predictShouldAcceptV4ClinicalFeaturesAndFallbackToMetadataMedians() {
+        ImldInferenceApiDtos.Request.ImldPredictRequest request = new ImldInferenceApiDtos.Request.ImldPredictRequest(
+                52,
+                1,
+                90.0,
+                32.0,
+                260.0,
+                0,
+                null,
+                List.of(),
+                Map.of(
+                        "ALT(U/L)", 90.0,
+                        "TBIL(μmol/L)", 32.0,
+                        "Smoking", 1.0,
+                        "Drinking", 1.0
+                ),
+                "P-V4"
+        );
+
+        ImldInferenceApiDtos.Response.PredictData response = inferenceService.predict(request);
+
+        assertThat(response.patientId()).isEqualTo("P-V4");
+        assertThat(response.riskProbability()).isBetween(0.0, 1.0);
+        assertThat(response.modelMetrics()).containsKey("auc");
+        assertThat(response.dataHash()).hasSize(64);
+    }
+
+    @Test
     void batchPredictShouldReturnEachSampleResult() {
         List<ImldInferenceApiDtos.Request.ImldPredictRequest> requests = List.of(
                 buildRequest("P001"),
@@ -83,6 +112,7 @@ class ImldInferenceServiceImplTest {
                 1,
                 null,
                 List.of(variant),
+                null,
                 patientId
         );
     }

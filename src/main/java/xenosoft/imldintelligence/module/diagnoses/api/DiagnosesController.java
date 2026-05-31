@@ -6,8 +6,10 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -248,8 +250,126 @@ public class DiagnosesController implements DiagnosesControllerContract {
         int jaundice = clamp(intOf(n, "jaundice").orElse(0), 0, 1);
         Integer nasScore = intOf(n, "nasScore", "nas_score").orElseGet(() -> pathologyNasScore(derivedSourceSnapshot));
         List<ImldInferenceApiDtos.Request.GeneVariant> geneVariants = geneVariants(tenantId, patient.getId(), encounter, n);
+        Map<String, Double> clinicalFeatures = buildClinicalFeatures(
+                tenantId, patient, encounter, n, labs, derivedSourceSnapshot, age, gender, alt, bilirubin, ceruloplasmin, nasScore
+        );
         return new ImldInferenceApiDtos.Request.ImldPredictRequest(age, gender, alt, bilirubin, ceruloplasmin, jaundice, nasScore, geneVariants,
+                clinicalFeatures,
                 patient.getPatientNo() == null ? String.valueOf(patient.getId()) : patient.getPatientNo());
+    }
+
+    private Map<String, Double> buildClinicalFeatures(
+            Long tenantId,
+            Patient patient,
+            Encounter encounter,
+            JsonNode input,
+            List<LabResult> labs,
+            ObjectNode derivedSourceSnapshot,
+            int age,
+            int gender,
+            double alt,
+            double bilirubin,
+            double ceruloplasmin,
+            Integer nasScore) {
+        Map<String, Double> features = new LinkedHashMap<>();
+        putFeature(features, "age", (double) age);
+        putFeature(features, "gender", (double) gender);
+        putFeature(features, "ALT(U/L)", alt);
+        putFeature(features, "TBIL(μmol/L)", bilirubin);
+        putFeature(features, "ceruloplasmin", ceruloplasmin);
+        if (nasScore != null) {
+            putFeature(features, "NAS", nasScore.doubleValue());
+        }
+
+        copyClinicalFeaturesFromInput(features, input);
+        copyClinicalFeaturesFromLabs(features, labs);
+        copyClinicalFeaturesFromHistory(features, findLatestClinicalHistoryEntry(tenantId, patient.getId(), encounter, "PATIENT_HISTORY").map(ClinicalHistoryEntry::getContentJson).orElse(null));
+        Integer derivedNas = pathologyNasScore(derivedSourceSnapshot);
+        if (derivedNas != null && !features.containsKey("NAS")) {
+            putFeature(features, "NAS", derivedNas.doubleValue());
+        }
+        return features;
+    }
+
+    private void copyClinicalFeaturesFromInput(Map<String, Double> features, JsonNode input) {
+        JsonNode clinicalFeatures = input != null && input.has("clinical_features") ? input.get("clinical_features") : null;
+        if (clinicalFeatures == null || !clinicalFeatures.isObject()) {
+            return;
+        }
+        clinicalFeatures.properties().forEach(entry -> {
+            JsonNode value = entry.getValue();
+            if (value != null && value.isNumber()) {
+                putFeature(features, entry.getKey(), value.asDouble());
+            }
+        });
+    }
+
+    private void copyClinicalFeaturesFromLabs(Map<String, Double> features, List<LabResult> labs) {
+        putLabFeature(features, labs, "TBIL(μmol/L)", "TBIL", "BILIRUBIN");
+        putLabFeature(features, labs, "DBIL(μmol/L)", "DBIL");
+        putLabFeature(features, labs, "IBIL(μmol/L)", "IBIL");
+        putLabFeature(features, labs, "ALT(U/L)", "ALT", "GPT");
+        putLabFeature(features, labs, "AST(U/L)", "AST", "GOT");
+        putLabFeature(features, labs, "TP(g/L)", "TP");
+        putLabFeature(features, labs, "ALB(g/L)", "ALB");
+        putLabFeature(features, labs, "GLB(g/L)", "GLB", "GLOB");
+        putLabFeature(features, labs, "GLU(mmol/L)", "GLU");
+        putLabFeature(features, labs, "URIC(μmol/L)", "URIC", "UA");
+        putLabFeature(features, labs, "TG(mmol/L)", "TG");
+        putLabFeature(features, labs, "CHOL(mmol/L)", "CHOL", "TC");
+        putLabFeature(features, labs, "HDL-C(mmol/L)", "HDL_C", "HDL-C", "HDLC");
+        putLabFeature(features, labs, "LDL-C(mmol/L)", "LDL_C", "LDL-C", "LDLC");
+        putLabFeature(features, labs, "ALP(U/L)", "ALP");
+        putLabFeature(features, labs, "GGT(U/L)", "GGT");
+        putLabFeature(features, labs, "TBA(μmol/L)", "TBA");
+        putLabFeature(features, labs, "NH3(μmol/L)", "NH3");
+        putLabFeature(features, labs, "PLT(10^9/L)", "PLT");
+        putLabFeature(features, labs, "WBC(10^9/L)", "WBC");
+        putLabFeature(features, labs, "ceruloplasmin", "CERULOPLASMIN", "CER", "CP");
+        putLabFeature(features, labs, "PIVKA（mAU/mL）", "PIVKA", "PIVKAII", "PIVKA_II");
+        putLabFeature(features, labs, "PT(s)", "PT");
+        putLabFeature(features, labs, "INR", "INR");
+        putLabFeature(features, labs, "CRP(mg/L)", "CRP");
+        putLabFeature(features, labs, "IgG(g/L)", "IGG");
+        putLabFeature(features, labs, "IgA(g/L)", "IGA");
+        putLabFeature(features, labs, "IgM(g/L)", "IGM");
+    }
+
+    private void copyClinicalFeaturesFromHistory(Map<String, Double> features, JsonNode history) {
+        JsonNode diseaseHistory = history == null ? null : history.get("diseaseHistory");
+        if (diseaseHistory == null || !diseaseHistory.isObject()) {
+            return;
+        }
+        putFlagFeature(features, diseaseHistory, "Smoking", "smokingHistory");
+        putFlagFeature(features, diseaseHistory, "Drinking", "drinkingHistory");
+        putFlagFeature(features, diseaseHistory, "糖尿病病史", "diabetesHistory");
+        putFlagFeature(features, diseaseHistory, "高血压病史", "hypertensionHistory");
+        putFlagFeature(features, diseaseHistory, "高尿酸血症病史", "hyperuricemiaHistory");
+        putFlagFeature(features, diseaseHistory, "高脂血症病史", "hyperlipidemiaHistory");
+        putFlagFeature(features, diseaseHistory, "乙肝病史", "hepatitisBHistory");
+    }
+
+    private void putLabFeature(Map<String, Double> features, List<LabResult> labs, String feature, String... aliases) {
+        indicatorValue(labs, Set.of(aliases)).ifPresent(value -> putFeature(features, feature, value));
+    }
+
+    private void putFlagFeature(Map<String, Double> features, JsonNode diseaseHistory, String feature, String key) {
+        JsonNode value = diseaseHistory.get(key);
+        if (value == null || value.isNull()) {
+            return;
+        }
+        String normalized = value.asText("").trim().toUpperCase(Locale.ROOT);
+        if (normalized.isEmpty() || "UNKNOWN".equals(normalized)) {
+            return;
+        }
+        putFeature(features, feature, normalized.equals("YES") || normalized.equals("Y") || normalized.equals("TRUE") || normalized.equals("1") ? 1D : 0D);
+    }
+
+    private void putFeature(Map<String, Double> features, String feature, Double value) {
+        if (feature == null || feature.isBlank() || value == null || value.isNaN() || value.isInfinite()) {
+            return;
+        }
+        features.put(feature, value);
     }
 
     private List<ImldInferenceApiDtos.Request.GeneVariant> geneVariants(Long tenantId, Long patientId, Encounter encounter, JsonNode n) {
@@ -301,11 +421,15 @@ public class DiagnosesController implements DiagnosesControllerContract {
     }
 
     private Optional<ClinicalHistoryEntry> findLatestPathologyEntry(Long tenantId, Long patientId, Encounter encounter) {
+        return findLatestClinicalHistoryEntry(tenantId, patientId, encounter, "PATHOLOGY");
+    }
+
+    private Optional<ClinicalHistoryEntry> findLatestClinicalHistoryEntry(Long tenantId, Long patientId, Encounter encounter, String historyType) {
         List<ClinicalHistoryEntry> entries = encounter != null
                 ? clinicalHistoryEntryRepository.listByEncounterId(tenantId, encounter.getId())
                 : clinicalHistoryEntryRepository.listByPatientId(tenantId, patientId);
         return entries.stream()
-                .filter(entry -> "PATHOLOGY".equalsIgnoreCase(entry.getHistoryType()))
+                .filter(entry -> historyType.equalsIgnoreCase(entry.getHistoryType()))
                 .sorted(Comparator.comparing((ClinicalHistoryEntry entry) -> entry.getRecordedAt() != null ? entry.getRecordedAt() : now()).reversed()
                         .thenComparing(ClinicalHistoryEntry::getId, Comparator.reverseOrder()))
                 .findFirst();
