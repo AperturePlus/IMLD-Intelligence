@@ -1,5 +1,7 @@
 // @ts-nocheck
 
+import { SEED_PATIENT_RECORDS } from './patientRecordsSeed'
+
 const MOCK_USERS_KEY = '__imld_mock_users__'
 const MOCK_TOKENS_KEY = '__imld_mock_tokens__'
 const MOCK_PATIENTS_KEY = '__imld_mock_patients__'
@@ -196,8 +198,30 @@ export const loadPatients = () => {
 
 export const savePatients = (items) => safeWrite(MOCK_PATIENTS_KEY, items)
 
-export const loadRecords = () => safeRead(MOCK_RECORDS_KEY, [])
+export const loadRecords = () => {
+  const items = safeRead(MOCK_RECORDS_KEY, [])
+  if (Array.isArray(items) && items.length > 0) return items
+
+  const seeded = SEED_PATIENT_RECORDS.map((payload) => ({
+    id: `REC-${payload.patientNo}`,
+    visitId: payload.visitId || `VISIT-${payload.patientNo}`,
+    submittedAt: `${payload.visitDate || '2026-05-01'}T08:30:00.000Z`,
+    payload
+  }))
+  safeWrite(MOCK_RECORDS_KEY, seeded)
+  return seeded
+}
+
 export const saveRecords = (items) => safeWrite(MOCK_RECORDS_KEY, items)
+
+export const findRecordPayloadByPatientNo = (patientNo) => {
+  const target = String(patientNo || '').toLowerCase()
+  if (!target) return null
+  const found = loadRecords().find(
+    (item) => String(item.payload?.patientNo || '').toLowerCase() === target
+  )
+  return found ? found.payload : null
+}
 
 export const loadReports = () => {
   const items = safeRead(MOCK_REPORTS_KEY, [])
