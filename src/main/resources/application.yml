@@ -115,6 +115,7 @@ imld:
       - /api/v1/app/identity/auth/**
       - /api/v1/web/identity/auth/**
       - /actuator/health
+      - /actuator/health/**
       - /actuator/info
       - /swagger-ui.html
       - /swagger-ui/**
@@ -202,6 +203,17 @@ springdoc:
     default-models-expand-depth: 1
     default-model-expand-depth: 1
   show-actuator: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
 
 resilience4j:
   circuitbreaker:

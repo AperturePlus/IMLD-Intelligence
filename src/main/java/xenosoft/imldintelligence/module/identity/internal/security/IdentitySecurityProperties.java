@@ -26,6 +26,7 @@ public class IdentitySecurityProperties {
             "/api/v1/app/identity/auth/**",
             "/api/v1/web/identity/auth/**",
             "/actuator/health",
+            "/actuator/health/**",
             "/actuator/info"
     ));
     private Jwt jwt = new Jwt();
