@@ -32,6 +32,11 @@ export interface DiagnosisResult {
   genes: string[]
   diet: string
   sequencing: string
+  differentials: string[]
+  keySigns: string[]
+  dietTags: string[]
+  geneRecommendationTitle: string
+  dataConfidenceLabel: string
 }
 
 export interface AiFindings {
