@@ -24,6 +24,7 @@ public final class WebPatientApiDtos {
                 String gender,
                 int age,
                 String riskLevel,
+                String aiStatus,
                 String avatar
         ) {
         }

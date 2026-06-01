@@ -33,7 +33,12 @@
         <el-card shadow="hover" :body-style="{ padding: '24px 20px' }">
           <el-row :gutter="16" align="middle">
             <el-col :span="6" style="text-align: center;">
-              <el-avatar :size="64" :src="patient.avatar" style="border: 2px solid #e4e7ed;" />
+              <PatientAvatar
+                :size="64"
+                :src="patient.avatar"
+                :name="patient.name"
+                style="border: 2px solid #e4e7ed;"
+              />
             </el-col>
 
             <el-col :span="18">
@@ -59,8 +64,16 @@
                 <el-text type="info" style="margin-right: 8px; font-size: 14px;">
                   遗传代谢性肝病风险:
                 </el-text>
-                <el-tag :type="getRiskTagType(patient.riskLevel)" effect="light" round>
+                <el-tag
+                  v-if="patient.aiStatus === '已诊断' && patient.riskLevel"
+                  :type="getRiskTagType(patient.riskLevel)"
+                  effect="light"
+                  round
+                >
                   {{ patient.riskLevel }}风险
+                </el-tag>
+                <el-tag v-else type="info" effect="light" round>
+                  未诊断
                 </el-tag>
               </div>
             </el-col>
@@ -85,6 +98,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import PatientAvatar from '@/components/PatientAvatar.vue'
 import patientApi from '../../api/patient'
 import type { PatientSummary } from '../../api/types'
 
@@ -112,11 +126,14 @@ const fetchPatients = async () => {
 
 type RiskTagType = 'danger' | 'warning' | 'success' | 'info'
 
-const getRiskTagType = (level: string): RiskTagType => {
+const getRiskTagType = (level?: string | null): RiskTagType => {
   const map: Record<string, RiskTagType> = {
     高: 'danger',
     中: 'warning',
     低: 'success'
+  }
+  if (!level) {
+    return 'info'
   }
   return map[level] || 'info'
 }

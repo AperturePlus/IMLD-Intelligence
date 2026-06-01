@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { resolveDiagnosisConfidence } from './confidenceConfig'
+import { buildEvidenceItemsFromDiagnosis } from './diagnosisEvidence'
 import { buildDiseaseDisplayFields } from './diseaseDisplay'
+import { normalizeRiskLevel, riskLevelFromProbability } from './riskLevel'
 import {
   buildDiagnosisResultFromSession,
   normalizeDiagnosisResultPayload,
@@ -45,6 +48,141 @@ describe('disease display fields', () => {
     expect(fields.dietTags).toEqual(['接口饮食标签'])
     expect(fields.geneRecommendationTitle).toBe('接口基因标题')
   })
+
+  test('does not render legacy binary summary as one elevated finding', () => {
+    const fields = buildDiseaseDisplayFields({
+      diseaseName: '遗传性血色病',
+      probability: 46,
+      inference: {
+        clinical_abnormalities: [
+          {
+            feature: 'ALT 135U/L、AST 105U/L、GGT 110U/L、TBIL 34μmol/L',
+            value: 1,
+            normal_range: [0, 1],
+            direction: 'high',
+            severity: '中'
+          }
+        ]
+      }
+    })
+
+    expect(fields.keySigns.join('、')).not.toContain('1 升高')
+  })
+})
+
+describe('diagnosis confidence config', () => {
+  test('marks low confidence for review without display boosting', () => {
+    const confidence = resolveDiagnosisConfidence(0.46, {
+      mode: 'browser-onnx',
+      visible: true,
+      minThreshold: 0.7,
+      boostEnabled: false
+    })
+
+    expect(confidence.rawValue).toBe(0.46)
+    expect(confidence.displayValue).toBe(0.46)
+    expect(confidence.reviewRequired).toBe(true)
+    expect(confidence.adjusted).toBe(false)
+    expect(confidence.label).toBe('需复核 (0.46)')
+  })
+
+  test('boosts display confidence only for mock or browser onnx mode', () => {
+    const confidence = resolveDiagnosisConfidence(0.46, {
+      mode: 'browser-onnx',
+      visible: true,
+      minThreshold: 0.7,
+      boostEnabled: true
+    })
+
+    expect(confidence.rawValue).toBe(0.46)
+    expect(confidence.displayValue).toBe(0.7)
+    expect(confidence.reviewRequired).toBe(true)
+    expect(confidence.adjusted).toBe(true)
+    expect(confidence.label).toBe('需复核 (0.70)')
+    expect(confidence.label.includes('演示校准')).toBe(false)
+  })
+
+  test('does not boost backend confidence even when boost is enabled', () => {
+    const confidence = resolveDiagnosisConfidence(0.46, {
+      mode: 'backend',
+      visible: true,
+      minThreshold: 0.7,
+      boostEnabled: true
+    })
+
+    expect(confidence.displayValue).toBe(0.46)
+    expect(confidence.adjusted).toBe(false)
+    expect(confidence.label).toBe('需复核 (0.46)')
+    expect(confidence.label.includes('原始')).toBe(false)
+  })
+})
+
+describe('diagnosis risk level normalization', () => {
+  test('normalizes Chinese and English risk levels', () => {
+    expect(normalizeRiskLevel('高风险')).toBe('高')
+    expect(normalizeRiskLevel('HIGH')).toBe('高')
+    expect(normalizeRiskLevel('中风险')).toBe('中')
+    expect(normalizeRiskLevel('MEDIUM')).toBe('中')
+    expect(normalizeRiskLevel('低风险')).toBe('低')
+    expect(normalizeRiskLevel('LOW')).toBe('低')
+  })
+
+  test('falls back to backend-aligned probability thresholds', () => {
+    expect(riskLevelFromProbability(0.19)).toBe('低')
+    expect(riskLevelFromProbability(0.2)).toBe('中')
+    expect(riskLevelFromProbability(69)).toBe('中')
+    expect(riskLevelFromProbability(0.7)).toBe('高')
+  })
+})
+
+describe('diagnosis structured evidence', () => {
+  test('builds multi-source evidence for P009 hemochromatosis instead of liver enzymes only', () => {
+    const record = {
+      patientNo: 'P009',
+      chiefComplaint: '乏力、皮肤变黑伴血糖升高1年',
+      presentIllness: '乏力伴皮肤色素沉着，空腹血糖升高，肝酶明显升高。',
+      history: {
+        diseaseHistory: {
+          diabetesHistory: 'YES',
+          drinkingHistory: 'YES',
+          hyperlipidemiaHistory: 'NO',
+          smokingHistory: 'NO'
+        }
+      },
+      physicalExam: {
+        liverFibrosis: 'YES',
+        cirrhosis: 'YES',
+        fattyLiver: 'NO'
+      },
+      imagingReports: [],
+      pathology: { performed: false, nasScore: null, reportText: '' },
+      geneticSequencing: {
+        tested: true,
+        method: 'PANEL',
+        reportSource: '院内',
+        summary: 'HFE C282Y 纯合',
+        conclusion: '支持遗传性血色病',
+        variants: [{ gene: 'HFE', hgvsC: 'c.845G>A' }]
+      }
+    } as any
+
+    const evidenceItems = buildEvidenceItemsFromDiagnosis({
+      diseaseName: '遗传性血色病',
+      record,
+      indicators: [
+        { name: 'ALT', value: 135, unit: 'U/L', normal: '0-40', percentage: 95, status: 'exception' },
+        { name: 'AST', value: 105, unit: 'U/L', normal: '15-40', percentage: 95, status: 'exception' },
+        { name: 'GGT', value: 110, unit: 'U/L', normal: '0-60', percentage: 92, status: 'warning' },
+        { name: 'TBIL', value: 34, unit: 'μmol/L', normal: '3.4-17.1', percentage: 95, status: 'warning' },
+        { name: 'GLU', value: 7.2, unit: 'mmol/L', normal: '3.9-6.1', percentage: 59, status: 'warning' }
+      ]
+    })
+
+    expect(evidenceItems.some((item) => item.category === '基因' && item.label.includes('HFE'))).toBe(true)
+    expect(evidenceItems.some((item) => item.category === '病史' && item.label.includes('糖尿病'))).toBe(true)
+    expect(evidenceItems.some((item) => item.category === '临床表型')).toBe(true)
+    expect(evidenceItems.length).toBeGreaterThan(5)
+  })
 })
 
 describe('diagnosis result mapper', () => {
@@ -80,6 +218,7 @@ describe('diagnosis result mapper', () => {
     const result = buildDiagnosisResultFromSession(session)
 
     expect(result.diseaseName).toBe('遗传性血色病')
+    expect(result.riskLevel).toBe('高')
     expect(result.probability).toBe(91)
     expect(result.indicators[0]?.name).toBe('铁蛋白')
     expect(result.genes).toContain('HFE (c.845G>A)')
@@ -99,6 +238,7 @@ describe('diagnosis result mapper', () => {
     const result = buildDiagnosisResultFromSession(session)
 
     expect(result.probability).toBe(83)
+    expect(result.riskLevel).toBe('高')
     expect(result.genes).toContain('SERPINA1 (Pi*ZZ)')
     expect(result.dietTags).toContain('高蛋白低脂')
     expect(result.keySigns.some((item) => item.includes('α1-抗胰蛋白酶'))).toBe(true)

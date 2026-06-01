@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { SEED_PATIENT_RECORDS } from './patientRecordsSeed'
-import { buildDiseaseDisplayFields } from '@/features/diagnosis/services/diseaseDisplay'
+import { buildDiseaseDisplayFields } from '../../features/diagnosis/services/diseaseDisplay'
 
 const MOCK_USERS_KEY = '__imld_mock_users__'
 const MOCK_TOKENS_KEY = '__imld_mock_tokens__'
@@ -27,18 +27,18 @@ const DEFAULT_MOCK_USERS = [
 ]
 
 const SEED_PATIENTS = [
-  { id: 'P001', name: '林建国', gender: '男', age: 58, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-  { id: 'P002', name: '陈婉婷', gender: '女', age: 32, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '极佳', aiStatus: '已诊断', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  { id: 'P003', name: '张明远', gender: '男', age: 45, riskLevel: '中', disease: 'α1-抗胰蛋白酶缺乏症', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/67.jpg' },
-  { id: 'P004', name: '王淑芬', gender: '女', age: 62, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/68.jpg' },
-  { id: 'P005', name: '李浩宇', gender: '男', age: 28, riskLevel: '低', disease: 'Gilbert综合征', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' },
-  { id: 'P006', name: '赵雪梅', gender: '女', age: 51, riskLevel: '中', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/33.jpg' },
-  { id: 'P007', name: '刘振华', gender: '男', age: 66, riskLevel: '高', disease: '肝豆状核变性 (Wilson病)', compliance: '差', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/45.jpg' },
-  { id: 'P008', name: '周小雅', gender: '女', age: 24, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/12.jpg' },
-  { id: 'P009', name: '吴建强', gender: '男', age: 53, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/51.jpg' },
-  { id: 'P010', name: '郑丽丽', gender: '女', age: 38, riskLevel: '中', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '已诊断', avatar: 'https://randomuser.me/api/portraits/women/25.jpg' },
-  { id: 'P011', name: '孙立军', gender: '男', age: 41, riskLevel: '低', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/18.jpg' },
-  { id: 'P012', name: '马桂英', gender: '女', age: 71, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/71.jpg' }
+  { id: 'P001', name: '林建国', gender: '男', age: 58, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P002', name: '陈婉婷', gender: '女', age: 32, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '极佳', aiStatus: '已诊断', avatar: '' },
+  { id: 'P003', name: '张明远', gender: '男', age: 45, riskLevel: '中', disease: 'α1-抗胰蛋白酶缺乏症', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P004', name: '王淑芬', gender: '女', age: 62, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P005', name: '李浩宇', gender: '男', age: 28, riskLevel: '低', disease: 'Gilbert综合征', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P006', name: '赵雪梅', gender: '女', age: 51, riskLevel: '中', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P007', name: '刘振华', gender: '男', age: 66, riskLevel: '高', disease: '肝豆状核变性 (Wilson病)', compliance: '差', aiStatus: '未诊断', avatar: '' },
+  { id: 'P008', name: '周小雅', gender: '女', age: 24, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P009', name: '吴建强', gender: '男', age: 53, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P010', name: '郑丽丽', gender: '女', age: 38, riskLevel: '中', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '已诊断', avatar: '' },
+  { id: 'P011', name: '孙立军', gender: '男', age: 41, riskLevel: '低', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P012', name: '马桂英', gender: '女', age: 71, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '一般', aiStatus: '未诊断', avatar: '' }
 ]
 
 const SEED_REPORTS = [
@@ -135,13 +135,24 @@ export const DISEASE_CONFIGS = {
   }
 }
 
-const hasStorage = () => typeof window !== 'undefined' && !!window.localStorage
+const memoryStorage = new Map()
 const clone = (input) => JSON.parse(JSON.stringify(input))
 
-const safeRead = (key, fallback) => {
-  if (!hasStorage()) return fallback
+const getBrowserStorage = (storageType = 'local') => {
+  if (typeof window === 'undefined') return null
   try {
-    const raw = window.localStorage.getItem(key)
+    const storage = storageType === 'session' ? window.sessionStorage : window.localStorage
+    return storage || null
+  } catch {
+    return null
+  }
+}
+
+const safeRead = (key, fallback, storageType = 'local') => {
+  const storage = getBrowserStorage(storageType)
+  if (!storage) return fallback
+  try {
+    const raw = storage.getItem(key)
     if (!raw) return fallback
     return JSON.parse(raw)
   } catch {
@@ -149,13 +160,50 @@ const safeRead = (key, fallback) => {
   }
 }
 
-const safeWrite = (key, value) => {
-  if (!hasStorage()) return
+const safeWrite = (key, value, storageType = 'local') => {
+  const storage = getBrowserStorage(storageType)
+  if (!storage) return
   try {
-    window.localStorage.setItem(key, JSON.stringify(value))
+    storage.setItem(key, JSON.stringify(value))
   } catch {
     // ignore
   }
+}
+
+const safeReadMemory = (key, fallback) => {
+  if (!memoryStorage.has(key)) return fallback
+  try {
+    return JSON.parse(memoryStorage.get(key))
+  } catch {
+    return fallback
+  }
+}
+
+const safeWriteMemory = (key, value) => {
+  memoryStorage.set(key, JSON.stringify(value))
+}
+
+const shouldPersistDiagnosisReports = () => {
+  return String(import.meta.env.VITE_MOCK_DIAGNOSIS_PERSIST ?? '').toLowerCase() === 'true'
+}
+
+const diagnosisReportStorageType = () => shouldPersistDiagnosisReports() ? 'local' : 'session'
+
+const readDiagnosisReports = (fallback) => {
+  const storageType = diagnosisReportStorageType()
+  if (getBrowserStorage(storageType)) {
+    return safeRead(MOCK_REPORTS_KEY, fallback, storageType)
+  }
+  return safeReadMemory(MOCK_REPORTS_KEY, fallback)
+}
+
+const writeDiagnosisReports = (value) => {
+  const storageType = diagnosisReportStorageType()
+  if (getBrowserStorage(storageType)) {
+    safeWrite(MOCK_REPORTS_KEY, value, storageType)
+    return
+  }
+  safeWriteMemory(MOCK_REPORTS_KEY, value)
 }
 
 export const loadUsers = () => {
@@ -225,15 +273,15 @@ export const findRecordPayloadByPatientNo = (patientNo) => {
 }
 
 export const loadReports = () => {
-  const items = safeRead(MOCK_REPORTS_KEY, [])
+  const items = readDiagnosisReports([])
   if (Array.isArray(items) && items.length > 0) return items
 
   const seeded = clone(SEED_REPORTS)
-  safeWrite(MOCK_REPORTS_KEY, seeded)
+  writeDiagnosisReports(seeded)
   return seeded
 }
 
-export const saveReports = (items) => safeWrite(MOCK_REPORTS_KEY, items)
+export const saveReports = (items) => writeDiagnosisReports(items)
 
 export const loadDietOverrides = () => safeRead(MOCK_DIET_OVERRIDES_KEY, {})
 export const saveDietOverrides = (items) => safeWrite(MOCK_DIET_OVERRIDES_KEY, items)

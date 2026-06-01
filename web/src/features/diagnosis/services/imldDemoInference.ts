@@ -5,9 +5,12 @@ import modelMetadataUrl from '@/assets/models/imld/imld_model_meta.json?url'
 import modelUrl from '@/assets/models/imld/imld_xgboost_model.onnx?url'
 import type { DiagnosisResult } from '@/types/diagnosis'
 import type { PatientRecordPayload } from '@/types/patient'
+import { resolveDiagnosisConfidence } from './confidenceConfig'
 import { buildDiseaseDisplayFields } from './diseaseDisplay'
+import { buildEvidenceItemsFromDiagnosis, buildEvidenceSummary } from './diagnosisEvidence'
 import { buildFeatureVectorFromRecord, buildIndicatorsFromRecord } from './emrFeatureMapping'
 import { isBrowserOnnxInferenceMode } from './inferenceMode'
+import { riskLevelFromProbability } from './riskLevel'
 
 interface DemoPatient {
   id?: string
@@ -241,11 +244,22 @@ export const predictImldDemoDiagnosis = async (
       diseaseName,
       probability
     })
+    const confidence = resolveDiagnosisConfidence(probability)
+    const evidenceItems = buildEvidenceItemsFromDiagnosis({
+      diseaseName,
+      indicators,
+      record,
+      genes: displayFields.genes
+    })
 
     return {
       diseaseName,
+      riskLevel: riskLevelFromProbability(probability),
       probability,
       indicators,
+      confidence,
+      evidenceItems,
+      evidenceSummary: buildEvidenceSummary(evidenceItems, confidence),
       ...displayFields
     }
   } catch (error) {

@@ -125,7 +125,7 @@ const INDICATOR_DEFS: Record<string, IndicatorDef> = {
 
 const DISEASE_INDICATOR_KEYS: Array<{ match: (name: string) => boolean; keys: string[] }> = [
   { match: (n) => n.includes('Wilson') || n.includes('肝豆'), keys: ['ceruloplasmin', 'ALT', 'AST', 'TBIL'] },
-  { match: (n) => n.includes('血色'), keys: ['ALT', 'AST', 'GGT', 'TBIL'] },
+  { match: (n) => n.includes('血色'), keys: ['ALT', 'AST', 'GGT', 'TBIL', 'GLU'] },
   { match: (n) => n.includes('抗胰蛋白酶'), keys: ['AAT', 'ALT', 'AST', 'TBIL'] },
   { match: (n) => n.includes('脂肪') || n.includes('代谢'), keys: ['TG', 'CHOL', 'GLU', 'ALT'] }
 ]

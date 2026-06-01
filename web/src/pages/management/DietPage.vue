@@ -23,7 +23,7 @@
               :class="{ 'is-active': selectedPatient?.id === patient.id }"
               @click="handleSelectPatient(patient)"
             >
-              <el-avatar :size="46" :src="patient.avatar" />
+              <PatientAvatar :size="46" :src="patient.avatar" :name="patient.name" />
               <div class="item-info">
                 <div class="item-header">
                   <span class="name">{{ patient.name }}</span>
@@ -49,7 +49,7 @@
           <div v-else class="diet-dashboard">
             <div class="dashboard-header">
               <div class="header-left">
-                <el-avatar :size="64" :src="selectedPatient.avatar" />
+                <PatientAvatar :size="64" :src="selectedPatient.avatar" :name="selectedPatient.name" />
                 <div class="header-text">
                   <h2>{{ selectedPatient.name }} <span class="age-gender">{{ selectedPatient.gender }} | {{ selectedPatient.age }}岁</span></h2>
                   <p class="disease-tag">管理病种：<el-tag effect="plain" type="danger">{{ selectedPatient.disease }}</el-tag></p>
@@ -164,6 +164,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Search, Position, Printer, Aim, Warning, Food, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import PatientAvatar from '@/components/PatientAvatar.vue'
 import managementApi from '../../api/management'
 import type { DietPatient, DietPlanResponse } from '../../api/types'
 

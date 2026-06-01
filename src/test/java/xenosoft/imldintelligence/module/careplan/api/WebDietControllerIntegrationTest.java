@@ -100,6 +100,7 @@ class WebDietControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.data.items", hasSize(2)))
                 .andExpect(jsonPath("$.data.items[0].id").value("P910"))
                 .andExpect(jsonPath("$.data.items[0].name").value("林膳食"))
+                .andExpect(jsonPath("$.data.items[0].avatar").value(""))
                 .andExpect(jsonPath("$.data.items[0].disease").value("肝豆状核变性 (Wilson病)"))
                 .andExpect(jsonPath("$.data.items[0].compliance").value("极佳"))
                 .andExpect(jsonPath("$.data.items[1].id").value("P911"))

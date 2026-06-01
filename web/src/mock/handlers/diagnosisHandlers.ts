@@ -9,7 +9,15 @@ import {
   toAiFinding
 } from '../core/mockState'
 import { wait } from '../core/mockUtils'
+import {
+  DEFAULT_MODEL_FEATURE_COUNT,
+  buildEvidenceItemsFromDiagnosis,
+  buildEvidenceSummary,
+  buildKeySignsFromEvidenceItems
+} from '@/features/diagnosis/services/diagnosisEvidence'
+import { resolveDiagnosisConfidence } from '@/features/diagnosis/services/confidenceConfig'
 import { predictImldDemoDiagnosis } from '@/features/diagnosis/services/imldDemoInference'
+import { toChineseRiskLabel } from '@/features/diagnosis/services/riskLevel'
 
 const SUCCESS_CODE = 200
 const DEFAULT_PAGE_SIZE = 20
@@ -113,13 +121,7 @@ const inferDiseaseCode = (diseaseName = '') => {
 }
 
 const inferRiskLevel = (probability) => {
-  if (probability >= 0.85) {
-    return 'HIGH'
-  }
-  if (probability >= 0.6) {
-    return 'MEDIUM'
-  }
-  return 'LOW'
+  return toChineseRiskLabel(undefined, probability)
 }
 
 const inferGeneByDisease = (diseaseName = '') => {
@@ -135,34 +137,73 @@ const inferGeneByDisease = (diseaseName = '') => {
   return 'ATP7B'
 }
 
-const inferClinicalFinding = (report) => {
-  const text = String(report.aiFindings?.biochemical || '')
-  if (!text) {
-    return []
+const severityFromIndicator = (indicator) => {
+  if (indicator.status === 'exception') {
+    return '高'
   }
-
-  return [
-    {
-      feature: text.slice(0, 64),
-      value: 1,
-      normal_range: [0, 1],
-      direction: 'high',
-      severity: report.status === '已签发' ? '高' : '中'
-    }
-  ]
+  if (indicator.status === 'warning') {
+    return '中'
+  }
+  return ''
 }
 
-const buildInference = (report) => {
+const directionFromIndicator = (indicator) => {
+  const name = String(indicator.name || '')
+  return /铜蓝蛋白|AAT|抗胰蛋白酶/.test(name) ? 'low' : 'high'
+}
+
+const buildClinicalAbnormalities = (diagnosisPayload) => {
+  return (diagnosisPayload?.indicators || []).map((indicator) => ({
+    feature: indicator.name,
+    value: indicator.value,
+    unit: indicator.unit,
+    normal_range_label: indicator.normal,
+    direction: indicator.status ? directionFromIndicator(indicator) : '',
+    severity: severityFromIndicator(indicator)
+  }))
+}
+
+const buildGeneAbnormalities = (diseaseName, record) => {
+  const variants = record?.geneticSequencing?.variants || []
+  if (variants.length > 0) {
+    return variants.map((variant) => ({
+      gene: variant.gene,
+      c_change: variant.hgvsC,
+      p_change: variant.hgvsP
+    }))
+  }
+  return [{ gene: inferGeneByDisease(diseaseName) }]
+}
+
+const buildInference = (report, record) => {
   const probability = parseProbability(report.aiFindings?.probability)
   const diseaseName = String(report.aiFindings?.disease || '')
+  const diagnosisPayload = report.diagnosisPayload || null
+  const indicators = diagnosisPayload?.indicators || []
+  const confidence = diagnosisPayload?.confidence || resolveDiagnosisConfidence(probability)
+  const evidenceItems = Array.isArray(diagnosisPayload?.evidenceItems) && diagnosisPayload.evidenceItems.length > 0
+    ? diagnosisPayload.evidenceItems
+    : buildEvidenceItemsFromDiagnosis({
+        diseaseName,
+        indicators,
+        record,
+        genes: diagnosisPayload?.genes || []
+      })
+  const evidenceSummary = diagnosisPayload?.evidenceSummary ||
+    buildEvidenceSummary(evidenceItems, confidence, DEFAULT_MODEL_FEATURE_COUNT)
+
   return {
     risk_probability: probability,
+    model_feature_count: evidenceSummary.modelFeatureCount,
+    abnormal_evidence_count: evidenceSummary.abnormalEvidenceCount,
+    evidence_items: evidenceItems,
+    key_signs: buildKeySignsFromEvidenceItems(evidenceItems),
     suggestions: [
       report.expertConclusion || '建议结合病史、查体和关键化验指标综合判断。',
       report.treatmentPlan || '建议建立长期随访并动态评估病情变化。'
     ],
-    clinical_abnormalities: inferClinicalFinding(report),
-    gene_abnormalities: [{ gene: inferGeneByDisease(diseaseName) }]
+    clinical_abnormalities: buildClinicalAbnormalities(diagnosisPayload),
+    gene_abnormalities: buildGeneAbnormalities(diseaseName, record)
   }
 }
 
@@ -215,6 +256,7 @@ const buildSessionFromReport = (report, patient, doctorIdOverride) => {
   const diseaseName = String(report.aiFindings?.disease || '遗传代谢性肝病风险提示')
   const doctorId = parsePositiveInt(doctorIdOverride, parsePositiveInt(report.doctorId, DEFAULT_DOCTOR_ID))
   const feedbacks = buildFeedbacks(report, doctorId)
+  const record = findRecordPayloadByPatientNo(report.patientId || patient?.id)
 
   return {
     id: sessionId,
@@ -234,7 +276,7 @@ const buildSessionFromReport = (report, patient, doctorIdOverride) => {
         rankNo: 1,
         riskLevel: inferRiskLevel(probability),
         evidenceJson: {
-          inference: buildInference(report)
+          inference: buildInference(report, record)
         }
       }
     ],
@@ -271,6 +313,7 @@ const upsertDiagnosisReport = (patient, diagnosisPayload, doctorId = DEFAULT_DOC
     existed.age = patient.age
     existed.date = new Date().toISOString().slice(0, 10)
     existed.aiFindings = toAiFinding(diagnosisPayload)
+    existed.diagnosisPayload = diagnosisPayload
     existed.doctorId = doctorId
     saveReports(reports)
     return existed
@@ -287,6 +330,7 @@ const upsertDiagnosisReport = (patient, diagnosisPayload, doctorId = DEFAULT_DOC
     date: new Date().toISOString().slice(0, 10),
     status: '待签发',
     aiFindings: toAiFinding(diagnosisPayload),
+    diagnosisPayload,
     expertConclusion: '',
     treatmentPlan: '',
     doctorId
@@ -409,13 +453,14 @@ export const diagnosisExactHandlers = {
   },
 
   'GET /api/v1/web/diagnosis/ai-queue/': async () => {
+    const reportedPatientIds = new Set(loadReports().map((report) => String(report.patientId || '')))
     const items = loadPatients().map((item) => ({
       id: item.id,
       name: item.name,
       gender: item.gender,
       age: item.age,
-      avatar: item.avatar,
-      aiStatus: item.aiStatus || '未诊断'
+      avatar: '',
+      aiStatus: reportedPatientIds.has(item.id) ? '已诊断' : '未诊断'
     }))
 
     return { status: 200, data: { items } }

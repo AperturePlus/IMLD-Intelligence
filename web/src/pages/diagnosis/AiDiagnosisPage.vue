@@ -6,20 +6,33 @@
         <el-card class="left-panel" shadow="never">
           <template #header>
             <div class="panel-header">
-              <el-text tag="b" size="large">待诊患者队列</el-text>
+              <el-text tag="b" size="large">AI 诊断队列</el-text>
               <el-tag size="small" type="info">{{ patients.length }} 人</el-tag>
             </div>
           </template>
+
+          <el-tabs v-model="queueTab" class="queue-tabs">
+            <el-tab-pane name="pending">
+              <template #label>
+                <span class="queue-tab-label">待诊 <span>{{ pendingPatients.length }}</span></span>
+              </template>
+            </el-tab-pane>
+            <el-tab-pane name="reported">
+              <template #label>
+                <span class="queue-tab-label">已出报告 <span>{{ reportedPatients.length }}</span></span>
+              </template>
+            </el-tab-pane>
+          </el-tabs>
           
-          <el-scrollbar height="calc(100vh - 160px)">
+          <el-scrollbar class="queue-scrollbar">
             <div 
-              v-for="patient in patients" 
+              v-for="patient in visiblePatients"
               :key="patient.id"
               class="patient-list-item"
               :class="{ 'is-active': selectedPatient?.id === patient.id }"
               @click="handleSelectPatient(patient)"
             >
-              <el-avatar :size="46" :src="patient.avatar" />
+              <PatientAvatar :size="46" :src="patient.avatar" :name="patient.name" />
               <div class="item-info">
                 <div class="item-header">
                   <div class="patient-identity">
@@ -37,6 +50,11 @@
                 </div>
               </div>
             </div>
+            <el-empty
+              v-if="visiblePatients.length === 0"
+              :description="queueTab === 'pending' ? '暂无待诊患者' : '暂无已出报告患者'"
+              :image-size="90"
+            />
           </el-scrollbar>
         </el-card>
       </el-col>
@@ -58,7 +76,12 @@
             v-else-if="selectedPatient && !diagnosisResult && selectedPatient.aiStatus === diagnosedStatus"
             class="ready-state"
           >
-            <el-avatar :size="80" :src="selectedPatient.avatar" style="margin-bottom: 20px;" />
+            <PatientAvatar
+              :size="80"
+              :src="selectedPatient.avatar"
+              :name="selectedPatient.name"
+              style="margin-bottom: 20px;"
+            />
             <el-text size="large" tag="b" style="font-size: 22px; display: block; margin-bottom: 12px;">
               {{ selectedPatient.name }} 已完成 AI 报告
             </el-text>
@@ -71,7 +94,12 @@
           </div>
 
           <div v-else-if="selectedPatient && !diagnosisResult" class="ready-state">
-            <el-avatar :size="80" :src="selectedPatient.avatar" style="margin-bottom: 20px;" />
+            <PatientAvatar
+              :size="80"
+              :src="selectedPatient.avatar"
+              :name="selectedPatient.name"
+              style="margin-bottom: 20px;"
+            />
             <el-text size="large" tag="b" style="font-size: 22px; display: block; margin-bottom: 12px;">
               {{ selectedPatient.name }} 的诊疗档案已就绪
             </el-text>
@@ -106,7 +134,7 @@
                   <el-progress 
                     type="dashboard" 
                     :percentage="diagnosisResult.probability" 
-                    :color="customColors" 
+                    :color="riskBand.color"
                     :width="140"
                     :stroke-width="12"
                   >
@@ -125,15 +153,52 @@
                   <el-descriptions-item label="鉴别诊断">
                     {{ diagnosisResult.differentials.join('、') || '--' }}
                   </el-descriptions-item>
-                  <el-descriptions-item label="数据置信度">
-                    <el-tag type="success" size="small">{{ diagnosisResult.dataConfidenceLabel }}</el-tag>
+                  <el-descriptions-item v-if="diagnosisResult.confidence.visible" label="数据置信度">
+                    <el-tag :type="confidenceTagType" size="small">{{ diagnosisResult.confidence.label }}</el-tag>
                   </el-descriptions-item>
-                  <el-descriptions-item label="关键体征">
-                    {{ diagnosisResult.keySigns.join('、') || '--' }}
+                  <el-descriptions-item label="关键证据" :span="2">
+                    <div class="key-sign-list">
+                      <el-tag
+                        v-for="sign in diagnosisResult.keySigns"
+                        :key="sign"
+                        type="warning"
+                        effect="plain"
+                        size="small"
+                      >
+                        {{ sign }}
+                      </el-tag>
+                      <span v-if="diagnosisResult.keySigns.length === 0">--</span>
+                    </div>
                   </el-descriptions-item>
                 </el-descriptions>
+                <div class="evidence-summary">
+                  <el-tag type="info" effect="plain">纳入模型特征 {{ diagnosisResult.evidenceSummary.modelFeatureCount }} 项</el-tag>
+                  <el-tag type="warning" effect="plain">异常证据 {{ diagnosisResult.evidenceSummary.abnormalEvidenceCount }} 项</el-tag>
+                  <el-tag :type="reviewTagType" effect="plain">
+                    {{ diagnosisResult.evidenceSummary.reviewRequired ? '需医生复核' : '置信度达标' }}
+                  </el-tag>
+                </div>
               </el-col>
             </el-row>
+
+            <div v-if="diagnosisResult.evidenceItems.length > 0" class="section-card evidence-card">
+              <div class="section-title">关键证据汇总</div>
+              <div class="evidence-grid">
+                <div
+                  v-for="item in diagnosisResult.evidenceItems"
+                  :key="`${item.category}-${item.label}-${item.value || ''}`"
+                  class="evidence-item"
+                  :class="item.severity"
+                >
+                  <div class="evidence-item-top">
+                    <span class="evidence-category">{{ item.category }}</span>
+                    <span v-if="item.source" class="evidence-source">{{ item.source }}</span>
+                  </div>
+                  <div class="evidence-label">{{ item.label }}</div>
+                  <div v-if="item.value" class="evidence-value">{{ item.value }}</div>
+                </div>
+              </div>
+            </div>
 
             <div class="section-card">
               <div class="section-title">特征性生化指标偏离分析</div>
@@ -153,6 +218,7 @@
                     <span class="ref-range">(参考: {{ item.normal }})</span>
                   </div>
                 </div>
+                <el-empty v-if="diagnosisResult.indicators.length === 0" description="暂无结构化生化指标" :image-size="80" />
               </div>
             </div>
 
@@ -213,12 +279,11 @@
 import { computed, ref, onMounted } from 'vue'
 import { Cpu, Aim, Download, Microphone, Food } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import PatientAvatar from '@/components/PatientAvatar.vue'
 import diagnosisApi from '../../api/diagnosis'
 import type { DiagnosisQueuePatient, DiagnosisResult } from '../../api/types'
 
 const DIAGNOSED_STATUS = '已诊断'
-const UNDIAGNOSED_STATUS = '未诊断'
-const MAX_REPORTED_PATIENT_COUNT = 3
 
 const isDiagnosing = ref(false)
 const isLoadingReportedResult = ref(false)
@@ -226,7 +291,7 @@ const loadingQueue = ref(false)
 const selectedPatient = ref<DiagnosisQueuePatient | null>(null)
 const diagnosisResult = ref<DiagnosisResult | null>(null)
 const patients = ref<DiagnosisQueuePatient[]>([])
-const seedReportedPatientIds = ref<string[]>([])
+const queueTab = ref<'pending' | 'reported'>('pending')
 const diagnosedStatus = DIAGNOSED_STATUS
 
 const isBusy = computed(() => isDiagnosing.value || isLoadingReportedResult.value)
@@ -238,45 +303,39 @@ const loadingText = computed(() => {
   return '正在调取该患者的历史 AI 报告，请稍候...'
 })
 
-const customColors = [
-  { color: '#67c23a', percentage: 30 },
-  { color: '#e6a23c', percentage: 70 },
-  { color: '#f56c6c', percentage: 100 }
-]
-
-const RISK_BANDS = [
-  { min: 85, label: '极高危', color: '#f56c6c' },
-  { min: 70, label: '高危', color: '#f56c6c' },
-  { min: 30, label: '中危', color: '#e6a23c' },
-  { min: 0, label: '低危', color: '#67c23a' }
-]
+const RISK_BANDS = {
+  高: { label: '高风险', color: '#f56c6c' },
+  中: { label: '中风险', color: '#e6a23c' },
+  低: { label: '低风险', color: '#67c23a' }
+} as const
 
 const riskBand = computed(() => {
-  const probability = diagnosisResult.value?.probability ?? 0
-  return RISK_BANDS.find((band) => probability >= band.min) ?? RISK_BANDS[RISK_BANDS.length - 1]
+  const level = diagnosisResult.value?.riskLevel ?? '中'
+  return RISK_BANDS[level] ?? RISK_BANDS.中
 })
 
-const resolveSeedReportedPatientIds = (items: DiagnosisQueuePatient[]): string[] => {
-  return items
-    .filter((item) => item.aiStatus === DIAGNOSED_STATUS)
-    .slice(0, MAX_REPORTED_PATIENT_COUNT)
-    .map((item) => item.id)
-}
-
-const applySeedStatus = (items: DiagnosisQueuePatient[]): DiagnosisQueuePatient[] => {
-  if (seedReportedPatientIds.value.length === 0) {
-    seedReportedPatientIds.value = resolveSeedReportedPatientIds(items)
+const confidenceTagType = computed(() => {
+  const confidence = diagnosisResult.value?.confidence
+  if (!confidence) {
+    return 'info'
   }
-  if (seedReportedPatientIds.value.length === 0) {
-    return items
+  if (confidence.adjusted || confidence.reviewRequired) {
+    return 'warning'
   }
+  return 'success'
+})
 
-  const reportedSet = new Set(seedReportedPatientIds.value)
-  return items.map((item) => ({
-    ...item,
-    aiStatus: reportedSet.has(item.id) ? DIAGNOSED_STATUS : UNDIAGNOSED_STATUS
-  }))
-}
+const reviewTagType = computed(() => {
+  return diagnosisResult.value?.evidenceSummary.reviewRequired ? 'warning' : 'success'
+})
+
+const pendingPatients = computed(() => patients.value.filter((item) => item.aiStatus !== DIAGNOSED_STATUS))
+
+const reportedPatients = computed(() => patients.value.filter((item) => item.aiStatus === DIAGNOSED_STATUS))
+
+const visiblePatients = computed(() => {
+  return queueTab.value === 'reported' ? reportedPatients.value : pendingPatients.value
+})
 
 const syncSelectedPatientFromQueue = () => {
   if (!selectedPatient.value) {
@@ -285,18 +344,13 @@ const syncSelectedPatientFromQueue = () => {
   selectedPatient.value = patients.value.find((item) => item.id === selectedPatient.value?.id) || null
 }
 
-const resetMockQueueStatuses = () => {
-  patients.value = applySeedStatus(patients.value)
-  syncSelectedPatientFromQueue()
-}
-
 const loadReportedDiagnosis = async (patient: DiagnosisQueuePatient) => {
   isLoadingReportedResult.value = true
   try {
     const res = await diagnosisApi.getLatestDiagnosisResultByPatient(patient.id)
     if (!res.data) {
-      seedReportedPatientIds.value = seedReportedPatientIds.value.filter((id) => id !== patient.id)
-      resetMockQueueStatuses()
+      await fetchQueue()
+      queueTab.value = 'pending'
       ElMessage.warning('该患者暂无已出报告，请点击“启动 AI 智能筛查”')
       return
     }
@@ -320,7 +374,7 @@ const fetchQueue = async () => {
   loadingQueue.value = true
   try {
     const res = await diagnosisApi.getAiQueue()
-    patients.value = applySeedStatus(res.data.items || [])
+    patients.value = res.data.items || []
     syncSelectedPatientFromQueue()
   } catch {
     ElMessage.error('加载待诊队列失败，请稍后重试')
@@ -358,8 +412,9 @@ const startDiagnosis = async () => {
   try {
     const res = await diagnosisApi.runAiDiagnosis(patient.id)
     diagnosisResult.value = res.data
-    resetMockQueueStatuses()
-    ElMessage.success('AI 辅助诊断已完成，患者队列状态已重置')
+    await fetchQueue()
+    queueTab.value = 'reported'
+    ElMessage.success('AI 辅助诊断已完成，患者已移入已出报告')
   } catch {
     ElMessage.error('AI 诊断失败，请稍后重试')
   } finally {
@@ -390,12 +445,55 @@ onMounted(() => {
   border-radius: 8px;
   border: none;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.left-panel :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  min-height: 0;
+}
+
+.queue-tabs {
+  flex-shrink: 0;
+  padding: 0 16px;
+}
+
+.queue-tabs :deep(.el-tabs__header) {
+  margin-bottom: 0;
+}
+
+.queue-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.queue-tab-label span {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #f0f2f5;
+  color: #606266;
+  font-size: 12px;
+  line-height: 20px;
+  justify-content: center;
+}
+
+.queue-scrollbar {
+  flex: 1;
+  min-height: 0;
 }
 
 .patient-list-item {
@@ -463,9 +561,12 @@ onMounted(() => {
 
 /* 右侧工作台样式 */
 :deep(.el-card__body) {
-  height: 100%;
+  flex: 1;
+  overflow: auto;
   box-sizing: border-box;
   padding: 24px;
+  min-height: 0;
+  min-width: 0;
 }
 
 .empty-state, .ready-state {
@@ -541,6 +642,20 @@ onMounted(() => {
   font-size: 24px;
 }
 
+.key-sign-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.evidence-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* 内部卡片样式 */
 .section-card {
   border: 1px solid #ebeef5;
@@ -561,6 +676,65 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.evidence-card {
+  margin-bottom: 20px;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.evidence-item {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.evidence-item.warning {
+  border-color: #f3d19e;
+  background: #fdf6ec;
+}
+
+.evidence-item.exception {
+  border-color: #fab6b6;
+  background: #fef0f0;
+}
+
+.evidence-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.evidence-category {
+  font-size: 12px;
+  font-weight: 700;
+  color: #606266;
+}
+
+.evidence-source {
+  font-size: 12px;
+  color: #909399;
+}
+
+.evidence-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.evidence-value {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.4;
 }
 
 /* 纯 CSS 图表样式 */

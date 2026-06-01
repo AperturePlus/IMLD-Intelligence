@@ -7,8 +7,11 @@ export interface DiagnosisRecommendationLike {
 export interface ClinicalAbnormalityLike {
   feature?: string
   value?: number
+  unit?: string
   normal_range?: number[]
   normalRange?: number[]
+  normal_range_label?: string
+  normalRangeLabel?: string
   direction?: string
   severity?: string
 }
@@ -21,12 +24,22 @@ export interface GeneAbnormalityLike {
   pChange?: string
 }
 
+export interface EvidenceItemLike {
+  category?: string
+  label?: string
+  value?: string
+  source?: string
+  severity?: string
+}
+
 export interface InferenceDisplayLike {
   suggestions?: string[]
   clinical_abnormalities?: ClinicalAbnormalityLike[]
   clinicalAbnormalities?: ClinicalAbnormalityLike[]
   gene_abnormalities?: GeneAbnormalityLike[]
   geneAbnormalities?: GeneAbnormalityLike[]
+  evidence_items?: EvidenceItemLike[]
+  evidenceItems?: EvidenceItemLike[]
   differentials?: string[]
   differential_diagnoses?: string[]
   differentialDiagnoses?: string[]
@@ -178,13 +191,20 @@ const formatClinicalAbnormality = (item: ClinicalAbnormalityLike): string | null
   if (!feature) {
     return null
   }
+  const binarySummary = item.value === 1 && item.direction === 'high' && feature.length > 24
+  if (binarySummary) {
+    const severity = item.severity ? `（${item.severity}）` : ''
+    return `${feature}${severity}`
+  }
   const directionMap: Record<string, string> = {
     high: '升高',
     low: '降低',
     positive: '阳性'
   }
   const direction = item.direction ? directionMap[item.direction] || item.direction : ''
-  const value = typeof item.value === 'number' && Number.isFinite(item.value) ? ` ${item.value}` : ''
+  const value = typeof item.value === 'number' && Number.isFinite(item.value)
+    ? ` ${item.value}${item.unit || ''}`
+    : ''
   const severity = item.severity ? `（${item.severity}）` : ''
   return `${feature}${value}${direction ? ` ${direction}` : ''}${severity}`
 }
@@ -196,6 +216,14 @@ const formatGeneAbnormality = (item: GeneAbnormalityLike): string | null => {
   }
   const change = firstText(item.c_change, item.cChange, item.p_change, item.pChange)
   return change ? `${gene} (${change})` : gene
+}
+
+const formatEvidenceItem = (item: EvidenceItemLike): string | null => {
+  const label = item.label?.trim()
+  if (!label) {
+    return null
+  }
+  return item.value?.trim() ? `${label}（${item.value.trim()}）` : label
 }
 
 export const buildDataConfidenceLabel = (probability = 0): string => {
@@ -220,6 +248,12 @@ export const buildDiseaseDisplayFields = (input: DiseaseDisplayInput): DiseaseDi
       .map(formatGeneAbnormality)
       .filter((item): item is string => Boolean(item))
   )
+  const evidenceSigns = uniqueStrings(
+    (inference?.evidence_items || inference?.evidenceItems || [])
+      .filter((item) => ['warning', 'exception'].includes(item.severity || ''))
+      .map(formatEvidenceItem)
+      .filter((item): item is string => Boolean(item))
+  )
   const genes = firstArray(input.genes, inferenceGenes, profile.genes)
 
   return {
@@ -229,7 +263,7 @@ export const buildDiseaseDisplayFields = (input: DiseaseDisplayInput): DiseaseDi
       inference?.differentialDiagnoses,
       profile.differentials
     ),
-    keySigns: firstArray(inference?.key_signs, inference?.keySigns, clinicalSigns, profile.keySigns),
+    keySigns: firstArray(inference?.key_signs, inference?.keySigns, evidenceSigns, clinicalSigns, profile.keySigns),
     dietTags: firstArray(inference?.diet_tags, inference?.dietTags, profile.dietTags),
     genes,
     diet: firstText(
