@@ -33,7 +33,12 @@
         <el-card shadow="hover" :body-style="{ padding: '24px 20px' }">
           <el-row :gutter="16" align="middle">
             <el-col :span="6" style="text-align: center;">
-              <el-avatar :size="64" :src="patient.avatar" style="border: 2px solid #e4e7ed;" />
+              <PatientAvatar
+                :size="64"
+                :src="patient.avatar"
+                :name="patient.name"
+                style="border: 2px solid #e4e7ed;"
+              />
             </el-col>
 
             <el-col :span="18">
@@ -85,6 +90,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import PatientAvatar from '@/components/PatientAvatar.vue'
 import patientApi from '../../api/patient'
 import type { PatientSummary } from '../../api/types'
 
