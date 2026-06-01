@@ -64,6 +64,14 @@ export const centerRouteDefinitions = {
     sectionTitle: '患者档案',
     component: () => import('@/pages/patients/PatientRecordPage.vue')
   },
+  patientRecordView: {
+    name: 'patient-record-view',
+    path: 'patient-record/view/:patientNo',
+    fullPath: '/center/patient-record/view',
+    title: '电子病历',
+    sectionTitle: '患者档案',
+    component: () => import('@/pages/patients/PatientRecordViewPage.vue')
+  },
   aiDiagnosis: {
     name: 'ai-diagnosis',
     path: 'ai-diagnosis',

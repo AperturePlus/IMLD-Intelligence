@@ -69,7 +69,7 @@
           <template #footer>
             <el-row justify="end">
               <el-button link type="primary">查看详情</el-button>
-              <el-button link type="info">电子病历</el-button>
+              <el-button link type="info" @click="openMedicalRecord(patient)">电子病历</el-button>
             </el-row>
           </template>
         </el-card>
@@ -130,6 +130,13 @@ const handleExternalAdd = () => {
     }
   })
   ElMessage.info('已跳转至病历录入页，请先导入基础信息后再补录临床字段')
+}
+
+const openMedicalRecord = (patient: PatientSummary) => {
+  router.push({
+    name: 'patient-record-view',
+    params: { patientNo: patient.id }
+  })
 }
 
 watch(searchQuery, () => {

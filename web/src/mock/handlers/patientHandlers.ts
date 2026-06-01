@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import {
+  findRecordPayloadByPatientNo,
   loadPatients,
   loadRecords,
   nextPatientId,
@@ -658,7 +659,20 @@ export const patientExactHandlers = {
   }
 }
 
-export const patientDynamicHandlers = []
+export const patientDynamicHandlers = [
+  {
+    method: 'GET',
+    pattern: /^\/api\/v1\/web\/patient-records\/([^/]+)$/,
+    buildParams: (match) => ({ patientNo: match[1] }),
+    handler: async ({ params }) => {
+      const payload = findRecordPayloadByPatientNo(decodeURIComponent(params.patientNo))
+      if (!payload) {
+        return { status: 404, statusText: 'Not Found', data: { detail: '该患者暂无电子病历' } }
+      }
+      return { status: 200, data: payload }
+    }
+  }
+]
 
 export const patientRouteDocs = [
   {
@@ -674,6 +688,13 @@ export const patientRouteDocs = [
     path: '/api/v1/web/patient-records/',
     kind: 'exact',
     description: '创建病历并在必要时写入新患者。'
+  },
+  {
+    module: 'patient',
+    method: 'GET',
+    path: '/api/v1/web/patient-records/:patientNo',
+    kind: 'dynamic',
+    description: '按病号查询患者电子病历（只读）。'
   },
   {
     module: 'patient',

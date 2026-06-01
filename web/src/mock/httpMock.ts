@@ -6,6 +6,7 @@ import { diagnosisDynamicHandlers, diagnosisExactHandlers, diagnosisRouteDocs } 
 import { dietDynamicHandlers, dietExactHandlers, dietRouteDocs } from './handlers/dietHandlers'
 import { patientDynamicHandlers, patientExactHandlers, patientRouteDocs } from './handlers/patientHandlers'
 import { screeningDynamicHandlers, screeningExactHandlers, screeningRouteDocs } from './handlers/screeningHandlers'
+import { isBackendInferenceMode } from '@/features/diagnosis/services/inferenceMode'
 import {
   MOCK_DELAY_MS,
   buildResponse,
@@ -80,7 +81,7 @@ export const isMockEnabled = () => {
   const mockFlag = import.meta.env.VITE_USE_MOCK === 'true'
   const isElectronBuild = import.meta.env.MODE === 'electron'
 
-  return mockFlag && (import.meta.env.DEV || isElectronBuild)
+  return mockFlag && !isBackendInferenceMode() && (import.meta.env.DEV || isElectronBuild)
 }
 
 export const createMockAdapter = (config) => {

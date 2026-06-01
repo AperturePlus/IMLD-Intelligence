@@ -1,7 +1,13 @@
+import * as ort from 'onnxruntime-web'
+import ortWasmMjsUrl from '../../../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs?url'
+import ortWasmUrl from '../../../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url'
 import modelMetadataUrl from '@/assets/models/imld/imld_model_meta.json?url'
 import modelUrl from '@/assets/models/imld/imld_xgboost_model.onnx?url'
-
-type ProgressStatus = '' | 'success' | 'warning' | 'exception'
+import type { DiagnosisResult } from '@/types/diagnosis'
+import type { PatientRecordPayload } from '@/types/patient'
+import { buildDiseaseDisplayFields } from './diseaseDisplay'
+import { buildFeatureVectorFromRecord, buildIndicatorsFromRecord } from './emrFeatureMapping'
+import { isBrowserOnnxInferenceMode } from './inferenceMode'
 
 interface DemoPatient {
   id?: string
@@ -19,59 +25,22 @@ interface ModelMetadata {
   version?: string
 }
 
-interface DiagnosisPayload {
-  diseaseName: string
-  probability: number
-  indicators: Array<{
-    name: string
-    value: number
-    unit: string
-    normal: string
-    percentage: number
-    status: ProgressStatus
-  }>
-  genes: string[]
-  diet: string
-  sequencing: string
-}
+type DiagnosisPayload = DiagnosisResult
 
 interface OrtTensor {
   data: ArrayLike<number | bigint>
 }
 
-interface OrtSession {
-  inputNames: string[]
+interface DemoOrtSession {
+  readonly inputNames: readonly string[]
   run: (feeds: Record<string, unknown>) => Promise<Record<string, OrtTensor>>
 }
 
-interface OrtRuntime {
-  env: {
-    wasm: {
-      wasmPaths?: string
-    }
-  }
-  InferenceSession: {
-    create: (path: string, options?: Record<string, unknown>) => Promise<OrtSession>
-  }
-  Tensor: new (type: string, data: Float32Array, dims: number[]) => unknown
-}
-
-declare global {
-  interface Window {
-    ort?: OrtRuntime
-  }
-}
-
 let metadataPromise: Promise<ModelMetadata> | null = null
-let runtimePromise: Promise<OrtRuntime> | null = null
-let sessionPromise: Promise<OrtSession> | null = null
-
-const DEFAULT_RUNTIME_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js'
-const DEFAULT_WASM_BASE_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/'
+let sessionPromise: Promise<DemoOrtSession> | null = null
 
 const isDemoInferenceEnabled = (): boolean => {
-  return import.meta.env.VITE_USE_MOCK === 'true'
-    && import.meta.env.VITE_IMLD_DEMO_INFERENCE_ENABLED === 'true'
+  return import.meta.env.VITE_USE_MOCK === 'true' && isBrowserOnnxInferenceMode()
 }
 
 const loadMetadata = (): Promise<ModelMetadata> => {
@@ -86,49 +55,34 @@ const loadMetadata = (): Promise<ModelMetadata> => {
   return metadataPromise
 }
 
-const loadScript = (src: string): Promise<void> => {
-  const existed = document.querySelector<HTMLScriptElement>(`script[data-imld-onnx-runtime="${src}"]`)
-  if (existed) {
-    return Promise.resolve()
+const toAbsoluteAssetUrl = (assetUrl: string): string => {
+  if (typeof window === 'undefined') {
+    return assetUrl
   }
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = src
-    script.async = true
-    script.dataset.imldOnnxRuntime = src
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error(`failed to load ONNX Runtime Web script: ${src}`))
-    document.head.appendChild(script)
-  })
+  return new URL(assetUrl, window.location.href).href
 }
 
-const loadOrtRuntime = (): Promise<OrtRuntime> => {
-  if (!runtimePromise) {
-    runtimePromise = (async () => {
-      if (typeof window === 'undefined' || typeof document === 'undefined') {
-        throw new Error('browser runtime is not available')
-      }
-      if (!window.ort) {
-        const runtimeScriptUrl = import.meta.env.VITE_IMLD_ONNX_RUNTIME_SCRIPT_URL || DEFAULT_RUNTIME_SCRIPT_URL
-        await loadScript(runtimeScriptUrl)
-      }
-      if (!window.ort) {
-        throw new Error('ONNX Runtime Web did not expose window.ort')
-      }
-      window.ort.env.wasm.wasmPaths = import.meta.env.VITE_IMLD_ONNX_WASM_BASE_URL || DEFAULT_WASM_BASE_URL
-      return window.ort
-    })()
+const configureOrtRuntime = () => {
+  const explicitBasePath = import.meta.env.VITE_IMLD_ONNX_WASM_BASE_URL
+  const wasmEnv = ort.env.wasm as typeof ort.env.wasm & {
+    wasmPaths?: string | { mjs: string; wasm: string }
+    numThreads?: number
   }
-  return runtimePromise
+  wasmEnv.numThreads = 1
+  wasmEnv.wasmPaths = explicitBasePath || {
+    mjs: toAbsoluteAssetUrl(ortWasmMjsUrl),
+    wasm: toAbsoluteAssetUrl(ortWasmUrl)
+  }
 }
 
-const loadSession = async (): Promise<OrtSession> => {
+const loadSession = async (): Promise<DemoOrtSession> => {
   if (!sessionPromise) {
     sessionPromise = (async () => {
-      const ort = await loadOrtRuntime()
-      return ort.InferenceSession.create(modelUrl, {
+      configureOrtRuntime()
+      const session = await ort.InferenceSession.create(modelUrl, {
         executionProviders: ['wasm']
       })
+      return session as unknown as DemoOrtSession
     })()
   }
   return sessionPromise
@@ -225,94 +179,74 @@ const readRiskProbability = (outputs: Record<string, OrtTensor>): number => {
   return clamp(Number.isFinite(positiveProbability) ? positiveProbability : 0.5, 0, 1)
 }
 
-const diseaseGenes = (diseaseName: string): string[] => {
-  if (diseaseName.includes('血色')) {
-    return ['HFE (C282Y)', 'HFE (H63D)']
-  }
-  if (diseaseName.includes('抗胰蛋白酶')) {
-    return ['SERPINA1 (Pi*ZZ)']
-  }
-  if (diseaseName.includes('脂肪') || diseaseName.includes('代谢')) {
-    return []
-  }
-  return ['ATP7B (c.2333G>T)', 'ATP7B (c.2975C>T)']
+const buildIndicatorsFromOverrides = (
+  patient: DemoPatient,
+  probability: number
+): DiagnosisPayload['indicators'] => {
+  const overrides = patientOverrides(patient)
+  return [
+    {
+      name: 'TBIL',
+      value: Number(overrides['TBIL(μmol/L)'] ?? 0),
+      unit: 'μmol/L',
+      normal: '3.4-17.1',
+      percentage: clamp(Math.round(Number(overrides['TBIL(μmol/L)'] ?? 0) / 0.6), 20, 95),
+      status: probability >= 70 ? 'exception' : 'warning'
+    },
+    {
+      name: 'ALT',
+      value: Number(overrides['ALT(U/L)'] ?? 0),
+      unit: 'U/L',
+      normal: '0-40',
+      percentage: clamp(Math.round(Number(overrides['ALT(U/L)'] ?? 0) / 1.4), 20, 95),
+      status: probability >= 70 ? 'exception' : 'warning'
+    },
+    {
+      name: 'ceruloplasmin',
+      value: Number(overrides.ceruloplasmin ?? 0),
+      unit: 'mg/L',
+      normal: '200-600',
+      percentage: clamp(Math.round(Number(overrides.ceruloplasmin ?? 0) / 6), 15, 95),
+      status: Number(overrides.ceruloplasmin ?? 0) < 200 ? 'exception' : ''
+    }
+  ]
 }
 
-const dietAdvice = (diseaseName: string): string => {
-  if (diseaseName.includes('血色')) {
-    return '建议限制红肉和动物内脏，避免随餐补充维生素C，餐后可饮茶抑制铁吸收。'
-  }
-  if (diseaseName.includes('抗胰蛋白酶')) {
-    return '建议高蛋白、低脂饮食，减少酒精摄入，配合呼吸系统评估。'
-  }
-  if (diseaseName.includes('脂肪') || diseaseName.includes('代谢')) {
-    return '建议控制总热量和精制碳水摄入，配合体重管理与规律运动。'
-  }
-  return '建议低铜饮食，禁食坚果、巧克力和动物内脏。'
-}
-
-const sequencingAdvice = (diseaseName: string): string => {
-  if (diseaseName.includes('血色')) {
-    return '建议进行 HFE 基因检测，并对一级亲属开展家系筛查。'
-  }
-  if (diseaseName.includes('抗胰蛋白酶')) {
-    return '建议进行 SERPINA1 基因分型，并评估肝肺联合受累风险。'
-  }
-  if (diseaseName.includes('脂肪') || diseaseName.includes('代谢')) {
-    return '建议优先完善代谢危险因素评估，必要时结合遗传易感位点检测。'
-  }
-  return '建议 ATP7B 靶向测序，并开展一级亲属筛查。'
-}
-
-export const predictImldDemoDiagnosis = async (patient: DemoPatient): Promise<DiagnosisPayload | null> => {
+export const predictImldDemoDiagnosis = async (
+  patient: DemoPatient,
+  record?: PatientRecordPayload | null
+): Promise<DiagnosisPayload | null> => {
   if (!isDemoInferenceEnabled()) {
     return null
   }
 
   try {
-    const [metadata, session, ort] = await Promise.all([loadMetadata(), loadSession(), loadOrtRuntime()])
-    const features = buildFeatureVector(metadata, patient)
+    const [metadata, session] = await Promise.all([loadMetadata(), loadSession()])
+    const features = record
+      ? buildFeatureVectorFromRecord(metadata, record)
+      : buildFeatureVector(metadata, patient)
     const inputName = session.inputNames[0] || 'features'
     const outputs = await session.run({
       [inputName]: new ort.Tensor('float32', features, [1, features.length])
     })
     const riskProbability = readRiskProbability(outputs)
     const probability = Math.round(riskProbability * 100)
-    const overrides = patientOverrides(patient)
-    const diseaseName = patient.disease || '遗传代谢性肝病风险提示'
+    const diseaseName = record?.clinicalDecision?.diagnosis || patient.disease || '遗传代谢性肝病风险提示'
+
+    const indicators = record
+      ? buildIndicatorsFromRecord(record, diseaseName)
+      : buildIndicatorsFromOverrides(patient, probability)
+
+    const displayFields = buildDiseaseDisplayFields({
+      diseaseName,
+      probability
+    })
 
     return {
       diseaseName,
       probability,
-      indicators: [
-        {
-          name: 'TBIL',
-          value: Number(overrides['TBIL(μmol/L)'] ?? 0),
-          unit: 'μmol/L',
-          normal: '3.4-17.1',
-          percentage: clamp(Math.round(Number(overrides['TBIL(μmol/L)'] ?? 0) / 0.6), 20, 95),
-          status: probability >= 70 ? 'exception' : 'warning'
-        },
-        {
-          name: 'ALT',
-          value: Number(overrides['ALT(U/L)'] ?? 0),
-          unit: 'U/L',
-          normal: '0-40',
-          percentage: clamp(Math.round(Number(overrides['ALT(U/L)'] ?? 0) / 1.4), 20, 95),
-          status: probability >= 70 ? 'exception' : 'warning'
-        },
-        {
-          name: 'ceruloplasmin',
-          value: Number(overrides.ceruloplasmin ?? 0),
-          unit: 'mg/L',
-          normal: '200-600',
-          percentage: clamp(Math.round(Number(overrides.ceruloplasmin ?? 0) / 6), 15, 95),
-          status: Number(overrides.ceruloplasmin ?? 0) < 200 ? 'exception' : ''
-        }
-      ],
-      genes: diseaseGenes(diseaseName),
-      diet: dietAdvice(diseaseName),
-      sequencing: sequencingAdvice(diseaseName)
+      indicators,
+      ...displayFields
     }
   } catch (error) {
     console.warn('IMLD browser demo inference unavailable, fallback to mock payload.', error)
