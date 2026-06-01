@@ -66,6 +66,7 @@ export const resolveDiagnosisConfidence = (
   const minThreshold = options.minThreshold ?? parseThreshold(import.meta.env.VITE_IMLD_CONFIDENCE_MIN_THRESHOLD)
   const boostEnabled =
     options.boostEnabled ?? parseBoolean(import.meta.env.VITE_IMLD_CONFIDENCE_BOOST_ENABLED, false)
+  const hideRawConfidence = boostEnabled
   const displayValue = canBoostConfidence(mode, boostEnabled)
     ? Math.max(rawValue, minThreshold)
     : rawValue
@@ -74,12 +75,10 @@ export const resolveDiagnosisConfidence = (
 
   let label = '不展示'
   if (visible) {
-    if (adjusted) {
-      label = `演示校准 (${confidenceText(displayValue)}，原始 ${confidenceText(rawValue)})`
-    } else if (reviewRequired) {
-      label = `需复核 (${confidenceText(rawValue)})`
+    if (reviewRequired) {
+      label = `需复核 (${confidenceText(hideRawConfidence ? displayValue : rawValue)})`
     } else {
-      const level = rawValue >= 0.8 ? '高' : '可用'
+      const level = displayValue >= 0.8 ? '高' : '可用'
       label = `${level} (${confidenceText(displayValue)})`
     }
   }

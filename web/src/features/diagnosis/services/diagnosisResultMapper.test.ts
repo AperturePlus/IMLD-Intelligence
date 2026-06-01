@@ -98,6 +98,8 @@ describe('diagnosis confidence config', () => {
     expect(confidence.displayValue).toBe(0.7)
     expect(confidence.reviewRequired).toBe(true)
     expect(confidence.adjusted).toBe(true)
+    expect(confidence.label).toBe('需复核 (0.70)')
+    expect(confidence.label.includes('演示校准')).toBe(false)
   })
 
   test('does not boost backend confidence even when boost is enabled', () => {
@@ -110,6 +112,8 @@ describe('diagnosis confidence config', () => {
 
     expect(confidence.displayValue).toBe(0.46)
     expect(confidence.adjusted).toBe(false)
+    expect(confidence.label).toBe('需复核 (0.46)')
+    expect(confidence.label.includes('原始')).toBe(false)
   })
 })
 
