@@ -122,11 +122,15 @@
                 <el-text type="info">疑似疾病指向</el-text>
                 <h2 class="disease-name">{{ diagnosisResult.diseaseName }}</h2>
                 <el-descriptions :column="2" border size="small" style="margin-top: 16px;">
-                  <el-descriptions-item label="鉴别诊断">遗传性血色病 (排除)、自身免疫性肝炎 (低可能)</el-descriptions-item>
-                  <el-descriptions-item label="数据置信度">
-                    <el-tag type="success" size="small">高 (0.94)</el-tag>
+                  <el-descriptions-item label="鉴别诊断">
+                    {{ diagnosisResult.differentials.join('、') || '--' }}
                   </el-descriptions-item>
-                  <el-descriptions-item label="关键体征">角膜 K-F 环阳性、非对称性震颤</el-descriptions-item>
+                  <el-descriptions-item label="数据置信度">
+                    <el-tag type="success" size="small">{{ diagnosisResult.dataConfidenceLabel }}</el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="关键体征">
+                    {{ diagnosisResult.keySigns.join('、') || '--' }}
+                  </el-descriptions-item>
                 </el-descriptions>
               </el-col>
             </el-row>
@@ -162,9 +166,12 @@
                     <el-tag v-for="gene in diagnosisResult.genes" :key="gene" type="danger" effect="light" class="gene-tag">
                       {{ gene }}
                     </el-tag>
+                    <el-text v-if="diagnosisResult.genes.length === 0" type="info" size="small">
+                      暂无明确高风险基因变异
+                    </el-text>
                   </div>
                   <el-alert
-                    title="基因测序建议 (WES)"
+                    :title="diagnosisResult.geneRecommendationTitle"
                     type="warning"
                     :description="diagnosisResult.sequencing"
                     show-icon
@@ -181,9 +188,15 @@
                   </div>
                   <p class="diet-text">{{ diagnosisResult.diet }}</p>
                   <div style="margin-top: 12px;">
-                    <el-tag type="info" effect="plain" style="margin-right: 8px;">禁食坚果/巧克力</el-tag>
-                    <el-tag type="info" effect="plain" style="margin-right: 8px;">避免内脏</el-tag>
-                    <el-tag type="info" effect="plain">勿用铜制炊具</el-tag>
+                    <el-tag
+                      v-for="tag in diagnosisResult.dietTags"
+                      :key="tag"
+                      type="info"
+                      effect="plain"
+                      style="margin-right: 8px; margin-bottom: 8px;"
+                    >
+                      {{ tag }}
+                    </el-tag>
                   </div>
                 </div>
               </el-col>
