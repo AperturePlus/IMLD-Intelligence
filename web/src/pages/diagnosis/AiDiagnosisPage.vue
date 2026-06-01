@@ -116,7 +116,7 @@
                   <el-progress 
                     type="dashboard" 
                     :percentage="diagnosisResult.probability" 
-                    :color="customColors" 
+                    :color="riskBand.color"
                     :width="140"
                     :stroke-width="12"
                   >
@@ -287,22 +287,15 @@ const loadingText = computed(() => {
   return '正在调取该患者的历史 AI 报告，请稍候...'
 })
 
-const customColors = [
-  { color: '#67c23a', percentage: 30 },
-  { color: '#e6a23c', percentage: 70 },
-  { color: '#f56c6c', percentage: 100 }
-]
-
-const RISK_BANDS = [
-  { min: 85, label: '极高危', color: '#f56c6c' },
-  { min: 70, label: '高危', color: '#f56c6c' },
-  { min: 30, label: '中危', color: '#e6a23c' },
-  { min: 0, label: '低危', color: '#67c23a' }
-]
+const RISK_BANDS = {
+  高: { label: '高风险', color: '#f56c6c' },
+  中: { label: '中风险', color: '#e6a23c' },
+  低: { label: '低风险', color: '#67c23a' }
+} as const
 
 const riskBand = computed(() => {
-  const probability = diagnosisResult.value?.probability ?? 0
-  return RISK_BANDS.find((band) => probability >= band.min) ?? RISK_BANDS[RISK_BANDS.length - 1]
+  const level = diagnosisResult.value?.riskLevel ?? '中'
+  return RISK_BANDS[level] ?? RISK_BANDS.中
 })
 
 const confidenceTagType = computed(() => {
