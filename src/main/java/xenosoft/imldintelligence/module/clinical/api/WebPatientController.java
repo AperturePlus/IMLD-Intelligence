@@ -74,15 +74,24 @@ public class WebPatientController implements WebPatientControllerContract {
 
     private String resolveRiskLevel(Long tenantId, Patient patient) {
         return diagnosisSessionRepository.listByPatientId(tenantId, patient.getId()).stream()
+                .filter(this::isAuthoritativeDiagnosisSession)
                 .sorted(Comparator
                         .comparing((DiagnosisSession s) -> s.getCompletedAt() != null ? s.getCompletedAt() : s.getStartedAt(),
                                 Comparator.nullsLast(Comparator.naturalOrder()))
-                        .reversed())
+                        .reversed()
+                        .thenComparing(DiagnosisSession::getId, Comparator.nullsLast(Comparator.reverseOrder())))
                 .flatMap(session -> diagnosisResultRepository.listBySessionId(tenantId, session.getId()).stream())
                 .findFirst()
                 .map(DiagnosisResult::getRiskLevel)
                 .map(this::toFrontendRiskLevel)
                 .orElseGet(() -> DEFAULT_RISK_BY_PATIENT_NO.getOrDefault(patient.getPatientNo(), "中"));
+    }
+
+    private boolean isAuthoritativeDiagnosisSession(DiagnosisSession session) {
+        return session != null && (
+                "COMPLETED".equalsIgnoreCase(session.getStatus()) ||
+                        "REVIEWED".equalsIgnoreCase(session.getStatus())
+        );
     }
 
     private String toFrontendRiskLevel(String riskLevel) {
