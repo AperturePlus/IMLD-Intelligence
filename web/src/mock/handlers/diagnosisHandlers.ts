@@ -453,13 +453,14 @@ export const diagnosisExactHandlers = {
   },
 
   'GET /api/v1/web/diagnosis/ai-queue/': async () => {
+    const reportedPatientIds = new Set(loadReports().map((report) => String(report.patientId || '')))
     const items = loadPatients().map((item) => ({
       id: item.id,
       name: item.name,
       gender: item.gender,
       age: item.age,
       avatar: '',
-      aiStatus: item.aiStatus || '未诊断'
+      aiStatus: reportedPatientIds.has(item.id) ? '已诊断' : '未诊断'
     }))
 
     return { status: 200, data: { items } }

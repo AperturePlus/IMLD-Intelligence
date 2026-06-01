@@ -492,19 +492,25 @@ const reportTimeWeight = (report) => {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-const resolveLatestDiagnosisRisk = (patientNo) => {
+const resolveDiagnosisSummary = (patientNo) => {
   const latestReport = [...loadReports()]
     .filter((report) => String(report.patientId || '').toLowerCase() === String(patientNo || '').toLowerCase())
     .sort((left, right) => reportTimeWeight(right) - reportTimeWeight(left))[0]
 
   if (!latestReport) {
-    return null
+    return {
+      aiStatus: '未诊断',
+      riskLevel: null
+    }
   }
 
   const probability = parseRiskProbability(
     latestReport.diagnosisPayload?.probability ?? latestReport.aiFindings?.probability
   )
-  return normalizeRiskLevel(latestReport.diagnosisPayload?.riskLevel, probability)
+  return {
+    aiStatus: '已诊断',
+    riskLevel: normalizeRiskLevel(latestReport.diagnosisPayload?.riskLevel, probability)
+  }
 }
 
 const pickSeedByPatientNoOrVisitNo = (data) => {
@@ -531,14 +537,18 @@ export const patientExactHandlers = {
     const keyword = (query.keyword || '').trim()
     const items = loadPatients()
       .filter((item) => !keyword || item.name.includes(keyword) || item.id.includes(keyword))
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        gender: item.gender,
-        age: item.age,
-        riskLevel: resolveLatestDiagnosisRisk(item.id) || normalizeRiskLevel(item.riskLevel),
-        avatar: ''
-      }))
+      .map((item) => {
+        const diagnosis = resolveDiagnosisSummary(item.id)
+        return {
+          id: item.id,
+          name: item.name,
+          gender: item.gender,
+          age: item.age,
+          riskLevel: diagnosis.riskLevel,
+          aiStatus: diagnosis.aiStatus,
+          avatar: ''
+        }
+      })
 
     return { status: 200, data: { items } }
   },
