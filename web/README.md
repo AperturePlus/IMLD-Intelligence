@@ -66,6 +66,16 @@ Mock 数据会写入浏览器本地存储，用于模拟注册、登录和 token
 
 Electron 打包默认使用 `browser-onnx`，模型、metadata、ONNX Runtime wasm/mjs 均随 Vite/Electron 资源打包，不依赖 CDN。
 
+## 诊断置信度展示
+
+通过以下变量控制报告页“数据置信度”字段：
+
+- `VITE_IMLD_CONFIDENCE_VISIBLE`: 是否展示置信度字段，默认 `true`
+- `VITE_IMLD_CONFIDENCE_MIN_THRESHOLD`: 最低可用阈值，默认 `0.7`
+- `VITE_IMLD_CONFIDENCE_BOOST_ENABLED`: 是否允许演示抬分，默认 `false`
+
+默认不抬高模型原始输出；低于阈值时显示“需复核”。抬分只在 `mock` / `browser-onnx` 演示模式生效，`backend` 模式始终保留后端返回值。
+
 ## 环境变量
 
 参考 `.env.example`：
@@ -73,5 +83,8 @@ Electron 打包默认使用 `browser-onnx`，模型、metadata、ONNX Runtime wa
 - `VITE_USE_MOCK`: 是否启用 Mock
 - `VITE_IMLD_INFERENCE_MODE`: 诊断推理模式（`browser-onnx` / `backend` / `mock`）
 - `VITE_IMLD_DEMO_INFERENCE_ENABLED`: 兼容旧配置，未设置 `VITE_IMLD_INFERENCE_MODE` 时可开启浏览器侧 ONNX 推理
+- `VITE_IMLD_CONFIDENCE_VISIBLE`: 是否展示报告置信度
+- `VITE_IMLD_CONFIDENCE_MIN_THRESHOLD`: 报告置信度最低阈值
+- `VITE_IMLD_CONFIDENCE_BOOST_ENABLED`: 是否在 mock / browser-onnx 演示模式抬高展示置信度
 - `VITE_MOCK_DELAY_MS`: Mock 接口延迟（毫秒）
 - `VITE_API_BASE_URL`: 真实后端地址（关闭 Mock 时生效）

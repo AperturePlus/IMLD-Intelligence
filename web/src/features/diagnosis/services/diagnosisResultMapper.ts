@@ -1,5 +1,11 @@
-import type { DiagnosisIndicator, DiagnosisResult, ExpertReport, ProgressStatus } from '@/types/diagnosis'
+import type { DiagnosisEvidenceItem, DiagnosisIndicator, DiagnosisResult, ExpertReport, ProgressStatus } from '@/types/diagnosis'
 import { buildDiseaseDisplayFields, type InferenceDisplayLike } from './diseaseDisplay'
+import { resolveDiagnosisConfidence } from './confidenceConfig'
+import {
+  DEFAULT_MODEL_FEATURE_COUNT,
+  buildEvidenceItemsFromDiagnosis,
+  buildEvidenceSummary
+} from './diagnosisEvidence'
 
 export interface DiagnosisResultItemApi {
   id: number
@@ -41,6 +47,10 @@ export interface DiagnosisSessionApi {
 interface InferencePayloadApi extends InferenceDisplayLike {
   risk_probability?: number
   riskProbability?: number
+  model_feature_count?: number
+  modelFeatureCount?: number
+  abnormal_evidence_count?: number
+  abnormalEvidenceCount?: number
 }
 
 const DEFAULT_DISEASE_NAME = '遗传代谢性肝病风险提示'
@@ -89,7 +99,7 @@ export const mapInferenceIndicators = (inference: InferencePayloadApi): Diagnosi
   const clinical = inference.clinical_abnormalities || inference.clinicalAbnormalities || []
   return clinical.map((item) => {
     const range = item.normal_range || item.normalRange || []
-    const rangeLabel = range.length >= 2 ? `${range[0]}-${range[1]}` : '--'
+    const rangeLabel = item.normal_range_label || item.normalRangeLabel || (range.length >= 2 ? `${range[0]}-${range[1]}` : '--')
     const status = toProgressStatus(item.severity)
     const percentage =
       status === 'exception'
@@ -104,7 +114,7 @@ export const mapInferenceIndicators = (inference: InferencePayloadApi): Diagnosi
     return {
       name: item.feature || '临床指标',
       value: Number(item.value ?? 0),
-      unit: '',
+      unit: item.unit || '',
       normal: rangeLabel,
       percentage,
       status
@@ -112,9 +122,90 @@ export const mapInferenceIndicators = (inference: InferencePayloadApi): Diagnosi
   })
 }
 
+const mapInferenceEvidenceItems = (inference: InferencePayloadApi): DiagnosisEvidenceItem[] => {
+  const items = inference.evidence_items || inference.evidenceItems || []
+  return items
+    .map((item) => ({
+      category: item.category || '证据',
+      label: item.label || '',
+      value: item.value,
+      source: item.source,
+      severity: item.severity === 'exception' || item.severity === 'warning' || item.severity === 'success'
+        ? item.severity
+        : 'info'
+    } satisfies DiagnosisEvidenceItem))
+    .filter((item) => item.label.trim())
+}
+
+const resolveModelFeatureCount = (inference: InferencePayloadApi): number => {
+  const value = inference.model_feature_count ?? inference.modelFeatureCount
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.round(value)
+    : DEFAULT_MODEL_FEATURE_COUNT
+}
+
+const withResultScaffolding = (
+  payload: Pick<DiagnosisResult, 'diseaseName' | 'probability' | 'indicators'> &
+    Partial<Pick<DiagnosisResult, 'evidenceItems' | 'confidence' | 'evidenceSummary'>>,
+  inference?: InferencePayloadApi
+) => {
+  const confidence = payload.confidence || resolveDiagnosisConfidence(payload.probability)
+  const evidenceItems = payload.evidenceItems?.length
+    ? payload.evidenceItems
+    : buildEvidenceItemsFromDiagnosis({
+        diseaseName: payload.diseaseName,
+        indicators: payload.indicators
+      })
+  const modelFeatureCount = inference ? resolveModelFeatureCount(inference) : DEFAULT_MODEL_FEATURE_COUNT
+  const evidenceSummary = payload.evidenceSummary || buildEvidenceSummary(evidenceItems, confidence, modelFeatureCount)
+  return {
+    confidence,
+    evidenceItems,
+    evidenceSummary
+  }
+}
+
+const parseLegacyBiochemicalIndicators = (text: string | undefined): DiagnosisIndicator[] => {
+  if (!text) {
+    return []
+  }
+  return text
+    .split(/[，,。；;]/)
+    .map((segment) => segment.trim())
+    .map((segment): DiagnosisIndicator | null => {
+      const matched = segment.match(/^(.+?)\s*([<>]?\s*\d+(?:\.\d+)?)\s*([^\s(（]*)/)
+      if (!matched) {
+        return null
+      }
+      const value = Number.parseFloat(matched[2].replace(/[<>\s]/g, ''))
+      if (!Number.isFinite(value)) {
+        return null
+      }
+      const status: ProgressStatus = /升高|降低|异常|极低|显著|高/.test(segment) ? 'warning' : ''
+      return {
+        name: matched[1].trim(),
+        value,
+        unit: matched[3] || '',
+        normal: '--',
+        percentage: status ? 76 : 50,
+        status
+      }
+    })
+    .filter((item): item is DiagnosisIndicator => item !== null)
+}
+
 export const normalizeDiagnosisResultPayload = (payload: Partial<DiagnosisResult>): DiagnosisResult => {
   const diseaseName = payload.diseaseName || DEFAULT_DISEASE_NAME
   const probability = numberToPercent(payload.probability)
+  const indicators = payload.indicators || []
+  const scaffolding = withResultScaffolding({
+    diseaseName,
+    probability,
+    indicators,
+    evidenceItems: payload.evidenceItems,
+    confidence: payload.confidence,
+    evidenceSummary: payload.evidenceSummary
+  })
   const displayFields = buildDiseaseDisplayFields({
     diseaseName,
     probability,
@@ -132,7 +223,8 @@ export const normalizeDiagnosisResultPayload = (payload: Partial<DiagnosisResult
   return {
     diseaseName,
     probability,
-    indicators: payload.indicators || [],
+    indicators,
+    ...scaffolding,
     ...displayFields
   }
 }
@@ -140,6 +232,12 @@ export const normalizeDiagnosisResultPayload = (payload: Partial<DiagnosisResult
 export const buildDiagnosisResultFromExpertReport = (report: ExpertReport): DiagnosisResult => {
   const diseaseName = report.aiFindings?.disease || DEFAULT_DISEASE_NAME
   const probability = numberToPercent(report.aiFindings?.probability)
+  const indicators = parseLegacyBiochemicalIndicators(report.aiFindings?.biochemical)
+  const scaffolding = withResultScaffolding({
+    diseaseName,
+    probability,
+    indicators
+  })
   const displayFields = buildDiseaseDisplayFields({
     diseaseName,
     probability,
@@ -152,16 +250,8 @@ export const buildDiagnosisResultFromExpertReport = (report: ExpertReport): Diag
   return {
     diseaseName,
     probability,
-    indicators: [
-      {
-        name: '关键生化线索',
-        value: 1,
-        unit: '',
-        normal: report.aiFindings?.biochemical || '--',
-        percentage: 78,
-        status: 'warning'
-      }
-    ],
+    indicators,
+    ...scaffolding,
     ...displayFields
   }
 }
@@ -178,6 +268,25 @@ export const buildDiagnosisResultFromSession = (session: DiagnosisSessionApi): D
         : primaryResult?.confidence || 0
   const probability = numberToPercent(rawProbability)
   const diseaseName = primaryResult?.diseaseName || DEFAULT_DISEASE_NAME
+  const indicators = mapInferenceIndicators(inference)
+  const evidenceItems = mapInferenceEvidenceItems(inference)
+  const confidence = resolveDiagnosisConfidence(probability)
+  const scaffolding = withResultScaffolding(
+    {
+      diseaseName,
+      probability,
+      indicators,
+      evidenceItems,
+      confidence
+    },
+    inference
+  )
+  if (typeof inference.abnormal_evidence_count === 'number' || typeof inference.abnormalEvidenceCount === 'number') {
+    scaffolding.evidenceSummary.abnormalEvidenceCount = Math.max(
+      0,
+      Math.round(inference.abnormal_evidence_count ?? inference.abnormalEvidenceCount ?? 0)
+    )
+  }
   const displayFields = buildDiseaseDisplayFields({
     diseaseName,
     probability,
@@ -189,7 +298,8 @@ export const buildDiagnosisResultFromSession = (session: DiagnosisSessionApi): D
   return {
     diseaseName,
     probability,
-    indicators: mapInferenceIndicators(inference),
+    indicators,
+    ...scaffolding,
     ...displayFields
   }
 }
