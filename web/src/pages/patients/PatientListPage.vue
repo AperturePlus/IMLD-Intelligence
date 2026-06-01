@@ -64,8 +64,16 @@
                 <el-text type="info" style="margin-right: 8px; font-size: 14px;">
                   遗传代谢性肝病风险:
                 </el-text>
-                <el-tag :type="getRiskTagType(patient.riskLevel)" effect="light" round>
+                <el-tag
+                  v-if="patient.aiStatus === '已诊断' && patient.riskLevel"
+                  :type="getRiskTagType(patient.riskLevel)"
+                  effect="light"
+                  round
+                >
                   {{ patient.riskLevel }}风险
+                </el-tag>
+                <el-tag v-else type="info" effect="light" round>
+                  未诊断
                 </el-tag>
               </div>
             </el-col>
@@ -118,11 +126,14 @@ const fetchPatients = async () => {
 
 type RiskTagType = 'danger' | 'warning' | 'success' | 'info'
 
-const getRiskTagType = (level: string): RiskTagType => {
+const getRiskTagType = (level?: string | null): RiskTagType => {
   const map: Record<string, RiskTagType> = {
     高: 'danger',
     中: 'warning',
     低: 'success'
+  }
+  if (!level) {
+    return 'info'
   }
   return map[level] || 'info'
 }
