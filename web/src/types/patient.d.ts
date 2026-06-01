@@ -8,7 +8,7 @@ export interface PatientSummary {
   gender: string
   age: number
   riskLevel: string
-  avatar?: string
+  avatar?: string | null
 }
 
 export interface PatientListResponse {

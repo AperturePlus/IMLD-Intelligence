@@ -54,7 +54,7 @@ public class WebPatientController implements WebPatientControllerContract {
                         normalizeGender(patient.getGender()),
                         ageOf(patient),
                         resolveRiskLevel(tenantId, patient),
-                        avatarFor(patient)
+                        ""
                 ))
                 .toList();
         return ApiResponse.success(new WebPatientApiDtos.Response.PatientListResponse(items));
@@ -119,12 +119,6 @@ public class WebPatientController implements WebPatientControllerContract {
             return "女";
         }
         return gender.trim();
-    }
-
-    private String avatarFor(Patient patient) {
-        String bucket = "女".equals(normalizeGender(patient.getGender())) ? "women" : "men";
-        int number = Math.floorMod(patient.getPatientNo() == null ? patient.getId().intValue() : patient.getPatientNo().hashCode(), 70) + 10;
-        return "https://randomuser.me/api/portraits/" + bucket + "/" + number + ".jpg";
     }
 
     private String trimToNull(String value) {

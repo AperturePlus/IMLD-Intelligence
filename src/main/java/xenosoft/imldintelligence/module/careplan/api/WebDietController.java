@@ -191,7 +191,7 @@ public class WebDietController implements WebDietControllerContract {
                 patient.getPatientName(),
                 normalizeGender(patient.getGender()),
                 ageOf(patient),
-                avatarFor(patient),
+                "",
                 profile.disease(),
                 profile.compliance()
         );
@@ -321,13 +321,6 @@ public class WebDietController implements WebDietControllerContract {
             return "女";
         }
         return gender.trim();
-    }
-
-    private String avatarFor(Patient patient) {
-        String bucket = "女".equals(normalizeGender(patient.getGender())) ? "women" : "men";
-        String seed = patient.getPatientNo() == null ? String.valueOf(patient.getId()) : patient.getPatientNo();
-        int number = Math.floorMod(seed.hashCode(), 70) + 10;
-        return "https://randomuser.me/api/portraits/" + bucket + "/" + number + ".jpg";
     }
 
     private OffsetDateTime historySortTime(ClinicalHistoryEntry entry) {

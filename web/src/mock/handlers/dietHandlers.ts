@@ -17,7 +17,7 @@ export const dietExactHandlers = {
         name: item.name,
         gender: item.gender,
         age: item.age,
-        avatar: item.avatar,
+        avatar: '',
         disease: item.disease,
         compliance: item.compliance || '一般'
       }))

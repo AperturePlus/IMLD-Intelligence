@@ -27,18 +27,18 @@ const DEFAULT_MOCK_USERS = [
 ]
 
 const SEED_PATIENTS = [
-  { id: 'P001', name: '林建国', gender: '男', age: 58, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-  { id: 'P002', name: '陈婉婷', gender: '女', age: 32, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '极佳', aiStatus: '已诊断', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  { id: 'P003', name: '张明远', gender: '男', age: 45, riskLevel: '中', disease: 'α1-抗胰蛋白酶缺乏症', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/67.jpg' },
-  { id: 'P004', name: '王淑芬', gender: '女', age: 62, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/68.jpg' },
-  { id: 'P005', name: '李浩宇', gender: '男', age: 28, riskLevel: '低', disease: 'Gilbert综合征', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' },
-  { id: 'P006', name: '赵雪梅', gender: '女', age: 51, riskLevel: '中', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/33.jpg' },
-  { id: 'P007', name: '刘振华', gender: '男', age: 66, riskLevel: '高', disease: '肝豆状核变性 (Wilson病)', compliance: '差', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/45.jpg' },
-  { id: 'P008', name: '周小雅', gender: '女', age: 24, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/12.jpg' },
-  { id: 'P009', name: '吴建强', gender: '男', age: 53, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/51.jpg' },
-  { id: 'P010', name: '郑丽丽', gender: '女', age: 38, riskLevel: '中', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '已诊断', avatar: 'https://randomuser.me/api/portraits/women/25.jpg' },
-  { id: 'P011', name: '孙立军', gender: '男', age: 41, riskLevel: '低', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/men/18.jpg' },
-  { id: 'P012', name: '马桂英', gender: '女', age: 71, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '一般', aiStatus: '未诊断', avatar: 'https://randomuser.me/api/portraits/women/71.jpg' }
+  { id: 'P001', name: '林建国', gender: '男', age: 58, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P002', name: '陈婉婷', gender: '女', age: 32, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '极佳', aiStatus: '已诊断', avatar: '' },
+  { id: 'P003', name: '张明远', gender: '男', age: 45, riskLevel: '中', disease: 'α1-抗胰蛋白酶缺乏症', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P004', name: '王淑芬', gender: '女', age: 62, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P005', name: '李浩宇', gender: '男', age: 28, riskLevel: '低', disease: 'Gilbert综合征', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P006', name: '赵雪梅', gender: '女', age: 51, riskLevel: '中', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P007', name: '刘振华', gender: '男', age: 66, riskLevel: '高', disease: '肝豆状核变性 (Wilson病)', compliance: '差', aiStatus: '未诊断', avatar: '' },
+  { id: 'P008', name: '周小雅', gender: '女', age: 24, riskLevel: '低', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '未诊断', avatar: '' },
+  { id: 'P009', name: '吴建强', gender: '男', age: 53, riskLevel: '高', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P010', name: '郑丽丽', gender: '女', age: 38, riskLevel: '中', disease: '肝豆状核变性 (Wilson病)', compliance: '良好', aiStatus: '已诊断', avatar: '' },
+  { id: 'P011', name: '孙立军', gender: '男', age: 41, riskLevel: '低', disease: '遗传性血色病', compliance: '一般', aiStatus: '未诊断', avatar: '' },
+  { id: 'P012', name: '马桂英', gender: '女', age: 71, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '一般', aiStatus: '未诊断', avatar: '' }
 ]
 
 const SEED_REPORTS = [

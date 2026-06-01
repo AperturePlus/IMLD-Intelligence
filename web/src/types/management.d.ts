@@ -53,7 +53,7 @@ export interface DietPatient {
   name: string
   gender: string
   age: number
-  avatar: string
+  avatar?: string | null
   disease: string
   compliance: string
 }

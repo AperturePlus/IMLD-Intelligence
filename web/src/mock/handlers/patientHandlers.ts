@@ -503,7 +503,7 @@ export const patientExactHandlers = {
         gender: item.gender,
         age: item.age,
         riskLevel: item.riskLevel,
-        avatar: item.avatar
+        avatar: ''
       }))
 
     return { status: 200, data: { items } }
@@ -569,7 +569,7 @@ export const patientExactHandlers = {
         disease,
         compliance: '一般',
         aiStatus: '未诊断',
-        avatar: `https://randomuser.me/api/portraits/${normalizedPayload.gender === '女' ? 'women' : 'men'}/${Math.floor(Math.random() * 80) + 10}.jpg`
+        avatar: ''
       })
       savePatients(patients)
     }

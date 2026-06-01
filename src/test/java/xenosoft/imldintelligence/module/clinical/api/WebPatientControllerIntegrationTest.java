@@ -68,7 +68,7 @@ class WebPatientControllerIntegrationTest extends AbstractPostgresIntegrationTes
                 .andExpect(jsonPath("$.data.items[0].gender").value("女"))
                 .andExpect(jsonPath("$.data.items[0].age").value(42))
                 .andExpect(jsonPath("$.data.items[0].riskLevel").value("中"))
-                .andExpect(jsonPath("$.data.items[0].avatar").isString());
+                .andExpect(jsonPath("$.data.items[0].avatar").value(""));
     }
 
     private void savePatient(String patientNo, String name, String gender, int age, String status) {
