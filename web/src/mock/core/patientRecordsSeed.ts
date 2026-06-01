@@ -1,5 +1,5 @@
-import type { PatientRecordPayload } from '@/types/patient'
-import { createInitialLaboratoryScreening } from '@/features/patient-record/constants/laboratoryScreening'
+import type { PatientRecordPayload } from '../../types/patient'
+import { createInitialLaboratoryScreening } from '../../features/patient-record/constants/laboratoryScreening'
 
 interface SeedBasics {
   patientNo: string

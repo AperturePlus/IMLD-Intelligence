@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { SEED_PATIENT_RECORDS } from './patientRecordsSeed'
-import { buildDiseaseDisplayFields } from '@/features/diagnosis/services/diseaseDisplay'
+import { buildDiseaseDisplayFields } from '../../features/diagnosis/services/diseaseDisplay'
 
 const MOCK_USERS_KEY = '__imld_mock_users__'
 const MOCK_TOKENS_KEY = '__imld_mock_tokens__'
@@ -135,13 +135,24 @@ export const DISEASE_CONFIGS = {
   }
 }
 
-const hasStorage = () => typeof window !== 'undefined' && !!window.localStorage
+const memoryStorage = new Map()
 const clone = (input) => JSON.parse(JSON.stringify(input))
 
-const safeRead = (key, fallback) => {
-  if (!hasStorage()) return fallback
+const getBrowserStorage = (storageType = 'local') => {
+  if (typeof window === 'undefined') return null
   try {
-    const raw = window.localStorage.getItem(key)
+    const storage = storageType === 'session' ? window.sessionStorage : window.localStorage
+    return storage || null
+  } catch {
+    return null
+  }
+}
+
+const safeRead = (key, fallback, storageType = 'local') => {
+  const storage = getBrowserStorage(storageType)
+  if (!storage) return fallback
+  try {
+    const raw = storage.getItem(key)
     if (!raw) return fallback
     return JSON.parse(raw)
   } catch {
@@ -149,13 +160,50 @@ const safeRead = (key, fallback) => {
   }
 }
 
-const safeWrite = (key, value) => {
-  if (!hasStorage()) return
+const safeWrite = (key, value, storageType = 'local') => {
+  const storage = getBrowserStorage(storageType)
+  if (!storage) return
   try {
-    window.localStorage.setItem(key, JSON.stringify(value))
+    storage.setItem(key, JSON.stringify(value))
   } catch {
     // ignore
   }
+}
+
+const safeReadMemory = (key, fallback) => {
+  if (!memoryStorage.has(key)) return fallback
+  try {
+    return JSON.parse(memoryStorage.get(key))
+  } catch {
+    return fallback
+  }
+}
+
+const safeWriteMemory = (key, value) => {
+  memoryStorage.set(key, JSON.stringify(value))
+}
+
+const shouldPersistDiagnosisReports = () => {
+  return String(import.meta.env.VITE_MOCK_DIAGNOSIS_PERSIST ?? '').toLowerCase() === 'true'
+}
+
+const diagnosisReportStorageType = () => shouldPersistDiagnosisReports() ? 'local' : 'session'
+
+const readDiagnosisReports = (fallback) => {
+  const storageType = diagnosisReportStorageType()
+  if (getBrowserStorage(storageType)) {
+    return safeRead(MOCK_REPORTS_KEY, fallback, storageType)
+  }
+  return safeReadMemory(MOCK_REPORTS_KEY, fallback)
+}
+
+const writeDiagnosisReports = (value) => {
+  const storageType = diagnosisReportStorageType()
+  if (getBrowserStorage(storageType)) {
+    safeWrite(MOCK_REPORTS_KEY, value, storageType)
+    return
+  }
+  safeWriteMemory(MOCK_REPORTS_KEY, value)
 }
 
 export const loadUsers = () => {
@@ -225,15 +273,15 @@ export const findRecordPayloadByPatientNo = (patientNo) => {
 }
 
 export const loadReports = () => {
-  const items = safeRead(MOCK_REPORTS_KEY, [])
+  const items = readDiagnosisReports([])
   if (Array.isArray(items) && items.length > 0) return items
 
   const seeded = clone(SEED_REPORTS)
-  safeWrite(MOCK_REPORTS_KEY, seeded)
+  writeDiagnosisReports(seeded)
   return seeded
 }
 
-export const saveReports = (items) => safeWrite(MOCK_REPORTS_KEY, items)
+export const saveReports = (items) => writeDiagnosisReports(items)
 
 export const loadDietOverrides = () => safeRead(MOCK_DIET_OVERRIDES_KEY, {})
 export const saveDietOverrides = (items) => safeWrite(MOCK_DIET_OVERRIDES_KEY, items)
