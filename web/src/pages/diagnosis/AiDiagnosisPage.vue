@@ -11,7 +11,7 @@
             </div>
           </template>
           
-          <el-scrollbar height="calc(100vh - 160px)">
+          <el-scrollbar height="100%">
             <div 
               v-for="patient in patients" 
               :key="patient.id"
@@ -19,7 +19,7 @@
               :class="{ 'is-active': selectedPatient?.id === patient.id }"
               @click="handleSelectPatient(patient)"
             >
-              <el-avatar :size="46" :src="patient.avatar" />
+              <PatientAvatar :size="46" :src="patient.avatar" :name="patient.name" />
               <div class="item-info">
                 <div class="item-header">
                   <div class="patient-identity">
@@ -58,7 +58,12 @@
             v-else-if="selectedPatient && !diagnosisResult && selectedPatient.aiStatus === diagnosedStatus"
             class="ready-state"
           >
-            <el-avatar :size="80" :src="selectedPatient.avatar" style="margin-bottom: 20px;" />
+            <PatientAvatar
+              :size="80"
+              :src="selectedPatient.avatar"
+              :name="selectedPatient.name"
+              style="margin-bottom: 20px;"
+            />
             <el-text size="large" tag="b" style="font-size: 22px; display: block; margin-bottom: 12px;">
               {{ selectedPatient.name }} 已完成 AI 报告
             </el-text>
@@ -71,7 +76,12 @@
           </div>
 
           <div v-else-if="selectedPatient && !diagnosisResult" class="ready-state">
-            <el-avatar :size="80" :src="selectedPatient.avatar" style="margin-bottom: 20px;" />
+            <PatientAvatar
+              :size="80"
+              :src="selectedPatient.avatar"
+              :name="selectedPatient.name"
+              style="margin-bottom: 20px;"
+            />
             <el-text size="large" tag="b" style="font-size: 22px; display: block; margin-bottom: 12px;">
               {{ selectedPatient.name }} 的诊疗档案已就绪
             </el-text>
@@ -125,15 +135,52 @@
                   <el-descriptions-item label="鉴别诊断">
                     {{ diagnosisResult.differentials.join('、') || '--' }}
                   </el-descriptions-item>
-                  <el-descriptions-item label="数据置信度">
-                    <el-tag type="success" size="small">{{ diagnosisResult.dataConfidenceLabel }}</el-tag>
+                  <el-descriptions-item v-if="diagnosisResult.confidence.visible" label="数据置信度">
+                    <el-tag :type="confidenceTagType" size="small">{{ diagnosisResult.confidence.label }}</el-tag>
                   </el-descriptions-item>
-                  <el-descriptions-item label="关键体征">
-                    {{ diagnosisResult.keySigns.join('、') || '--' }}
+                  <el-descriptions-item label="关键证据" :span="2">
+                    <div class="key-sign-list">
+                      <el-tag
+                        v-for="sign in diagnosisResult.keySigns"
+                        :key="sign"
+                        type="warning"
+                        effect="plain"
+                        size="small"
+                      >
+                        {{ sign }}
+                      </el-tag>
+                      <span v-if="diagnosisResult.keySigns.length === 0">--</span>
+                    </div>
                   </el-descriptions-item>
                 </el-descriptions>
+                <div class="evidence-summary">
+                  <el-tag type="info" effect="plain">纳入模型特征 {{ diagnosisResult.evidenceSummary.modelFeatureCount }} 项</el-tag>
+                  <el-tag type="warning" effect="plain">异常证据 {{ diagnosisResult.evidenceSummary.abnormalEvidenceCount }} 项</el-tag>
+                  <el-tag :type="reviewTagType" effect="plain">
+                    {{ diagnosisResult.evidenceSummary.reviewRequired ? '需医生复核' : '置信度达标' }}
+                  </el-tag>
+                </div>
               </el-col>
             </el-row>
+
+            <div v-if="diagnosisResult.evidenceItems.length > 0" class="section-card evidence-card">
+              <div class="section-title">关键证据汇总</div>
+              <div class="evidence-grid">
+                <div
+                  v-for="item in diagnosisResult.evidenceItems"
+                  :key="`${item.category}-${item.label}-${item.value || ''}`"
+                  class="evidence-item"
+                  :class="item.severity"
+                >
+                  <div class="evidence-item-top">
+                    <span class="evidence-category">{{ item.category }}</span>
+                    <span v-if="item.source" class="evidence-source">{{ item.source }}</span>
+                  </div>
+                  <div class="evidence-label">{{ item.label }}</div>
+                  <div v-if="item.value" class="evidence-value">{{ item.value }}</div>
+                </div>
+              </div>
+            </div>
 
             <div class="section-card">
               <div class="section-title">特征性生化指标偏离分析</div>
@@ -153,6 +200,7 @@
                     <span class="ref-range">(参考: {{ item.normal }})</span>
                   </div>
                 </div>
+                <el-empty v-if="diagnosisResult.indicators.length === 0" description="暂无结构化生化指标" :image-size="80" />
               </div>
             </div>
 
@@ -213,6 +261,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { Cpu, Aim, Download, Microphone, Food } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import PatientAvatar from '@/components/PatientAvatar.vue'
 import diagnosisApi from '../../api/diagnosis'
 import type { DiagnosisQueuePatient, DiagnosisResult } from '../../api/types'
 
@@ -254,6 +303,21 @@ const RISK_BANDS = [
 const riskBand = computed(() => {
   const probability = diagnosisResult.value?.probability ?? 0
   return RISK_BANDS.find((band) => probability >= band.min) ?? RISK_BANDS[RISK_BANDS.length - 1]
+})
+
+const confidenceTagType = computed(() => {
+  const confidence = diagnosisResult.value?.confidence
+  if (!confidence) {
+    return 'info'
+  }
+  if (confidence.adjusted || confidence.reviewRequired) {
+    return 'warning'
+  }
+  return 'success'
+})
+
+const reviewTagType = computed(() => {
+  return diagnosisResult.value?.evidenceSummary.reviewRequired ? 'warning' : 'success'
 })
 
 const resolveSeedReportedPatientIds = (items: DiagnosisQueuePatient[]): string[] => {
@@ -390,6 +454,8 @@ onMounted(() => {
   border-radius: 8px;
   border: none;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-header {
@@ -463,9 +529,12 @@ onMounted(() => {
 
 /* 右侧工作台样式 */
 :deep(.el-card__body) {
-  height: 100%;
+  flex: 1;
+  overflow: auto;
   box-sizing: border-box;
   padding: 24px;
+  min-height: 0;
+  min-width: 0;
 }
 
 .empty-state, .ready-state {
@@ -541,6 +610,20 @@ onMounted(() => {
   font-size: 24px;
 }
 
+.key-sign-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.evidence-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* 内部卡片样式 */
 .section-card {
   border: 1px solid #ebeef5;
@@ -561,6 +644,65 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.evidence-card {
+  margin-bottom: 20px;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.evidence-item {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.evidence-item.warning {
+  border-color: #f3d19e;
+  background: #fdf6ec;
+}
+
+.evidence-item.exception {
+  border-color: #fab6b6;
+  background: #fef0f0;
+}
+
+.evidence-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.evidence-category {
+  font-size: 12px;
+  font-weight: 700;
+  color: #606266;
+}
+
+.evidence-source {
+  font-size: 12px;
+  color: #909399;
+}
+
+.evidence-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.evidence-value {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.4;
 }
 
 /* 纯 CSS 图表样式 */
