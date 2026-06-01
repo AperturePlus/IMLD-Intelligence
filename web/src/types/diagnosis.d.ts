@@ -52,6 +52,7 @@ export interface DiagnosisEvidenceSummary {
 
 export interface DiagnosisResult {
   diseaseName: string
+  riskLevel: '低' | '中' | '高'
   probability: number
   indicators: DiagnosisIndicator[]
   evidenceItems: DiagnosisEvidenceItem[]

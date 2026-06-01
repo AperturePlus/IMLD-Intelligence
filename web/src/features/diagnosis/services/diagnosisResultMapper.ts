@@ -6,6 +6,7 @@ import {
   buildEvidenceItemsFromDiagnosis,
   buildEvidenceSummary
 } from './diagnosisEvidence'
+import { normalizeRiskLevel } from './riskLevel'
 
 export interface DiagnosisResultItemApi {
   id: number
@@ -47,6 +48,8 @@ export interface DiagnosisSessionApi {
 interface InferencePayloadApi extends InferenceDisplayLike {
   risk_probability?: number
   riskProbability?: number
+  risk_level?: string
+  riskLevel?: string
   model_feature_count?: number
   modelFeatureCount?: number
   abnormal_evidence_count?: number
@@ -222,6 +225,7 @@ export const normalizeDiagnosisResultPayload = (payload: Partial<DiagnosisResult
 
   return {
     diseaseName,
+    riskLevel: normalizeRiskLevel(payload.riskLevel, probability),
     probability,
     indicators,
     ...scaffolding,
@@ -249,6 +253,7 @@ export const buildDiagnosisResultFromExpertReport = (report: ExpertReport): Diag
 
   return {
     diseaseName,
+    riskLevel: normalizeRiskLevel(undefined, probability),
     probability,
     indicators,
     ...scaffolding,
@@ -268,6 +273,10 @@ export const buildDiagnosisResultFromSession = (session: DiagnosisSessionApi): D
         : primaryResult?.confidence || 0
   const probability = numberToPercent(rawProbability)
   const diseaseName = primaryResult?.diseaseName || DEFAULT_DISEASE_NAME
+  const riskLevel = normalizeRiskLevel(
+    primaryResult?.riskLevel || inference.risk_level || inference.riskLevel,
+    probability
+  )
   const indicators = mapInferenceIndicators(inference)
   const evidenceItems = mapInferenceEvidenceItems(inference)
   const confidence = resolveDiagnosisConfidence(probability)
@@ -297,6 +306,7 @@ export const buildDiagnosisResultFromSession = (session: DiagnosisSessionApi): D
 
   return {
     diseaseName,
+    riskLevel,
     probability,
     indicators,
     ...scaffolding,

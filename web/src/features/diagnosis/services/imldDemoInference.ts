@@ -10,6 +10,7 @@ import { buildDiseaseDisplayFields } from './diseaseDisplay'
 import { buildEvidenceItemsFromDiagnosis, buildEvidenceSummary } from './diagnosisEvidence'
 import { buildFeatureVectorFromRecord, buildIndicatorsFromRecord } from './emrFeatureMapping'
 import { isBrowserOnnxInferenceMode } from './inferenceMode'
+import { riskLevelFromProbability } from './riskLevel'
 
 interface DemoPatient {
   id?: string
@@ -253,6 +254,7 @@ export const predictImldDemoDiagnosis = async (
 
     return {
       diseaseName,
+      riskLevel: riskLevelFromProbability(probability),
       probability,
       indicators,
       confidence,

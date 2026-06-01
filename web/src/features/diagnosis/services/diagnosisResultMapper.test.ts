@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { resolveDiagnosisConfidence } from './confidenceConfig'
 import { buildEvidenceItemsFromDiagnosis } from './diagnosisEvidence'
 import { buildDiseaseDisplayFields } from './diseaseDisplay'
+import { normalizeRiskLevel, riskLevelFromProbability } from './riskLevel'
 import {
   buildDiagnosisResultFromSession,
   normalizeDiagnosisResultPayload,
@@ -112,6 +113,24 @@ describe('diagnosis confidence config', () => {
   })
 })
 
+describe('diagnosis risk level normalization', () => {
+  test('normalizes Chinese and English risk levels', () => {
+    expect(normalizeRiskLevel('高风险')).toBe('高')
+    expect(normalizeRiskLevel('HIGH')).toBe('高')
+    expect(normalizeRiskLevel('中风险')).toBe('中')
+    expect(normalizeRiskLevel('MEDIUM')).toBe('中')
+    expect(normalizeRiskLevel('低风险')).toBe('低')
+    expect(normalizeRiskLevel('LOW')).toBe('低')
+  })
+
+  test('falls back to backend-aligned probability thresholds', () => {
+    expect(riskLevelFromProbability(0.19)).toBe('低')
+    expect(riskLevelFromProbability(0.2)).toBe('中')
+    expect(riskLevelFromProbability(69)).toBe('中')
+    expect(riskLevelFromProbability(0.7)).toBe('高')
+  })
+})
+
 describe('diagnosis structured evidence', () => {
   test('builds multi-source evidence for P009 hemochromatosis instead of liver enzymes only', () => {
     const record = {
@@ -195,6 +214,7 @@ describe('diagnosis result mapper', () => {
     const result = buildDiagnosisResultFromSession(session)
 
     expect(result.diseaseName).toBe('遗传性血色病')
+    expect(result.riskLevel).toBe('高')
     expect(result.probability).toBe(91)
     expect(result.indicators[0]?.name).toBe('铁蛋白')
     expect(result.genes).toContain('HFE (c.845G>A)')
@@ -214,6 +234,7 @@ describe('diagnosis result mapper', () => {
     const result = buildDiagnosisResultFromSession(session)
 
     expect(result.probability).toBe(83)
+    expect(result.riskLevel).toBe('高')
     expect(result.genes).toContain('SERPINA1 (Pi*ZZ)')
     expect(result.dietTags).toContain('高蛋白低脂')
     expect(result.keySigns.some((item) => item.includes('α1-抗胰蛋白酶'))).toBe(true)
