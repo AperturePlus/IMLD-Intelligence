@@ -17,6 +17,7 @@ import {
 } from '@/features/diagnosis/services/diagnosisEvidence'
 import { resolveDiagnosisConfidence } from '@/features/diagnosis/services/confidenceConfig'
 import { predictImldDemoDiagnosis } from '@/features/diagnosis/services/imldDemoInference'
+import { toChineseRiskLabel } from '@/features/diagnosis/services/riskLevel'
 
 const SUCCESS_CODE = 200
 const DEFAULT_PAGE_SIZE = 20
@@ -120,13 +121,7 @@ const inferDiseaseCode = (diseaseName = '') => {
 }
 
 const inferRiskLevel = (probability) => {
-  if (probability >= 0.85) {
-    return 'HIGH'
-  }
-  if (probability >= 0.6) {
-    return 'MEDIUM'
-  }
-  return 'LOW'
+  return toChineseRiskLabel(undefined, probability)
 }
 
 const inferGeneByDisease = (diseaseName = '') => {

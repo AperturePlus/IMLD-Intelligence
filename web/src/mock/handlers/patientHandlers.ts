@@ -3,6 +3,7 @@
 import {
   findRecordPayloadByPatientNo,
   loadPatients,
+  loadReports,
   loadRecords,
   nextPatientId,
   resolveDiseaseByDiagnosis,
@@ -11,6 +12,7 @@ import {
   saveRecords
 } from '../core/mockState'
 import { normalizeLaboratoryScreening } from '@/features/patient-record/constants/laboratoryScreening'
+import { normalizeRiskLevel } from '@/features/diagnosis/services/riskLevel'
 
 const REQUIRED_RECORD_FIELDS = [
   'patientNo',
@@ -473,6 +475,38 @@ const buildImportPreview = ({ sourceType, patientNo, name, gender, age, confiden
   encounterType: 'OUTPATIENT'
 })
 
+const parseRiskProbability = (value) => {
+  const parsed = Number.parseFloat(String(value ?? ''))
+  if (!Number.isFinite(parsed)) {
+    return undefined
+  }
+  return parsed > 1 ? parsed / 100 : parsed
+}
+
+const reportTimeWeight = (report) => {
+  const value = report?.signedAt || report?.feedbackCreatedAt || report?.date
+  if (!value) {
+    return 0
+  }
+  const parsed = new Date(value).getTime()
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+const resolveLatestDiagnosisRisk = (patientNo) => {
+  const latestReport = [...loadReports()]
+    .filter((report) => String(report.patientId || '').toLowerCase() === String(patientNo || '').toLowerCase())
+    .sort((left, right) => reportTimeWeight(right) - reportTimeWeight(left))[0]
+
+  if (!latestReport) {
+    return null
+  }
+
+  const probability = parseRiskProbability(
+    latestReport.diagnosisPayload?.probability ?? latestReport.aiFindings?.probability
+  )
+  return normalizeRiskLevel(latestReport.diagnosisPayload?.riskLevel, probability)
+}
+
 const pickSeedByPatientNoOrVisitNo = (data) => {
   const candidates = loadPatients()
   const byPatientNo = data.patientNo
@@ -502,7 +536,7 @@ export const patientExactHandlers = {
         name: item.name,
         gender: item.gender,
         age: item.age,
-        riskLevel: item.riskLevel,
+        riskLevel: resolveLatestDiagnosisRisk(item.id) || normalizeRiskLevel(item.riskLevel),
         avatar: ''
       }))
 
