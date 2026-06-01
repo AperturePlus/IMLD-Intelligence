@@ -6,14 +6,27 @@
         <el-card class="left-panel" shadow="never">
           <template #header>
             <div class="panel-header">
-              <el-text tag="b" size="large">待诊患者队列</el-text>
+              <el-text tag="b" size="large">AI 诊断队列</el-text>
               <el-tag size="small" type="info">{{ patients.length }} 人</el-tag>
             </div>
           </template>
+
+          <el-tabs v-model="queueTab" class="queue-tabs">
+            <el-tab-pane name="pending">
+              <template #label>
+                <span class="queue-tab-label">待诊 <span>{{ pendingPatients.length }}</span></span>
+              </template>
+            </el-tab-pane>
+            <el-tab-pane name="reported">
+              <template #label>
+                <span class="queue-tab-label">已出报告 <span>{{ reportedPatients.length }}</span></span>
+              </template>
+            </el-tab-pane>
+          </el-tabs>
           
-          <el-scrollbar height="100%">
+          <el-scrollbar class="queue-scrollbar">
             <div 
-              v-for="patient in patients" 
+              v-for="patient in visiblePatients"
               :key="patient.id"
               class="patient-list-item"
               :class="{ 'is-active': selectedPatient?.id === patient.id }"
@@ -37,6 +50,11 @@
                 </div>
               </div>
             </div>
+            <el-empty
+              v-if="visiblePatients.length === 0"
+              :description="queueTab === 'pending' ? '暂无待诊患者' : '暂无已出报告患者'"
+              :image-size="90"
+            />
           </el-scrollbar>
         </el-card>
       </el-col>
@@ -266,8 +284,6 @@ import diagnosisApi from '../../api/diagnosis'
 import type { DiagnosisQueuePatient, DiagnosisResult } from '../../api/types'
 
 const DIAGNOSED_STATUS = '已诊断'
-const UNDIAGNOSED_STATUS = '未诊断'
-const MAX_REPORTED_PATIENT_COUNT = 3
 
 const isDiagnosing = ref(false)
 const isLoadingReportedResult = ref(false)
@@ -275,7 +291,7 @@ const loadingQueue = ref(false)
 const selectedPatient = ref<DiagnosisQueuePatient | null>(null)
 const diagnosisResult = ref<DiagnosisResult | null>(null)
 const patients = ref<DiagnosisQueuePatient[]>([])
-const seedReportedPatientIds = ref<string[]>([])
+const queueTab = ref<'pending' | 'reported'>('pending')
 const diagnosedStatus = DIAGNOSED_STATUS
 
 const isBusy = computed(() => isDiagnosing.value || isLoadingReportedResult.value)
@@ -313,27 +329,13 @@ const reviewTagType = computed(() => {
   return diagnosisResult.value?.evidenceSummary.reviewRequired ? 'warning' : 'success'
 })
 
-const resolveSeedReportedPatientIds = (items: DiagnosisQueuePatient[]): string[] => {
-  return items
-    .filter((item) => item.aiStatus === DIAGNOSED_STATUS)
-    .slice(0, MAX_REPORTED_PATIENT_COUNT)
-    .map((item) => item.id)
-}
+const pendingPatients = computed(() => patients.value.filter((item) => item.aiStatus !== DIAGNOSED_STATUS))
 
-const applySeedStatus = (items: DiagnosisQueuePatient[]): DiagnosisQueuePatient[] => {
-  if (seedReportedPatientIds.value.length === 0) {
-    seedReportedPatientIds.value = resolveSeedReportedPatientIds(items)
-  }
-  if (seedReportedPatientIds.value.length === 0) {
-    return items
-  }
+const reportedPatients = computed(() => patients.value.filter((item) => item.aiStatus === DIAGNOSED_STATUS))
 
-  const reportedSet = new Set(seedReportedPatientIds.value)
-  return items.map((item) => ({
-    ...item,
-    aiStatus: reportedSet.has(item.id) ? DIAGNOSED_STATUS : UNDIAGNOSED_STATUS
-  }))
-}
+const visiblePatients = computed(() => {
+  return queueTab.value === 'reported' ? reportedPatients.value : pendingPatients.value
+})
 
 const syncSelectedPatientFromQueue = () => {
   if (!selectedPatient.value) {
@@ -342,18 +344,13 @@ const syncSelectedPatientFromQueue = () => {
   selectedPatient.value = patients.value.find((item) => item.id === selectedPatient.value?.id) || null
 }
 
-const resetMockQueueStatuses = () => {
-  patients.value = applySeedStatus(patients.value)
-  syncSelectedPatientFromQueue()
-}
-
 const loadReportedDiagnosis = async (patient: DiagnosisQueuePatient) => {
   isLoadingReportedResult.value = true
   try {
     const res = await diagnosisApi.getLatestDiagnosisResultByPatient(patient.id)
     if (!res.data) {
-      seedReportedPatientIds.value = seedReportedPatientIds.value.filter((id) => id !== patient.id)
-      resetMockQueueStatuses()
+      await fetchQueue()
+      queueTab.value = 'pending'
       ElMessage.warning('该患者暂无已出报告，请点击“启动 AI 智能筛查”')
       return
     }
@@ -377,7 +374,7 @@ const fetchQueue = async () => {
   loadingQueue.value = true
   try {
     const res = await diagnosisApi.getAiQueue()
-    patients.value = applySeedStatus(res.data.items || [])
+    patients.value = res.data.items || []
     syncSelectedPatientFromQueue()
   } catch {
     ElMessage.error('加载待诊队列失败，请稍后重试')
@@ -415,8 +412,9 @@ const startDiagnosis = async () => {
   try {
     const res = await diagnosisApi.runAiDiagnosis(patient.id)
     diagnosisResult.value = res.data
-    resetMockQueueStatuses()
-    ElMessage.success('AI 辅助诊断已完成，患者队列状态已重置')
+    await fetchQueue()
+    queueTab.value = 'reported'
+    ElMessage.success('AI 辅助诊断已完成，患者已移入已出报告')
   } catch {
     ElMessage.error('AI 诊断失败，请稍后重试')
   } finally {
@@ -455,6 +453,47 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.left-panel :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  min-height: 0;
+}
+
+.queue-tabs {
+  flex-shrink: 0;
+  padding: 0 16px;
+}
+
+.queue-tabs :deep(.el-tabs__header) {
+  margin-bottom: 0;
+}
+
+.queue-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.queue-tab-label span {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #f0f2f5;
+  color: #606266;
+  font-size: 12px;
+  line-height: 20px;
+  justify-content: center;
+}
+
+.queue-scrollbar {
+  flex: 1;
+  min-height: 0;
 }
 
 .patient-list-item {
