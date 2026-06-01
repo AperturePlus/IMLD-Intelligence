@@ -5,72 +5,24 @@ import type {
   DiagnosisResult,
   ExpertReport,
   ExpertReportListResponse,
-  ProgressStatus,
   SignExpertReportPayload,
   SignExpertReportResponse
 } from '@/types/diagnosis'
 import type { ApiEnvelope, PagedResult } from '@/types/common'
-
-interface DiagnosisResultItemApi {
-  id: number
-  diseaseCode: string
-  diseaseName: string
-  confidence: number
-  rankNo: number
-  riskLevel: string
-  evidenceJson: unknown
-}
-
-interface DiagnosisRecommendationItemApi {
-  recType: string
-  content: string
-}
-
-interface DiagnosisFeedbackItemApi {
-  doctorId: number
-  action: string
-  modifiedValue: unknown
-  createdAt?: string
-}
-
-interface DiagnosisSessionApi {
-  id: number
-  patientId: number
-  encounterId?: number
-  doctorId?: number
-  modelRegistryId?: number
-  status: string
-  startedAt?: string
-  completedAt?: string
-  results: DiagnosisResultItemApi[]
-  recommendations: DiagnosisRecommendationItemApi[]
-  feedbacks: DiagnosisFeedbackItemApi[]
-}
+import {
+  buildDiagnosisResultFromExpertReport,
+  buildDiagnosisResultFromSession,
+  extractInferencePayload,
+  mapInferenceIndicators,
+  normalizeDiagnosisResultPayload,
+  type DiagnosisSessionApi
+} from '@/features/diagnosis/services/diagnosisResultMapper'
 
 interface IdentityPatientApi {
   id: number
   patientName: string
   gender?: string
   birthDate?: string | null
-}
-
-interface ClinicalAbnormalityApi {
-  feature?: string
-  value?: number
-  normal_range?: number[]
-  direction?: string
-  severity?: string
-}
-
-interface GeneAbnormalityApi {
-  gene?: string
-}
-
-interface InferencePayloadApi {
-  risk_probability?: number
-  suggestions?: string[]
-  clinical_abnormalities?: ClinicalAbnormalityApi[]
-  gene_abnormalities?: GeneAbnormalityApi[]
 }
 
 const SUCCESS_CODE = 200
@@ -204,33 +156,6 @@ const isDiagnosedStatus = (status: string | undefined): boolean => {
   return upper === 'COMPLETED' || upper === 'REVIEWED'
 }
 
-const parseProbabilityPercent = (value: string | undefined): number => {
-  const parsed = Number.parseFloat(String(value ?? '0'))
-  if (!Number.isFinite(parsed)) {
-    return 0
-  }
-  const normalized = parsed > 1 ? parsed : parsed * 100
-  return Math.round(Math.max(0, Math.min(100, normalized)))
-}
-
-const buildDiagnosisResultFromExpertReport = (report: ExpertReport): DiagnosisResult => ({
-  diseaseName: report.aiFindings?.disease || '遗传代谢性肝病风险提示',
-  probability: parseProbabilityPercent(report.aiFindings?.probability),
-  indicators: [
-    {
-      name: '关键生化线索',
-      value: 1,
-      unit: '',
-      normal: '--',
-      percentage: 78,
-      status: 'warning'
-    }
-  ],
-  genes: [],
-  diet: report.treatmentPlan || '建议清淡饮食，避免酒精和高脂饮食。',
-  sequencing: '建议结合家系史与临床特征评估基因检测。'
-})
-
 const fetchSessions = async (): Promise<{ response: AxiosResponse<ApiEnvelope<PagedResult<DiagnosisSessionApi>>>; items: DiagnosisSessionApi[] }> => {
   const response = await service<ApiEnvelope<PagedResult<DiagnosisSessionApi>>>({
     url: '/api/v1/web/diagnoses/sessions',
@@ -261,94 +186,18 @@ const fetchPatients = async (): Promise<IdentityPatientApi[]> => {
   return unwrapApiEnvelope(response.data).items || []
 }
 
-const toProgressStatus = (severity: string | undefined): ProgressStatus => {
-  if (!severity) {
-    return ''
-  }
-  if (severity.includes('高')) {
-    return 'exception'
-  }
-  if (severity.includes('中')) {
-    return 'warning'
-  }
-  return ''
-}
-
-const toIndicators = (inference: InferencePayloadApi): DiagnosisResult['indicators'] => {
-  const clinical = inference.clinical_abnormalities || []
-  return clinical.map((item) => {
-    const range = item.normal_range || []
-    const rangeLabel = range.length >= 2 ? `${range[0]}-${range[1]}` : '--'
-    const status = toProgressStatus(item.severity)
-    const percentage =
-      status === 'exception'
-        ? 92
-        : status === 'warning'
-          ? 76
-          : item.direction === 'low'
-            ? 38
-            : item.direction === 'high'
-              ? 65
-              : 50
-    return {
-      name: item.feature || '临床指标',
-      value: Number(item.value ?? 0),
-      unit: '',
-      normal: rangeLabel,
-      percentage,
-      status
-    }
-  })
-}
-
-const pickInference = (session: DiagnosisSessionApi): InferencePayloadApi => {
-  const primaryResult = [...(session.results || [])].sort((a, b) => a.rankNo - b.rankNo)[0]
-  const evidence = asRecord(primaryResult?.evidenceJson)
-  const inference = asRecord(evidence?.inference)
-  return (inference || {}) as InferencePayloadApi
-}
-
-const buildDiagnosisResult = (session: DiagnosisSessionApi): DiagnosisResult => {
-  const sortedResults = [...(session.results || [])].sort((a, b) => a.rankNo - b.rankNo)
-  const primaryResult = sortedResults[0]
-  const inference = pickInference(session)
-  const riskProbability = typeof inference.risk_probability === 'number'
-    ? inference.risk_probability
-    : primaryResult?.confidence || 0
-  const suggestions = inference.suggestions || []
-  const recommendations = session.recommendations || []
-  const diet = recommendations.find((item) => item.recType === 'DIET')?.content
-    || suggestions.find((item) => item.includes('饮食') || item.toLowerCase().includes('diet'))
-    || '建议清淡饮食，避免酒精和高脂饮食。'
-  const sequencing = recommendations.find((item) => item.recType === 'GENETIC')?.content
-    || suggestions.find((item) => item.includes('基因') || item.toLowerCase().includes('gene'))
-    || '建议结合家系史与临床指征评估是否进行基因检测。'
-  const genes = (inference.gene_abnormalities || [])
-    .map((item) => item.gene)
-    .filter((item): item is string => Boolean(item))
-  const uniqueGenes = [...new Set(genes)]
-  return {
-    diseaseName: primaryResult?.diseaseName || '遗传代谢性肝病风险提示',
-    probability: Math.round(Math.max(0, Math.min(1, riskProbability)) * 100),
-    indicators: toIndicators(inference),
-    genes: uniqueGenes,
-    diet,
-    sequencing
-  }
-}
-
 const buildExpertReport = (
   session: DiagnosisSessionApi,
   patientMap: Map<number, IdentityPatientApi>
 ): ExpertReport | null => {
-  const sortedResults = [...(session.results || [])].sort((a, b) => a.rankNo - b.rankNo)
+  const sortedResults = [...(session.results || [])].sort((a, b) => (a.rankNo || 0) - (b.rankNo || 0))
   const primaryResult = sortedResults[0]
   if (!primaryResult) {
     return null
   }
   const patient = patientMap.get(session.patientId)
-  const inference = pickInference(session)
-  const indicators = toIndicators(inference)
+  const inference = extractInferencePayload(session)
+  const indicators = mapInferenceIndicators(inference)
   const latestFeedback = [...(session.feedbacks || [])]
     .sort((a, b) => {
       const t1 = new Date(b.createdAt || '').getTime()
@@ -357,7 +206,8 @@ const buildExpertReport = (
     })[0]
   const feedbackBody = asRecord(latestFeedback?.modifiedValue)
   const signed = latestFeedback && ['ACCEPT', 'MODIFY'].includes((latestFeedback.action || '').toUpperCase())
-  const probability = Math.round(Math.max(0, Math.min(1, inference.risk_probability || primaryResult.confidence || 0)) * 100)
+  const rawProbability = typeof inference.risk_probability === 'number' ? inference.risk_probability : primaryResult.confidence || 0
+  const probability = Math.round(Math.max(0, Math.min(1, rawProbability)) * 100)
   return {
     id: String(session.id),
     patientId: String(session.patientId),
@@ -371,7 +221,7 @@ const buildExpertReport = (
       biochemical: indicators.map((item) => `${item.name} ${item.value}`).join('，') || '见诊断会话明细',
       clinical: (inference.suggestions || [])[0] || '请结合病史与临床体征综合判断',
       probability: String(probability),
-      disease: primaryResult.diseaseName
+      disease: primaryResult.diseaseName || '遗传代谢性肝病风险提示'
     },
     expertConclusion: typeof feedbackBody?.expertConclusion === 'string' ? feedbackBody.expertConclusion : '',
     treatmentPlan: typeof feedbackBody?.treatmentPlan === 'string' ? feedbackBody.treatmentPlan : '',
@@ -459,7 +309,7 @@ const diagnosisApi = {
         const latestSession = sortSessionsDesc(sessions).find((session) => {
           return session.patientId === numericPatientId && isDiagnosedStatus(session.status)
         })
-        return mapAxiosResponse(response, latestSession ? buildDiagnosisResult(latestSession) : null)
+        return mapAxiosResponse(response, latestSession ? buildDiagnosisResultFromSession(latestSession) : null)
       } catch (error) {
         if (!isEndpointMissing(error)) {
           throw error
@@ -503,16 +353,17 @@ const diagnosisApi = {
           }
         })
         const session = unwrapApiEnvelope(response.data)
-        return mapAxiosResponse(response, buildDiagnosisResult(session))
+        return mapAxiosResponse(response, buildDiagnosisResultFromSession(session))
       } catch (error) {
         if (!isEndpointMissing(error)) {
           throw error
         }
-        return service({
+        const fallbackResponse = await service<DiagnosisResult>({
           url: '/api/v1/web/diagnosis/ai-reports/',
           method: 'post',
           data: { patientId }
-        }) as Promise<AxiosResponse<DiagnosisResult>>
+        })
+        return mapAxiosResponse(fallbackResponse, normalizeDiagnosisResultPayload(fallbackResponse.data))
       }
     })()
   },
@@ -560,7 +411,7 @@ const diagnosisApi = {
           headers: tenantHeaders()
         })
         const session = unwrapApiEnvelope(sessionResponse.data)
-        const primaryResult = [...(session.results || [])].sort((a, b) => a.rankNo - b.rankNo)[0]
+        const primaryResult = [...(session.results || [])].sort((a, b) => (a.rankNo || 0) - (b.rankNo || 0))[0]
         if (!primaryResult) {
           throw new Error('session has no diagnosis result')
         }

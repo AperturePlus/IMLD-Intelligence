@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { SEED_PATIENT_RECORDS } from './patientRecordsSeed'
+import { buildDiseaseDisplayFields } from '@/features/diagnosis/services/diseaseDisplay'
 
 const MOCK_USERS_KEY = '__imld_mock_users__'
 const MOCK_TOKENS_KEY = '__imld_mock_tokens__'
@@ -277,9 +278,20 @@ export const resolveRiskByDiagnosis = (diagnosis = '') => {
   return '中'
 }
 
+const withDiagnosisDisplayFields = (payload) => ({
+  ...payload,
+  ...buildDiseaseDisplayFields({
+    diseaseName: payload.diseaseName,
+    probability: payload.probability,
+    genes: payload.genes,
+    diet: payload.diet,
+    sequencing: payload.sequencing
+  })
+})
+
 export const buildDiagnosisPayload = (patient) => {
   if (patient.disease === '遗传性血色病') {
-    return {
+    return withDiagnosisDisplayFields({
       diseaseName: '遗传性血色病',
       probability: 89,
       indicators: [
@@ -290,11 +302,11 @@ export const buildDiagnosisPayload = (patient) => {
       genes: ['HFE (C282Y)', 'HFE (H63D)'],
       diet: '建议严格限制红肉和动物内脏，避免随餐维生素C补充，餐后可饮茶抑制铁吸收。',
       sequencing: '建议进行 HFE 基因检测，并对一级亲属开展家系筛查。'
-    }
+    })
   }
 
   if (patient.disease === 'α1-抗胰蛋白酶缺乏症') {
-    return {
+    return withDiagnosisDisplayFields({
       diseaseName: 'α1-抗胰蛋白酶缺乏症',
       probability: 85,
       indicators: [
@@ -305,10 +317,10 @@ export const buildDiagnosisPayload = (patient) => {
       genes: ['SERPINA1 (Pi*ZZ)'],
       diet: '建议高蛋白、低脂饮食，减少酒精摄入，配合呼吸系统评估。',
       sequencing: '建议进行 SERPINA1 基因分型，并评估肝肺联合受累风险。'
-    }
+    })
   }
 
-  return {
+  return withDiagnosisDisplayFields({
     diseaseName: '肝豆状核变性 (Wilson病)',
     probability: 92,
     indicators: [
@@ -319,7 +331,7 @@ export const buildDiagnosisPayload = (patient) => {
     genes: ['ATP7B (c.2333G>T)', 'ATP7B (c.2975C>T)'],
     diet: '建议立即启动低铜饮食，禁食坚果、巧克力和动物内脏。',
     sequencing: '建议 ATP7B 靶向测序，并开展一级亲属筛查。'
-  }
+  })
 }
 
 export const toAiFinding = (diagnosisPayload) => ({
