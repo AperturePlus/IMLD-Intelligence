@@ -54,7 +54,10 @@ bun run build:electron:win:dir
 - 用户名：`doctor`
 - 密码：`123456`
 
-Mock 数据会写入浏览器本地存储，用于模拟注册、登录和 token 校验。
+Mock 数据会写入浏览器本地存储，用于模拟注册、登录和 token 校验。诊断报告/会话数据由
+`VITE_MOCK_DIAGNOSIS_PERSIST` 单独控制：默认 `false`，仅在当前浏览器标签页或 Electron
+renderer 会话内保留；设置为 `true` 时才跨启动保留到 `localStorage`。该开关只影响前端 mock
+诊断数据，不影响 `backend` 推理模式或真实后端持久化。
 
 ## 诊断推理模式
 
@@ -86,5 +89,6 @@ Electron 打包默认使用 `browser-onnx`，模型、metadata、ONNX Runtime wa
 - `VITE_IMLD_CONFIDENCE_VISIBLE`: 是否展示报告置信度
 - `VITE_IMLD_CONFIDENCE_MIN_THRESHOLD`: 报告置信度最低阈值
 - `VITE_IMLD_CONFIDENCE_BOOST_ENABLED`: 是否在 mock / browser-onnx 演示模式抬高展示置信度
+- `VITE_MOCK_DIAGNOSIS_PERSIST`: 是否跨启动保留前端 mock 诊断报告/会话数据，默认 `false`
 - `VITE_MOCK_DELAY_MS`: Mock 接口延迟（毫秒）
 - `VITE_API_BASE_URL`: 真实后端地址（关闭 Mock 时生效）
