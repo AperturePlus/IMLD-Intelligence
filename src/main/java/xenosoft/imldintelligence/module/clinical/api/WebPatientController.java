@@ -12,30 +12,18 @@ import xenosoft.imldintelligence.module.identity.internal.model.Patient;
 import xenosoft.imldintelligence.module.identity.internal.repository.PatientRepository;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 public class WebPatientController implements WebPatientControllerContract {
-    private static final Map<String, String> DEFAULT_RISK_BY_PATIENT_NO = Map.ofEntries(
-            Map.entry("P001", "高"),
-            Map.entry("P002", "低"),
-            Map.entry("P003", "中"),
-            Map.entry("P004", "高"),
-            Map.entry("P005", "低"),
-            Map.entry("P006", "中"),
-            Map.entry("P007", "高"),
-            Map.entry("P008", "低"),
-            Map.entry("P009", "高"),
-            Map.entry("P010", "中"),
-            Map.entry("P011", "低"),
-            Map.entry("P012", "高")
-    );
+    private static final String STATUS_DIAGNOSED = "已诊断";
+    private static final String STATUS_UNDIAGNOSED = "未诊断";
 
     private final PatientRepository patientRepository;
     private final DiagnosisSessionRepository diagnosisSessionRepository;
@@ -48,14 +36,18 @@ public class WebPatientController implements WebPatientControllerContract {
                 .filter(patient -> "ACTIVE".equalsIgnoreCase(patient.getStatus()))
                 .filter(patient -> matchesKeyword(patient, normalizedKeyword))
                 .sorted(Comparator.comparing(Patient::getPatientNo, Comparator.nullsLast(String::compareTo)))
-                .map(patient -> new WebPatientApiDtos.Response.PatientSummary(
-                        patient.getPatientNo(),
-                        patient.getPatientName(),
-                        normalizeGender(patient.getGender()),
-                        ageOf(patient),
-                        resolveRiskLevel(tenantId, patient),
-                        ""
-                ))
+                .map(patient -> {
+                    PatientDiagnosisSummary diagnosis = resolveDiagnosisSummary(tenantId, patient);
+                    return new WebPatientApiDtos.Response.PatientSummary(
+                            patient.getPatientNo(),
+                            patient.getPatientName(),
+                            normalizeGender(patient.getGender()),
+                            ageOf(patient),
+                            diagnosis.riskLevel(),
+                            diagnosis.aiStatus(),
+                            ""
+                    );
+                })
                 .toList();
         return ApiResponse.success(new WebPatientApiDtos.Response.PatientListResponse(items));
     }
@@ -72,11 +64,11 @@ public class WebPatientController implements WebPatientControllerContract {
         return value != null && value.toLowerCase(Locale.ROOT).contains(normalizedKeyword);
     }
 
-    private String resolveRiskLevel(Long tenantId, Patient patient) {
-        return diagnosisSessionRepository.listByPatientId(tenantId, patient.getId()).stream()
+    private PatientDiagnosisSummary resolveDiagnosisSummary(Long tenantId, Patient patient) {
+        String riskLevel = diagnosisSessionRepository.listByPatientId(tenantId, patient.getId()).stream()
                 .filter(this::isAuthoritativeDiagnosisSession)
                 .sorted(Comparator
-                        .comparing((DiagnosisSession s) -> s.getCompletedAt() != null ? s.getCompletedAt() : s.getStartedAt(),
+                        .comparing(this::diagnosisSessionSortTime,
                                 Comparator.nullsLast(Comparator.naturalOrder()))
                         .reversed()
                         .thenComparing(DiagnosisSession::getId, Comparator.nullsLast(Comparator.reverseOrder())))
@@ -84,7 +76,16 @@ public class WebPatientController implements WebPatientControllerContract {
                 .findFirst()
                 .map(DiagnosisResult::getRiskLevel)
                 .map(this::toFrontendRiskLevel)
-                .orElseGet(() -> DEFAULT_RISK_BY_PATIENT_NO.getOrDefault(patient.getPatientNo(), "中"));
+                .orElse(null);
+
+        if (riskLevel == null) {
+            return new PatientDiagnosisSummary(STATUS_UNDIAGNOSED, null);
+        }
+        return new PatientDiagnosisSummary(STATUS_DIAGNOSED, riskLevel);
+    }
+
+    private OffsetDateTime diagnosisSessionSortTime(DiagnosisSession session) {
+        return session.getCompletedAt() != null ? session.getCompletedAt() : session.getStartedAt();
     }
 
     private boolean isAuthoritativeDiagnosisSession(DiagnosisSession session) {
@@ -136,5 +137,8 @@ public class WebPatientController implements WebPatientControllerContract {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private record PatientDiagnosisSummary(String aiStatus, String riskLevel) {
     }
 }

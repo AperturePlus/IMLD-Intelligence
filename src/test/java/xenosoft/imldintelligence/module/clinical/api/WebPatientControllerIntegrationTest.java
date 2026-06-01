@@ -25,6 +25,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,7 +80,8 @@ class WebPatientControllerIntegrationTest extends AbstractPostgresIntegrationTes
                 .andExpect(jsonPath("$.data.items[0].name").value("林测试"))
                 .andExpect(jsonPath("$.data.items[0].gender").value("女"))
                 .andExpect(jsonPath("$.data.items[0].age").value(42))
-                .andExpect(jsonPath("$.data.items[0].riskLevel").value("中"))
+                .andExpect(jsonPath("$.data.items[0].riskLevel").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].aiStatus").value("未诊断"))
                 .andExpect(jsonPath("$.data.items[0].avatar").value(""));
     }
 
@@ -100,7 +102,8 @@ class WebPatientControllerIntegrationTest extends AbstractPostgresIntegrationTes
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.items", hasSize(1)))
                 .andExpect(jsonPath("$.data.items[0].id").value("P910"))
-                .andExpect(jsonPath("$.data.items[0].riskLevel").value("高"));
+                .andExpect(jsonPath("$.data.items[0].riskLevel").value("高"))
+                .andExpect(jsonPath("$.data.items[0].aiStatus").value("已诊断"));
     }
 
     private Patient savePatient(String patientNo, String name, String gender, int age, String status) {
