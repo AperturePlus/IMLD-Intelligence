@@ -4,7 +4,9 @@ import { buildEvidenceItemsFromDiagnosis } from './diagnosisEvidence'
 import { buildDiseaseDisplayFields } from './diseaseDisplay'
 import { normalizeRiskLevel, riskLevelFromProbability } from './riskLevel'
 import {
+  buildDiagnosisResultFromExpertReport,
   buildDiagnosisResultFromSession,
+  formatDiagnosisIndicatorSummary,
   normalizeDiagnosisResultPayload,
   type DiagnosisSessionApi
 } from './diagnosisResultMapper'
@@ -203,7 +205,14 @@ describe('diagnosis result mapper', () => {
               risk_probability: 0.91,
               suggestions: ['建议进行 HFE 基因检测。'],
               clinical_abnormalities: [
-                { feature: '铁蛋白', value: 850, normal_range: [30, 300], direction: 'high', severity: '高' }
+                {
+                  feature: '铁蛋白',
+                  value: 850,
+                  unit: 'ng/mL',
+                  normal_range_label: '30-300',
+                  direction: 'high',
+                  severity: '高'
+                }
               ],
               gene_abnormalities: [{ gene: 'HFE', c_change: 'c.845G>A' }],
               differentials: ['接口鉴别'],
@@ -221,10 +230,53 @@ describe('diagnosis result mapper', () => {
     expect(result.riskLevel).toBe('高')
     expect(result.probability).toBe(91)
     expect(result.indicators[0]?.name).toBe('铁蛋白')
+    expect(result.indicators[0]).toMatchObject({
+      value: 850,
+      unit: 'ng/mL',
+      normal: '30-300',
+      status: 'exception'
+    })
+    expect(formatDiagnosisIndicatorSummary(result.indicators)).toContain('铁蛋白 850 ng/mL (参考 30-300 / 显著偏离)')
     expect(result.genes).toContain('HFE (c.845G>A)')
     expect(result.differentials).toEqual(['接口鉴别'])
     expect(result.dietTags).toEqual(['接口饮食'])
     expect(result.diet).toBe('接口饮食建议')
+  })
+
+  test('parses legacy biochemical summaries with mock reference ranges', () => {
+    const result = buildDiagnosisResultFromExpertReport({
+      id: 'REP-202311-001',
+      patientId: 'P001',
+      visitId: 'MZ8849201',
+      patientName: '林建国',
+      gender: '男',
+      age: 58,
+      date: '2023-11-20',
+      status: '已签发',
+      aiFindings: {
+        biochemical: '血清铁蛋白 850 ng/mL (参考 30-300 / 显著偏离)，转铁蛋白饱和度 65 % (参考 20-45 / 显著偏离)（mock参考区间，实际以检验机构为准）',
+        clinical: '皮肤色素沉着伴轻度肝肿大。',
+        probability: '89',
+        disease: '遗传性血色病'
+      },
+      expertConclusion: '',
+      treatmentPlan: ''
+    })
+
+    expect(result.indicators[0]).toMatchObject({
+      name: '血清铁蛋白',
+      value: 850,
+      unit: 'ng/mL',
+      normal: '30-300',
+      status: 'exception'
+    })
+    expect(result.indicators[1]).toMatchObject({
+      name: '转铁蛋白饱和度',
+      value: 65,
+      unit: '%',
+      normal: '20-45',
+      status: 'exception'
+    })
   })
 
   test('falls back to disease profile when diagnosis session omits display fields', () => {
