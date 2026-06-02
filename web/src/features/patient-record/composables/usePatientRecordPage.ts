@@ -25,8 +25,16 @@ import {
   createInitialLaboratoryScreening,
   normalizeLaboratoryScreening
 } from '@/features/patient-record/constants/laboratoryScreening'
+import {
+  PATIENT_RECORD_DRAFT_LIMIT,
+  deletePatientRecordDraft,
+  getPatientRecordDraft,
+  listPatientRecordDraftSummaries,
+  migrateLegacyPatientRecordDraft,
+  savePatientRecordDraft,
+  type PatientRecordDraftSummary
+} from '@/features/patient-record/services/patientRecordDraftStorage'
 
-const DRAFT_STORAGE_KEY = 'imld_patient_record_draft'
 const TRI_STATE_VALUES = ['YES', 'NO', 'UNKNOWN'] as const
 const IMAGING_SOURCE_TYPES = ['MANUAL', 'IMAGE_OCR', 'PDF_OCR', 'PACS_IMPORT'] as const
 const PATHOLOGY_SOURCE_TYPES = ['MANUAL', 'IMAGE_OCR', 'PDF_OCR', 'PACS_IMPORT'] as const
@@ -35,6 +43,27 @@ const GENETIC_METHODS = ['PANEL', 'WES', 'WGS', 'OTHER', ''] as const
 const IMAGING_MODALITIES = ['CT', 'ULTRASOUND', 'MRI', 'OTHER'] as const
 
 type TriStateFormValue = TernaryFlag | ''
+type PatientRecordTabName = 'basic' | 'clinical' | 'laboratory' | 'imaging' | 'pathology' | 'genetic' | 'clinicalDecision'
+
+interface RequiredFieldDefinition {
+  field: string
+  label: string
+  tab: PatientRecordTabName
+  isActive?: (formData: PatientRecordFormModel) => boolean
+}
+
+export interface PatientRecordValidationField {
+  field: string
+  label: string
+  tab: PatientRecordTabName
+}
+
+export interface PatientRecordValidationSummary {
+  count: number
+  firstField: string
+  firstLabel: string
+  fields: PatientRecordValidationField[]
+}
 
 interface PatientRecordDiseaseHistoryFormModel {
   smokingHistory: TriStateFormValue
@@ -124,6 +153,8 @@ export interface PatientRecordFormModel {
 
 const createLocalId = (prefix: string): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+const createVisitId = (): string => `VISIT-${Date.now().toString().slice(-8)}`
 
 const createInitialDiseaseHistory = (): PatientRecordDiseaseHistoryFormModel => ({
   smokingHistory: '',
@@ -251,18 +282,70 @@ const createInitialImportMeta = (): PatientRecordImportMeta => ({
   importedAt: ''
 })
 
-const BASIC_TAB_FIELD_PREFIXES = [
-  'patientNo',
-  'name',
-  'gender',
-  'age',
-  'visitDate',
-  'occupation',
-  'currentAddress',
-  'nativePlace',
-  'department',
-  'encounterType'
-] as const
+const REQUIRED_FIELD_DEFINITIONS: RequiredFieldDefinition[] = [
+  { field: 'patientNo', label: '病人ID号', tab: 'basic' },
+  { field: 'name', label: '患者姓名', tab: 'basic' },
+  { field: 'gender', label: '性别', tab: 'basic' },
+  { field: 'age', label: '年龄', tab: 'basic' },
+  { field: 'visitDate', label: '就诊日期', tab: 'basic' },
+  { field: 'encounterType', label: '就诊方式', tab: 'basic' },
+  { field: 'department', label: '科室', tab: 'basic' },
+  { field: 'occupation', label: '职业', tab: 'basic' },
+  { field: 'currentAddress', label: '现住址', tab: 'basic' },
+  { field: 'nativePlace', label: '籍贯', tab: 'basic' },
+  { field: 'chiefComplaint', label: '主诉', tab: 'clinical' },
+  { field: 'presentIllness', label: '现病史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.smokingHistory', label: '吸烟史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.drinkingHistory', label: '饮酒史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.diabetesHistory', label: '糖尿病史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.hypertensionHistory', label: '高血压史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.hyperuricemiaHistory', label: '高尿酸血症史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.hyperlipidemiaHistory', label: '高脂血症史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.coronaryHeartDiseaseHistory', label: '冠心病史', tab: 'clinical' },
+  { field: 'history.diseaseHistory.hepatitisBHistory', label: '乙肝病史', tab: 'clinical' },
+  { field: 'history.surgeryHistory.status', label: '手术史', tab: 'clinical' },
+  {
+    field: 'history.surgeryHistory.detail',
+    label: '手术史明细',
+    tab: 'clinical',
+    isActive: (formData) => formData.history.surgeryHistory.status === 'YES'
+  },
+  { field: 'history.transfusionHistory.status', label: '输血史', tab: 'clinical' },
+  {
+    field: 'history.transfusionHistory.detail',
+    label: '输血史明细',
+    tab: 'clinical',
+    isActive: (formData) => formData.history.transfusionHistory.status === 'YES'
+  },
+  { field: 'history.allergyHistory', label: '过敏史', tab: 'clinical' },
+  { field: 'history.medicationHistory', label: '用药史', tab: 'clinical' },
+  { field: 'history.familyHistory', label: '家族史', tab: 'clinical' },
+  { field: 'physicalExam.heightCm', label: '身高', tab: 'clinical' },
+  { field: 'physicalExam.weightKg', label: '体重', tab: 'clinical' },
+  { field: 'physicalExam.bloodPressureSystolic', label: '收缩压', tab: 'clinical' },
+  { field: 'physicalExam.bloodPressureDiastolic', label: '舒张压', tab: 'clinical' },
+  { field: 'physicalExam.respiratoryRate', label: '呼吸频率', tab: 'clinical' },
+  { field: 'physicalExam.heartRate', label: '心率', tab: 'clinical' },
+  { field: 'physicalExam.liverFibrosis', label: '肝纤维化', tab: 'clinical' },
+  { field: 'physicalExam.cirrhosis', label: '肝硬化', tab: 'clinical' },
+  { field: 'physicalExam.fattyLiver', label: '脂肪肝', tab: 'clinical' },
+  { field: 'physicalExam.liverFailure', label: '肝衰竭', tab: 'clinical' },
+  { field: 'physicalExam.cholestasis', label: '胆汁淤积', tab: 'clinical' },
+  { field: 'physicalExam.viralHepatitis', label: '病毒性肝炎', tab: 'clinical' },
+  {
+    field: 'pathology.reportText',
+    label: '肝穿刺活检结果',
+    tab: 'pathology',
+    isActive: (formData) => formData.pathology.performed
+  },
+  {
+    field: 'geneticSequencing.method',
+    label: '检测方法',
+    tab: 'genetic',
+    isActive: (formData) => formData.geneticSequencing.tested
+  },
+  { field: 'clinicalDecision.diagnosis', label: '初步诊断', tab: 'clinicalDecision' }
+]
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -271,6 +354,30 @@ const isTernaryFlag = (value: unknown): value is TernaryFlag =>
   typeof value === 'string' && TRI_STATE_VALUES.includes(value as TernaryFlag)
 
 const normalizeText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+const getValueByPath = (source: unknown, path: string): unknown =>
+  path.split('.').reduce<unknown>((current, segment) => {
+    if (!isRecord(current)) {
+      return undefined
+    }
+    return current[segment]
+  }, source)
+
+const isMissingRequiredValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) {
+    return true
+  }
+
+  if (typeof value === 'string') {
+    return !value.trim()
+  }
+
+  if (typeof value === 'number') {
+    return !Number.isFinite(value) || value <= 0
+  }
+
+  return false
+}
 
 const normalizeNullableText = (value: unknown): string | null => {
   const text = normalizeText(value)
@@ -650,6 +757,7 @@ const normalizeClinicalDecisionDraft = (
 
 const requiredTextRule = (message: string): FormItemRule[] => [
   {
+    required: true,
     trigger: 'blur',
     validator: (_rule, value, callback) => {
       if (!normalizeText(value)) {
@@ -665,6 +773,7 @@ const requiredSelectRule = (message: string): FormItemRule[] => [{ required: tru
 
 const createPositiveNumberRule = (message: string): FormItemRule[] => [
   {
+    required: true,
     trigger: 'change',
     validator: (_rule, value, callback) => {
       if (typeof value !== 'number' || Number.isNaN(value) || value <= 0) {
@@ -698,12 +807,45 @@ export interface PatientRecordImportMetaState {
 }
 
 export const usePatientRecordPage = () => {
-  const visitId = ref(`VISIT-${Date.now().toString().slice(-8)}`)
+  const visitId = ref(createVisitId())
   const activeTab = ref('basic')
   const formRef = ref<FormInstance>()
   const submitting = ref(false)
   const formData = reactive<PatientRecordFormModel>(createInitialFormData())
   const importMeta = reactive<PatientRecordImportMetaState>(createInitialImportMeta())
+  const validationSummary = ref<PatientRecordValidationSummary | null>(null)
+  const drafts = ref<PatientRecordDraftSummary[]>([])
+  const activeDraftId = ref<string | null>(null)
+
+  const refreshDrafts = (): void => {
+    drafts.value = listPatientRecordDraftSummaries()
+  }
+
+  const clearValidationSummary = (): void => {
+    validationSummary.value = null
+  }
+
+  const getActiveRequiredFields = (): RequiredFieldDefinition[] =>
+    REQUIRED_FIELD_DEFINITIONS.filter((item) => !item.isActive || item.isActive(formData))
+
+  const getMissingRequiredFields = (): PatientRecordValidationField[] =>
+    getActiveRequiredFields()
+      .filter((item) => isMissingRequiredValue(getValueByPath(formData, item.field)))
+      .map(({ field, label, tab }) => ({ field, label, tab }))
+
+  const setValidationSummary = (fields: PatientRecordValidationField[]): void => {
+    if (fields.length === 0) {
+      validationSummary.value = null
+      return
+    }
+
+    validationSummary.value = {
+      count: fields.length,
+      firstField: fields[0].field,
+      firstLabel: fields[0].label,
+      fields
+    }
+  }
 
   const rules: FormRules<PatientRecordFormModel> = {
     patientNo: requiredTextRule('病人ID号（院内病历号/患者号）不能为空'),
@@ -949,58 +1091,68 @@ export const usePatientRecordPage = () => {
     }
   }
 
+  const applyDraftSnapshot = (parsed: Record<string, unknown>): void => {
+    const nextFormData = createInitialFormData()
+
+    nextFormData.patientNo = normalizeText(parsed.patientNo)
+    nextFormData.name = normalizeText(parsed.name)
+    nextFormData.gender = normalizeText(parsed.gender)
+    nextFormData.age = normalizeNumber(parsed.age)
+    nextFormData.visitDate = toFormVisitDate(parsed.visitDate) ?? nextFormData.visitDate
+    nextFormData.phone = normalizeText(parsed.phone)
+    nextFormData.idCard = normalizeText(parsed.idCard)
+    nextFormData.occupation = normalizeText(parsed.occupation)
+    nextFormData.currentAddress = normalizeText(parsed.currentAddress)
+    nextFormData.nativePlace = normalizeText(parsed.nativePlace)
+    nextFormData.department = normalizeText(parsed.department)
+    nextFormData.encounterType = normalizeEncounterType(parsed.encounterType)
+    nextFormData.consanguinity =
+      typeof parsed.consanguinity === 'boolean' ? parsed.consanguinity : nextFormData.consanguinity
+    nextFormData.chiefComplaint = normalizeText(parsed.chiefComplaint)
+    nextFormData.presentIllness = normalizeText(parsed.presentIllness)
+    nextFormData.history = normalizeHistoryDraft(parsed.history, parsed.familyHistoryDetail)
+    nextFormData.physicalExam = normalizePhysicalExamDraft(parsed.physicalExam)
+    nextFormData.laboratoryScreening = normalizeLaboratoryScreening(parsed.laboratoryScreening, parsed)
+    nextFormData.imagingReports = normalizeImagingReportsDraft(parsed.imagingReports, parsed.imagingResult)
+    nextFormData.pathology = normalizePathologyDraft(parsed.pathology, parsed.biopsyResult)
+    nextFormData.geneticSequencing = normalizeGeneticSequencingDraft(
+      parsed.geneticSequencing,
+      parsed.geneticTested,
+      parsed.mutatedGene
+    )
+    nextFormData.clinicalDecision = normalizeClinicalDecisionDraft(
+      parsed.clinicalDecision,
+      parsed.diagnosis,
+      parsed.treatmentPlan
+    )
+
+    applyFormData(nextFormData)
+
+    if (typeof parsed.visitId === 'string' && parsed.visitId.trim()) {
+      visitId.value = parsed.visitId.trim()
+    }
+
+    Object.assign(importMeta, normalizeImportMetaDraft(parsed.importMeta))
+    clearValidationSummary()
+    formRef.value?.clearValidate()
+  }
+
   const restoreDraftIfNeeded = (): void => {
-    const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
-    if (!raw) {
+    migrateLegacyPatientRecordDraft()
+    refreshDrafts()
+
+    const latestDraftId = drafts.value[0]?.id
+    if (!latestDraftId) {
       return
     }
 
-    try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>
-      const nextFormData = createInitialFormData()
-
-      nextFormData.patientNo = normalizeText(parsed.patientNo)
-      nextFormData.name = normalizeText(parsed.name)
-      nextFormData.gender = normalizeText(parsed.gender)
-      nextFormData.age = normalizeNumber(parsed.age)
-      nextFormData.visitDate = toFormVisitDate(parsed.visitDate) ?? nextFormData.visitDate
-      nextFormData.phone = normalizeText(parsed.phone)
-      nextFormData.idCard = normalizeText(parsed.idCard)
-      nextFormData.occupation = normalizeText(parsed.occupation)
-      nextFormData.currentAddress = normalizeText(parsed.currentAddress)
-      nextFormData.nativePlace = normalizeText(parsed.nativePlace)
-      nextFormData.department = normalizeText(parsed.department)
-      nextFormData.encounterType = normalizeEncounterType(parsed.encounterType)
-      nextFormData.consanguinity =
-        typeof parsed.consanguinity === 'boolean' ? parsed.consanguinity : nextFormData.consanguinity
-      nextFormData.chiefComplaint = normalizeText(parsed.chiefComplaint)
-      nextFormData.presentIllness = normalizeText(parsed.presentIllness)
-      nextFormData.history = normalizeHistoryDraft(parsed.history, parsed.familyHistoryDetail)
-      nextFormData.physicalExam = normalizePhysicalExamDraft(parsed.physicalExam)
-      nextFormData.laboratoryScreening = normalizeLaboratoryScreening(parsed.laboratoryScreening, parsed)
-      nextFormData.imagingReports = normalizeImagingReportsDraft(parsed.imagingReports, parsed.imagingResult)
-      nextFormData.pathology = normalizePathologyDraft(parsed.pathology, parsed.biopsyResult)
-      nextFormData.geneticSequencing = normalizeGeneticSequencingDraft(
-        parsed.geneticSequencing,
-        parsed.geneticTested,
-        parsed.mutatedGene
-      )
-      nextFormData.clinicalDecision = normalizeClinicalDecisionDraft(
-        parsed.clinicalDecision,
-        parsed.diagnosis,
-        parsed.treatmentPlan
-      )
-
-      applyFormData(nextFormData)
-
-      if (typeof parsed.visitId === 'string' && parsed.visitId.trim()) {
-        visitId.value = parsed.visitId.trim()
-      }
-
-      Object.assign(importMeta, normalizeImportMetaDraft(parsed.importMeta))
-    } catch {
-      localStorage.removeItem(DRAFT_STORAGE_KEY)
+    const latestDraft = getPatientRecordDraft(latestDraftId)
+    if (!latestDraft) {
+      return
     }
+
+    applyDraftSnapshot(latestDraft.snapshot)
+    activeDraftId.value = latestDraft.id
   }
 
   restoreDraftIfNeeded()
@@ -1031,6 +1183,7 @@ export const usePatientRecordPage = () => {
     importMeta.traceId = preview.traceId
     importMeta.confidence = preview.confidence
     importMeta.importedAt = new Date().toISOString()
+    clearValidationSummary()
   }
 
   const clearImportMeta = (): void => {
@@ -1053,17 +1206,148 @@ export const usePatientRecordPage = () => {
     formData.geneticSequencing.variants = formData.geneticSequencing.variants.filter((item) => item.localId !== localId)
   }
 
+  const hasCurrentFormContent = (): boolean =>
+    Boolean(
+      normalizeText(formData.patientNo) ||
+        normalizeText(formData.name) ||
+        normalizeText(formData.gender) ||
+        formData.age !== null ||
+        normalizeText(formData.phone) ||
+        normalizeText(formData.idCard) ||
+        normalizeText(formData.occupation) ||
+        normalizeText(formData.currentAddress) ||
+        normalizeText(formData.nativePlace) ||
+        normalizeText(formData.department) ||
+        normalizeText(formData.encounterType) ||
+        normalizeText(formData.chiefComplaint) ||
+        normalizeText(formData.presentIllness) ||
+        Object.values(formData.history.diseaseHistory).some((value) => Boolean(value)) ||
+        Boolean(formData.history.surgeryHistory.status) ||
+        normalizeText(formData.history.surgeryHistory.detail) ||
+        Boolean(formData.history.transfusionHistory.status) ||
+        normalizeText(formData.history.transfusionHistory.detail) ||
+        normalizeText(formData.history.allergyHistory) ||
+        normalizeText(formData.history.medicationHistory) ||
+        normalizeText(formData.history.familyHistory) ||
+        formData.physicalExam.heightCm !== null ||
+        formData.physicalExam.weightKg !== null ||
+        formData.physicalExam.bloodPressureSystolic !== null ||
+        formData.physicalExam.bloodPressureDiastolic !== null ||
+        formData.physicalExam.respiratoryRate !== null ||
+        formData.physicalExam.heartRate !== null ||
+        Boolean(formData.physicalExam.liverFibrosis) ||
+        Boolean(formData.physicalExam.cirrhosis) ||
+        Boolean(formData.physicalExam.fattyLiver) ||
+        Boolean(formData.physicalExam.liverFailure) ||
+        Boolean(formData.physicalExam.cholestasis) ||
+        Boolean(formData.physicalExam.viralHepatitis) ||
+        formData.imagingReports.some((item) => hasImagingContent(item)) ||
+        formData.pathology.performed ||
+        normalizeText(formData.pathology.reportText) ||
+        formData.geneticSequencing.tested ||
+        normalizeText(formData.geneticSequencing.conclusion) ||
+        formData.geneticSequencing.variants.some((item) => hasGeneticVariantContent(item)) ||
+        normalizeText(formData.clinicalDecision.diagnosis) ||
+        normalizeText(formData.clinicalDecision.treatmentPlan) ||
+        Boolean(importMeta.sourceType)
+    )
+
   const saveDraft = (): void => {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(serializeDraft()))
-    ElMessage({
-      message: '草稿已保存至本地缓存',
-      type: 'success'
-    })
+    try {
+      const result = savePatientRecordDraft(serializeDraft(), activeDraftId.value)
+      activeDraftId.value = result.draft.id
+      refreshDrafts()
+      clearValidationSummary()
+      ElMessage({
+        message: result.isNew ? '草稿已保存至草稿箱' : '草稿已更新',
+        type: 'success'
+      })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'PATIENT_RECORD_DRAFT_LIMIT_REACHED') {
+        ElMessage.warning(`草稿箱最多保留 ${PATIENT_RECORD_DRAFT_LIMIT} 条，请删除旧草稿后再保存`)
+        return
+      }
+      ElMessage.error('草稿保存失败，请稍后重试')
+    }
   }
 
-  const resolveTabByInvalidField = (field: string): string => {
-    if (BASIC_TAB_FIELD_PREFIXES.some((item) => field === item || field.startsWith(`${item}.`))) {
-      return 'basic'
+  const loadDraft = async (draftId: string): Promise<boolean> => {
+    if (activeDraftId.value !== draftId && hasCurrentFormContent()) {
+      try {
+        await ElMessageBox.confirm('载入草稿会覆盖当前页面已填写内容，是否继续？', '载入草稿', {
+          confirmButtonText: '继续载入',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+      } catch {
+        return false
+      }
+    }
+
+    const draft = getPatientRecordDraft(draftId)
+    if (!draft) {
+      refreshDrafts()
+      ElMessage.warning('该草稿不存在或已被删除')
+      return false
+    }
+
+    applyDraftSnapshot(draft.snapshot)
+    activeDraftId.value = draft.id
+    activeTab.value = 'basic'
+    refreshDrafts()
+    ElMessage.success('已载入草稿')
+    return true
+  }
+
+  const removeDraft = async (draftId: string): Promise<boolean> => {
+    try {
+      await ElMessageBox.confirm('删除草稿后不可恢复，是否继续？', '删除草稿', {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+    } catch {
+      return false
+    }
+
+    deletePatientRecordDraft(draftId)
+    if (activeDraftId.value === draftId) {
+      activeDraftId.value = null
+    }
+    refreshDrafts()
+    ElMessage.success('草稿已删除')
+    return true
+  }
+
+  const startNewRecord = async (): Promise<boolean> => {
+    if (hasCurrentFormContent()) {
+      try {
+        await ElMessageBox.confirm('当前页面内容将被清空，已保存草稿仍会保留。是否新建病历？', '新建病历', {
+          confirmButtonText: '确认新建',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+      } catch {
+        return false
+      }
+    }
+
+    applyFormData(createInitialFormData())
+    visitId.value = createVisitId()
+    activeTab.value = 'basic'
+    activeDraftId.value = null
+    formRef.value?.clearValidate()
+    clearImportMeta()
+    clearValidationSummary()
+    refreshDrafts()
+    ElMessage.success('已新建病历，可开始录入')
+    return true
+  }
+
+  const resolveTabByInvalidField = (field: string): PatientRecordTabName => {
+    const definition = REQUIRED_FIELD_DEFINITIONS.find((item) => item.field === field)
+    if (definition) {
+      return definition.tab
     }
 
     if (
@@ -1098,6 +1382,16 @@ export const usePatientRecordPage = () => {
     return 'basic'
   }
 
+  const goToValidationField = async (field = validationSummary.value?.firstField): Promise<void> => {
+    if (!field) {
+      return
+    }
+
+    activeTab.value = resolveTabByInvalidField(field)
+    await nextTick()
+    formRef.value?.scrollToField(field)
+  }
+
   const submitForm = async (): Promise<void> => {
     if (!formRef.value || submitting.value) {
       return
@@ -1106,13 +1400,27 @@ export const usePatientRecordPage = () => {
     try {
       await formRef.value.validate()
     } catch (invalidFields) {
-      const firstInvalidField = Object.keys((invalidFields as Record<string, unknown>) || {})[0] || 'patientNo'
-      activeTab.value = resolveTabByInvalidField(firstInvalidField)
-      await nextTick()
-      formRef.value.scrollToField(firstInvalidField)
-      ElMessage.error('基础信息或必填项未完善，请检查红框字段')
+      const invalidFieldNames = Object.keys((invalidFields as Record<string, unknown>) || {})
+      const missingFields = getMissingRequiredFields()
+      const fallbackFields = invalidFieldNames.map((field) => {
+        const definition = REQUIRED_FIELD_DEFINITIONS.find((item) => item.field === field)
+        return {
+          field,
+          label: definition?.label ?? field,
+          tab: definition?.tab ?? resolveTabByInvalidField(field)
+        }
+      })
+      const fields = missingFields.length > 0 ? missingFields : fallbackFields
+      setValidationSummary(fields)
+      const firstInvalidField = fields[0]?.field || invalidFieldNames[0] || 'patientNo'
+      await goToValidationField(firstInvalidField)
+      ElMessage.error(validationSummary.value
+        ? `请先完善必填项：${validationSummary.value.firstLabel}`
+        : '基础信息或必填项未完善，请检查红框字段')
       return
     }
+
+    clearValidationSummary()
 
     try {
       await ElMessageBox.confirm('确认核对无误并归档该患者病历吗？', '系统提示', {
@@ -1133,7 +1441,11 @@ export const usePatientRecordPage = () => {
         message: '病历归档成功，已同步至 AI 辅助诊断中台',
         duration: 2800
       })
-      localStorage.removeItem(DRAFT_STORAGE_KEY)
+      if (activeDraftId.value) {
+        deletePatientRecordDraft(activeDraftId.value)
+        activeDraftId.value = null
+        refreshDrafts()
+      }
     } catch {
       ElMessage.error('病历归档失败，请稍后重试')
     } finally {
@@ -1152,7 +1464,12 @@ export const usePatientRecordPage = () => {
         activeTab.value = 'basic'
         formRef.value?.clearValidate()
         clearImportMeta()
-        localStorage.removeItem(DRAFT_STORAGE_KEY)
+        clearValidationSummary()
+        if (activeDraftId.value) {
+          deletePatientRecordDraft(activeDraftId.value)
+          activeDraftId.value = null
+          refreshDrafts()
+        }
         ElMessage.info('表单已重置')
       })
       .catch(() => {
@@ -1167,8 +1484,16 @@ export const usePatientRecordPage = () => {
     submitting,
     formData,
     importMeta,
+    validationSummary,
+    drafts,
+    activeDraftId,
     rules,
+    clearValidationSummary,
+    goToValidationField,
     saveDraft,
+    loadDraft,
+    removeDraft,
+    startNewRecord,
     submitForm,
     resetForm,
     applyImportPreview,
