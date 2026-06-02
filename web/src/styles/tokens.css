@@ -1,0 +1,116 @@
+:root {
+  /* 品牌 */
+  --imld-navy: #001529;
+  --imld-navy-deep: #000c17;
+  --imld-teal-1: #0f6d8d;
+  --imld-teal-2: #22a39f;
+  --imld-brand-grad: linear-gradient(
+    135deg,
+    var(--imld-teal-1),
+    var(--imld-teal-2)
+  );
+
+  /* 中性 */
+  --imld-bg: #eef3f8;
+  --imld-card: #ffffff;
+  --imld-border: #e6edf4;
+  --imld-text: #1c2d3f;
+  --imld-muted: #6a7d90;
+
+  /* 文字层级 — 亮色背景 */
+  --imld-text-secondary: #475569;
+  --imld-text-tertiary: #64748b;
+  --imld-text-quaternary: #94a3b8;
+
+  /* 文字层级 — 深色背景（Sidebar） */
+  --imld-on-dark-secondary: #a6adb4;
+  --imld-on-dark-tertiary: #8c939d;
+  --imld-on-dark-quaternary: #6e7a89;
+
+  /* 深色表面 */
+  --imld-dark-border: #112a41;
+
+  /* 白色（用于深色背景上的文字/装饰） */
+  --imld-white: #ffffff;
+  --imld-white-rgb: 255, 255, 255;
+
+  /* 语义 */
+  --imld-primary: #409eff;
+  --imld-success: #67c23a;
+  --imld-warning: #e6a23c;
+  --imld-danger: #f56c6c;
+  --imld-danger-hover: #ef4444;
+  --imld-danger-active: #dc2626;
+  --imld-info: #909399;
+
+  /* 风险（对齐 riskLevel.ts 的 低/中/高） */
+  --imld-risk-low: #67c23a;
+  --imld-risk-mid: #e6a23c;
+  --imld-risk-high: #f56c6c;
+
+  /* 圆角 */
+  --imld-radius-sm: 8px;
+  --imld-radius-md: 12px;
+  --imld-radius-lg: 15px;
+  --imld-radius-pill: 20px;
+
+  /* 阴影 */
+  --imld-shadow-card: 0 8px 20px rgba(23, 48, 66, 0.05);
+  --imld-shadow-float: 0 22px 50px rgba(13, 40, 60, 0.22);
+
+  /* 间距（4 基准） */
+  --imld-sp-1: 4px;
+  --imld-sp-2: 8px;
+  --imld-sp-3: 12px;
+  --imld-sp-4: 16px;
+  --imld-sp-5: 20px;
+  --imld-sp-6: 24px;
+
+  /* 动效 */
+  --imld-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --imld-dur-rise: 0.5s;
+  --imld-dur-count: 900ms;
+}
+
+/* 共享 keyframes */
+@keyframes imld-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes imld-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  75%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes imld-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes imld-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
