@@ -1,7 +1,6 @@
 <template>
   <div class="diet-plan-container" v-loading="loadingPatients">
     <el-row :gutter="20" class="full-height">
-      
       <el-col :span="6" class="full-height">
         <el-card class="left-panel" shadow="never">
           <div class="panel-header">
@@ -11,37 +10,47 @@
               placeholder="搜索患者姓名"
               :prefix-icon="Search"
               clearable
-              style="margin-top: 12px;"
+              style="margin-top: 12px"
             />
           </div>
-          
-          <el-scrollbar height="calc(100vh - 160px)" style="margin-top: 12px;">
-            <div 
-              v-for="patient in filteredPatients" 
+
+          <el-scrollbar height="calc(100vh - 160px)" style="margin-top: 12px">
+            <div
+              v-for="patient in filteredPatients"
               :key="patient.id"
               class="patient-list-item"
               :class="{ 'is-active': selectedPatient?.id === patient.id }"
               @click="handleSelectPatient(patient)"
             >
-              <PatientAvatar :size="46" :src="patient.avatar" :name="patient.name" />
+              <PatientAvatar
+                :size="46"
+                :src="patient.avatar"
+                :name="patient.name"
+              />
               <div class="item-info">
                 <div class="item-header">
                   <span class="name">{{ patient.name }}</span>
-                  <el-tag :type="getComplianceType(patient.compliance)" size="small" effect="dark">
+                  <el-tag
+                    :type="getComplianceType(patient.compliance)"
+                    size="small"
+                    effect="dark"
+                  >
                     依从性: {{ patient.compliance }}
                   </el-tag>
                 </div>
                 <div class="item-sub">{{ patient.disease }}</div>
               </div>
             </div>
-            <el-empty v-if="filteredPatients.length === 0" description="未找到匹配的患者" />
+            <el-empty
+              v-if="filteredPatients.length === 0"
+              description="未找到匹配的患者"
+            />
           </el-scrollbar>
         </el-card>
       </el-col>
 
       <el-col :span="18" class="full-height">
         <el-card class="right-panel" shadow="never" v-loading="loadingPlan">
-          
           <div v-if="!selectedPatient" class="empty-state">
             <el-empty description="请从左侧选择慢病患者，制定个性化膳食方案" />
           </div>
@@ -49,14 +58,33 @@
           <div v-else class="diet-dashboard">
             <div class="dashboard-header">
               <div class="header-left">
-                <PatientAvatar :size="64" :src="selectedPatient.avatar" :name="selectedPatient.name" />
+                <PatientAvatar
+                  :size="64"
+                  :src="selectedPatient.avatar"
+                  :name="selectedPatient.name"
+                />
                 <div class="header-text">
-                  <h2>{{ selectedPatient.name }} <span class="age-gender">{{ selectedPatient.gender }} | {{ selectedPatient.age }}岁</span></h2>
-                  <p class="disease-tag">管理病种：<el-tag effect="plain" type="danger">{{ selectedPatient.disease }}</el-tag></p>
+                  <h2>
+                    {{ selectedPatient.name }}
+                    <span class="age-gender"
+                      >{{ selectedPatient.gender }} |
+                      {{ selectedPatient.age }}岁</span
+                    >
+                  </h2>
+                  <p class="disease-tag">
+                    管理病种：<el-tag effect="plain" type="danger">{{
+                      selectedPatient.disease
+                    }}</el-tag>
+                  </p>
                 </div>
               </div>
               <div class="header-right">
-                <el-button type="primary" :icon="Position" size="large" @click="pushToPatient">
+                <el-button
+                  type="primary"
+                  :icon="Position"
+                  size="large"
+                  @click="pushToPatient"
+                >
                   一键推送至患者端
                 </el-button>
                 <el-button :icon="Printer" size="large" @click="printDietPlan">
@@ -68,13 +96,20 @@
             <el-divider />
 
             <div class="section-container">
-              <el-text tag="b" class="section-title"><el-icon><Aim /></el-icon> 核心生化干预目标</el-text>
-              <el-row :gutter="20" style="margin-top: 16px;">
-                <el-col :span="8" v-for="target in selectedPatient.targets" :key="target.label">
+              <el-text tag="b" class="section-title"
+                ><el-icon><Aim /></el-icon> 核心生化干预目标</el-text
+              >
+              <el-row :gutter="20" style="margin-top: 16px">
+                <el-col
+                  :span="8"
+                  v-for="target in selectedPatient.targets"
+                  :key="target.label"
+                >
                   <el-card shadow="hover" class="target-card">
                     <div class="target-label">{{ target.label }}</div>
                     <div class="target-value" :style="{ color: target.color }">
-                      {{ target.value }} <span class="target-unit">{{ target.unit }}</span>
+                      {{ target.value }}
+                      <span class="target-unit">{{ target.unit }}</span>
                     </div>
                     <div class="target-desc">{{ target.desc }}</div>
                   </el-card>
@@ -82,9 +117,11 @@
               </el-row>
             </div>
 
-            <div class="section-container" style="margin-top: 30px;">
-              <el-text tag="b" class="section-title"><el-icon><Warning /></el-icon> 专病食物红黄绿灯法则</el-text>
-              <el-row :gutter="20" style="margin-top: 16px;">
+            <div class="section-container" style="margin-top: 30px">
+              <el-text tag="b" class="section-title"
+                ><el-icon><Warning /></el-icon> 专病食物红黄绿灯法则</el-text
+              >
+              <el-row :gutter="20" style="margin-top: 16px">
                 <el-col :span="8">
                   <el-card class="traffic-card red-light" shadow="never">
                     <template #header>
@@ -93,7 +130,13 @@
                       </div>
                     </template>
                     <div class="food-tags">
-                      <el-tag v-for="food in selectedPatient.foods.red" :key="food" type="danger" effect="dark" class="food-tag">
+                      <el-tag
+                        v-for="food in selectedPatient.foods.red"
+                        :key="food"
+                        type="danger"
+                        effect="dark"
+                        class="food-tag"
+                      >
                         {{ food }}
                       </el-tag>
                     </div>
@@ -108,7 +151,13 @@
                       </div>
                     </template>
                     <div class="food-tags">
-                      <el-tag v-for="food in selectedPatient.foods.yellow" :key="food" type="warning" effect="dark" class="food-tag">
+                      <el-tag
+                        v-for="food in selectedPatient.foods.yellow"
+                        :key="food"
+                        type="warning"
+                        effect="dark"
+                        class="food-tag"
+                      >
                         {{ food }}
                       </el-tag>
                     </div>
@@ -123,7 +172,13 @@
                       </div>
                     </template>
                     <div class="food-tags">
-                      <el-tag v-for="food in selectedPatient.foods.green" :key="food" type="success" effect="dark" class="food-tag">
+                      <el-tag
+                        v-for="food in selectedPatient.foods.green"
+                        :key="food"
+                        type="success"
+                        effect="dark"
+                        class="food-tag"
+                      >
                         {{ food }}
                       </el-tag>
                     </div>
@@ -132,27 +187,57 @@
               </el-row>
             </div>
 
-            <div class="section-container" style="margin-top: 30px;">
+            <div class="section-container" style="margin-top: 30px">
               <div class="meal-header">
-                <el-text tag="b" class="section-title"><el-icon><Food /></el-icon> AI 智能每日食谱推荐</el-text>
-                <el-button type="primary" plain :icon="Refresh" size="small" @click="regenerateMeal">重新生成食谱</el-button>
+                <el-text tag="b" class="section-title"
+                  ><el-icon><Food /></el-icon> AI 智能每日食谱推荐</el-text
+                >
+                <el-button
+                  type="primary"
+                  plain
+                  :icon="Refresh"
+                  size="small"
+                  @click="regenerateMeal"
+                  >重新生成食谱</el-button
+                >
               </div>
-              
-              <el-table :data="selectedPatient.mealPlan" border style="width: 100%; margin-top: 16px;" header-cell-class-name="meal-table-header">
-                <el-table-column prop="time" label="餐次" width="120" align="center" cell-class-name="meal-type-cell">
+
+              <el-table
+                :data="selectedPatient.mealPlan"
+                border
+                style="width: 100%; margin-top: 16px"
+                header-cell-class-name="meal-table-header"
+              >
+                <el-table-column
+                  prop="time"
+                  label="餐次"
+                  width="120"
+                  align="center"
+                  cell-class-name="meal-type-cell"
+                >
                   <template #default="scope">
-                    <el-tag size="default" :type="scope.row.type" effect="dark">{{ scope.row.time }}</el-tag>
+                    <el-tag
+                      size="default"
+                      :type="scope.row.type"
+                      effect="dark"
+                      >{{ scope.row.time }}</el-tag
+                    >
                   </template>
                 </el-table-column>
                 <el-table-column prop="menu" label="推荐菜品" />
-                <el-table-column prop="nutrition" label="核心营养估算" width="280">
+                <el-table-column
+                  prop="nutrition"
+                  label="核心营养估算"
+                  width="280"
+                >
                   <template #default="scope">
-                    <el-text type="info" size="small">{{ scope.row.nutrition }}</el-text>
+                    <el-text type="info" size="small">{{
+                      scope.row.nutrition
+                    }}</el-text>
                   </template>
                 </el-table-column>
               </el-table>
             </div>
-
           </div>
         </el-card>
       </el-col>
@@ -161,124 +246,140 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { Search, Position, Printer, Aim, Warning, Food, Refresh } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import PatientAvatar from '@/components/PatientAvatar.vue'
-import managementApi from '../../api/management'
-import type { DietPatient, DietPlanResponse } from '../../api/types'
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import {
+  Search,
+  Position,
+  Printer,
+  Aim,
+  Warning,
+  Food,
+  Refresh,
+} from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import PatientAvatar from "@/components/molecules/PatientAvatar.vue";
+import managementApi from "../../api/management";
+import type { DietPatient, DietPlanResponse } from "../../api/types";
 
-const searchQuery = ref('')
-type DietPatientWithPlan = DietPatient & DietPlanResponse
+const searchQuery = ref("");
+type DietPatientWithPlan = DietPatient & DietPlanResponse;
 
-const selectedPatient = ref<DietPatientWithPlan | null>(null)
-const loadingPatients = ref(false)
-const loadingPlan = ref(false)
-const patients = ref<DietPatient[]>([])
-let searchTimer: ReturnType<typeof setTimeout> | null = null
+const selectedPatient = ref<DietPatientWithPlan | null>(null);
+const loadingPatients = ref(false);
+const loadingPlan = ref(false);
+const patients = ref<DietPatient[]>([]);
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-const filteredPatients = computed(() => patients.value)
+const filteredPatients = computed(() => patients.value);
 
 const fetchPatients = async () => {
-  loadingPatients.value = true
+  loadingPatients.value = true;
   try {
     const res = await managementApi.getDietPatients({
-      keyword: searchQuery.value.trim()
-    })
-    patients.value = res.data.items || []
+      keyword: searchQuery.value.trim(),
+    });
+    patients.value = res.data.items || [];
   } catch {
-    ElMessage.error('加载慢病患者列表失败，请稍后重试')
+    ElMessage.error("加载慢病患者列表失败，请稍后重试");
   } finally {
-    loadingPatients.value = false
+    loadingPatients.value = false;
   }
-}
+};
 
 const handleSelectPatient = async (patient: DietPatient) => {
-  loadingPlan.value = true
+  loadingPlan.value = true;
   try {
-    const res = await managementApi.getDietPlan(patient.id)
+    const res = await managementApi.getDietPlan(patient.id);
     selectedPatient.value = {
       ...patient,
-      ...res.data
-    }
+      ...res.data,
+    };
   } catch {
-    ElMessage.error('加载患者饮食方案失败，请稍后重试')
+    ElMessage.error("加载患者饮食方案失败，请稍后重试");
   } finally {
-    loadingPlan.value = false
+    loadingPlan.value = false;
   }
-}
+};
 
-type ComplianceTagType = 'success' | 'primary' | 'warning' | 'danger' | 'info'
+type ComplianceTagType = "success" | "primary" | "warning" | "danger" | "info";
 
 const getComplianceType = (level: string): ComplianceTagType => {
-  const map: Record<string, ComplianceTagType> = { 极佳: 'success', 良好: 'primary', 一般: 'warning', 差: 'danger' }
-  return map[level] || 'info'
-}
+  const map: Record<string, ComplianceTagType> = {
+    极佳: "success",
+    良好: "primary",
+    一般: "warning",
+    差: "danger",
+  };
+  return map[level] || "info";
+};
 
 const regenerateMeal = async () => {
-  const patient = selectedPatient.value
-  if (!patient) return
+  const patient = selectedPatient.value;
+  if (!patient) return;
 
   try {
-    const res = await managementApi.regenerateDietPlan(patient.id)
+    const res = await managementApi.regenerateDietPlan(patient.id);
     selectedPatient.value = {
       ...patient,
-      mealPlan: res.data.mealPlan || []
-    }
-    ElMessage.success('食谱已重新生成')
+      mealPlan: res.data.mealPlan || [],
+    };
+    ElMessage.success("食谱已重新生成");
   } catch {
-    ElMessage.error('生成失败，请稍后重试')
+    ElMessage.error("生成失败，请稍后重试");
   }
-}
+};
 
 const pushToPatient = async () => {
-  const patient = selectedPatient.value
-  if (!patient) return
+  const patient = selectedPatient.value;
+  if (!patient) return;
 
   try {
     await ElMessageBox.confirm(
       `确认将《${patient.disease} 个性化膳食处方》推送至患者【${patient.name}】端吗？`,
-      '推送确认',
+      "推送确认",
       {
-        confirmButtonText: '确认发送',
-        cancelButtonText: '取消',
-        type: 'success'
+        confirmButtonText: "确认发送",
+        cancelButtonText: "取消",
+        type: "success",
       }
-    )
+    );
   } catch {
-    return
+    return;
   }
 
   try {
-    await managementApi.pushDietPlan(patient.id)
-    ElMessage({ type: 'success', message: '已成功送达患者端，系统将开启饮食打卡监督。' })
+    await managementApi.pushDietPlan(patient.id);
+    ElMessage({
+      type: "success",
+      message: "已成功送达患者端，系统将开启饮食打卡监督。",
+    });
   } catch {
-    ElMessage.error('推送失败，请稍后重试')
+    ElMessage.error("推送失败，请稍后重试");
   }
-}
+};
 
 const printDietPlan = () => {
-  ElMessage.info('准备生成 PDF 打印件...')
-}
+  ElMessage.info("准备生成 PDF 打印件...");
+};
 
 watch(searchQuery, () => {
   if (searchTimer) {
-    clearTimeout(searchTimer)
+    clearTimeout(searchTimer);
   }
   searchTimer = setTimeout(() => {
-    fetchPatients()
-  }, 250)
-})
+    fetchPatients();
+  }, 250);
+});
 
 onMounted(() => {
-  fetchPatients()
-})
+  fetchPatients();
+});
 
 onUnmounted(() => {
   if (searchTimer) {
-    clearTimeout(searchTimer)
+    clearTimeout(searchTimer);
   }
-})
+});
 </script>
 
 <style scoped>
@@ -317,7 +418,7 @@ onUnmounted(() => {
 
 .patient-list-item.is-active {
   background-color: #ecf5ff;
-  border-left-color: #409EFF;
+  border-left-color: #409eff;
 }
 
 .item-info {
@@ -458,14 +559,32 @@ onUnmounted(() => {
   border-radius: 50%;
   display: inline-block;
 }
-.red-dot { background-color: #f56c6c; box-shadow: 0 0 8px rgba(245, 108, 108, 0.6); }
-.yellow-dot { background-color: #e6a23c; box-shadow: 0 0 8px rgba(230, 162, 60, 0.6); }
-.green-dot { background-color: #67c23a; box-shadow: 0 0 8px rgba(103, 194, 58, 0.6); }
+.red-dot {
+  background-color: #f56c6c;
+  box-shadow: 0 0 8px rgba(245, 108, 108, 0.6);
+}
+.yellow-dot {
+  background-color: #e6a23c;
+  box-shadow: 0 0 8px rgba(230, 162, 60, 0.6);
+}
+.green-dot {
+  background-color: #67c23a;
+  box-shadow: 0 0 8px rgba(103, 194, 58, 0.6);
+}
 
 /* 微调卡片头部背景色 */
-.red-light :deep(.el-card__header) { background-color: #fef0f0; border-bottom: 1px solid #fde2e2; }
-.yellow-light :deep(.el-card__header) { background-color: #fdf6ec; border-bottom: 1px solid #faecd8; }
-.green-light :deep(.el-card__header) { background-color: #f0f9eb; border-bottom: 1px solid #e1f3d8; }
+.red-light :deep(.el-card__header) {
+  background-color: #fef0f0;
+  border-bottom: 1px solid #fde2e2;
+}
+.yellow-light :deep(.el-card__header) {
+  background-color: #fdf6ec;
+  border-bottom: 1px solid #faecd8;
+}
+.green-light :deep(.el-card__header) {
+  background-color: #f0f9eb;
+  border-bottom: 1px solid #e1f3d8;
+}
 
 .food-tags {
   display: flex;
@@ -508,4 +627,3 @@ onUnmounted(() => {
   padding: 0 !important; /* 彻底移除 cell div 内边距 */
 }
 </style>
-
