@@ -109,4 +109,54 @@ describe('mock diagnosis report storage', () => {
     expect(reports[0].id).toBe('REP-202311-001')
     expect(JSON.parse(sessionStorage.getItem(MOCK_REPORTS_KEY))[0].id).toBe('REP-202311-001')
   })
+
+  test('hydrates fixed seed reports with structured biochemical indicators', () => {
+    const { sessionStorage } = installBrowserStorage()
+    sessionStorage.setItem(MOCK_REPORTS_KEY, JSON.stringify([
+      {
+        id: 'REP-202311-001',
+        patientId: 'P001',
+        aiFindings: {
+          biochemical: '旧版铁代谢摘要',
+          probability: '89',
+          disease: '遗传性血色病'
+        }
+      },
+      {
+        id: 'REP-202311-002',
+        patientId: 'P002',
+        aiFindings: {
+          biochemical: '旧版铜代谢摘要',
+          probability: '96',
+          disease: '肝豆状核变性 (Wilson病)'
+        }
+      },
+      {
+        id: 'REP-202311-003',
+        patientId: 'P003',
+        aiFindings: {
+          biochemical: '旧版 AAT 摘要',
+          probability: '85',
+          disease: 'α1-抗胰蛋白酶缺乏症'
+        }
+      }
+    ]))
+
+    const reports = loadReports()
+    const first = reports.find((item) => item.id === 'REP-202311-001')
+    const second = reports.find((item) => item.id === 'REP-202311-002')
+    const third = reports.find((item) => item.id === 'REP-202311-003')
+
+    expect(first.diagnosisPayload.indicators).toHaveLength(3)
+    expect(first.diagnosisPayload.indicators[0]).toMatchObject({ name: '血清铁蛋白', normal: '30-300' })
+    expect(first.diagnosisPayload.indicators[2]).toMatchObject({ name: 'ALT', value: 110, normal: '9-50' })
+    expect(second.diagnosisPayload.indicators[1]).toMatchObject({ name: '24h尿铜', unit: 'μg/24h', normal: '<100' })
+    expect(third.diagnosisPayload.indicators[0]).toMatchObject({ name: 'AAT', value: 0.45, normal: '0.90-2.00' })
+    expect(first.aiFindings.biochemical).toContain('参考 30-300 / 显著偏离')
+    expect(first.aiFindings.biochemical).toContain('mock参考区间')
+
+    const stored = JSON.parse(sessionStorage.getItem(MOCK_REPORTS_KEY))
+    expect(stored[0].diagnosisPayload.indicators[0].normal).toBe('30-300')
+    expect(stored[1].aiFindings.biochemical).toContain('参考 <100 / 显著偏离')
+  })
 })

@@ -41,6 +41,89 @@ const SEED_PATIENTS = [
   { id: 'P012', name: '马桂英', gender: '女', age: 71, riskLevel: '高', disease: '代谢相关脂肪性肝病', compliance: '一般', aiStatus: '未诊断', avatar: '' }
 ]
 
+const MOCK_REFERENCE_NOTE = 'mock参考区间，实际以检验机构为准'
+
+const formatIndicatorStatus = (status = '') => {
+  if (status === 'exception') {
+    return '显著偏离'
+  }
+  if (status === 'warning') {
+    return '偏离'
+  }
+  if (status === 'success') {
+    return '正常'
+  }
+  return '已纳入'
+}
+
+const formatIndicatorSummary = (indicators = [], withMockNote = true) => {
+  if (!Array.isArray(indicators) || indicators.length === 0) {
+    return '见诊断会话明细'
+  }
+
+  const summary = indicators
+    .map((item) => {
+      const unit = item.unit ? `${item.unit === '%' ? '' : ' '}${item.unit}` : ''
+      const reference = item.normal ? `参考 ${item.normal}` : '参考 --'
+      return `${item.name} ${item.value}${unit} (${reference} / ${formatIndicatorStatus(item.status)})`
+    })
+    .join('，')
+
+  return withMockNote ? `${summary}（${MOCK_REFERENCE_NOTE}）` : summary
+}
+
+const buildFixedReportDiagnosisPayload = (reportId) => {
+  if (reportId === 'REP-202311-001') {
+    return withDiagnosisDisplayFields({
+      diseaseName: '遗传性血色病',
+      riskLevel: '高',
+      probability: 89,
+      indicators: [
+        { name: '血清铁蛋白', value: 850, unit: 'ng/mL', normal: '30-300', percentage: 92, status: 'exception' },
+        { name: '转铁蛋白饱和度', value: 65, unit: '%', normal: '20-45', percentage: 86, status: 'exception' },
+        { name: 'ALT', value: 110, unit: 'U/L', normal: '9-50', percentage: 72, status: 'exception' }
+      ],
+      genes: ['HFE (C282Y)', 'HFE (H63D)'],
+      diet: '建议严格限制红肉和动物内脏，避免随餐维生素C补充，餐后可饮茶抑制铁吸收。',
+      sequencing: '建议进行 HFE 基因检测，并对一级亲属开展家系筛查。'
+    })
+  }
+
+  if (reportId === 'REP-202311-002') {
+    return withDiagnosisDisplayFields({
+      diseaseName: '肝豆状核变性 (Wilson病)',
+      riskLevel: '高',
+      probability: 96,
+      indicators: [
+        { name: '血清铜蓝蛋白', value: 0.08, unit: 'g/L', normal: '0.20-0.60', percentage: 15, status: 'exception' },
+        { name: '24h尿铜', value: 215, unit: 'μg/24h', normal: '<100', percentage: 85, status: 'exception' },
+        { name: 'ALT', value: 125, unit: 'U/L', normal: '9-50', percentage: 82, status: 'exception' }
+      ],
+      genes: ['ATP7B (c.2333G>T)', 'ATP7B (c.2975C>T)'],
+      diet: '建议立即启动低铜饮食，禁食坚果、巧克力和动物内脏。',
+      sequencing: '建议 ATP7B 靶向测序，并开展一级亲属筛查。'
+    })
+  }
+
+  if (reportId === 'REP-202311-003') {
+    return withDiagnosisDisplayFields({
+      diseaseName: 'α1-抗胰蛋白酶缺乏症',
+      riskLevel: '高',
+      probability: 85,
+      indicators: [
+        { name: 'AAT', value: 0.45, unit: 'g/L', normal: '0.90-2.00', percentage: 15, status: 'exception' },
+        { name: 'ALT', value: 78, unit: 'U/L', normal: '9-50', percentage: 52, status: 'warning' },
+        { name: 'AST', value: 64, unit: 'U/L', normal: '15-40', percentage: 48, status: 'warning' }
+      ],
+      genes: ['SERPINA1 (Pi*ZZ)'],
+      diet: '建议高蛋白、低脂饮食，减少酒精摄入，配合呼吸系统评估。',
+      sequencing: '建议进行 SERPINA1 基因分型，并评估肝肺联合受累风险。'
+    })
+  }
+
+  return null
+}
+
 const SEED_REPORTS = [
   {
     id: 'REP-202311-001',
@@ -52,11 +135,12 @@ const SEED_REPORTS = [
     date: '2023-11-20',
     status: '待签发',
     aiFindings: {
-      biochemical: '血清铁蛋白 850 ng/mL (显著升高), 转铁蛋白饱和度 65% (异常)。',
+      biochemical: formatIndicatorSummary(buildFixedReportDiagnosisPayload('REP-202311-001')?.indicators),
       clinical: '皮肤色素沉着伴轻度肝肿大，无角膜 K-F 环。',
       probability: '89',
       disease: '遗传性血色病'
     },
+    diagnosisPayload: buildFixedReportDiagnosisPayload('REP-202311-001'),
     expertConclusion: '同意 AI 辅助诊断意见。患者铁代谢指标显著异常，结合临床表型，考虑遗传性血色病可能性大。',
     treatmentPlan: '建议：完善 HFE 基因检测，评估后考虑启动静脉放血治疗，并严格限制高铁饮食摄入。'
   },
@@ -70,11 +154,12 @@ const SEED_REPORTS = [
     date: '2023-11-21',
     status: '已签发',
     aiFindings: {
-      biochemical: '铜蓝蛋白 0.08 g/L (极低), 24h尿铜 215 μg (升高), ALT 125 U/L。',
+      biochemical: formatIndicatorSummary(buildFixedReportDiagnosisPayload('REP-202311-002')?.indicators),
       clinical: '双眼角膜 K-F 环 (+)，伴有轻微非对称性手部震颤。',
       probability: '96',
       disease: '肝豆状核变性 (Wilson病)'
     },
+    diagnosisPayload: buildFixedReportDiagnosisPayload('REP-202311-002'),
     expertConclusion: '根据生化指标及裂隙灯检查结果（K-F环阳性），Wilson病诊断明确。',
     treatmentPlan: '立即启动青霉胺驱铜治疗，严格低铜饮食，并建议一级亲属开展 ATP7B 基因筛查。'
   },
@@ -88,11 +173,12 @@ const SEED_REPORTS = [
     date: '2023-11-22',
     status: '待签发',
     aiFindings: {
-      biochemical: '血清 α1-抗胰蛋白酶水平 < 0.5 g/L (显著降低)。',
+      biochemical: formatIndicatorSummary(buildFixedReportDiagnosisPayload('REP-202311-003')?.indicators),
       clinical: '早期肺气肿改变，伴有不明原因肝硬化。',
       probability: '85',
       disease: 'α1-抗胰蛋白酶缺乏症'
     },
+    diagnosisPayload: buildFixedReportDiagnosisPayload('REP-202311-003'),
     expertConclusion: '',
     treatmentPlan: ''
   }
@@ -272,11 +358,62 @@ export const findRecordPayloadByPatientNo = (patientNo) => {
   return found ? found.payload : null
 }
 
+const hydrateFixedDiagnosisReport = (report) => {
+  const payload = buildFixedReportDiagnosisPayload(report?.id)
+  if (!payload) {
+    return { report, changed: false }
+  }
+
+  const biochemical = formatIndicatorSummary(payload.indicators)
+  const existingIndicators = JSON.stringify(report.diagnosisPayload?.indicators || [])
+  const expectedIndicators = JSON.stringify(payload.indicators)
+  const changed = existingIndicators !== expectedIndicators || report.aiFindings?.biochemical !== biochemical
+
+  if (!changed) {
+    return { report, changed: false }
+  }
+
+  return {
+    changed: true,
+    report: {
+      ...report,
+      aiFindings: {
+        ...report.aiFindings,
+        biochemical,
+        probability: report.aiFindings?.probability || String(payload.probability),
+        disease: report.aiFindings?.disease || payload.diseaseName
+      },
+      diagnosisPayload: {
+        ...(report.diagnosisPayload || {}),
+        ...payload
+      }
+    }
+  }
+}
+
+const hydrateDiagnosisReports = (reports = []) => {
+  let changed = false
+  const hydrated = reports.map((report) => {
+    const result = hydrateFixedDiagnosisReport(report)
+    if (result.changed) {
+      changed = true
+    }
+    return result.report
+  })
+  return { reports: hydrated, changed }
+}
+
 export const loadReports = () => {
   const items = readDiagnosisReports([])
-  if (Array.isArray(items) && items.length > 0) return items
+  if (Array.isArray(items) && items.length > 0) {
+    const hydrated = hydrateDiagnosisReports(items)
+    if (hydrated.changed) {
+      writeDiagnosisReports(hydrated.reports)
+    }
+    return hydrated.reports
+  }
 
-  const seeded = clone(SEED_REPORTS)
+  const seeded = hydrateDiagnosisReports(clone(SEED_REPORTS)).reports
   writeDiagnosisReports(seeded)
   return seeded
 }
@@ -326,16 +463,18 @@ export const resolveRiskByDiagnosis = (diagnosis = '') => {
   return '中'
 }
 
-const withDiagnosisDisplayFields = (payload) => ({
-  ...payload,
-  ...buildDiseaseDisplayFields({
-    diseaseName: payload.diseaseName,
-    probability: payload.probability,
-    genes: payload.genes,
-    diet: payload.diet,
-    sequencing: payload.sequencing
-  })
-})
+function withDiagnosisDisplayFields(payload) {
+  return {
+    ...payload,
+    ...buildDiseaseDisplayFields({
+      diseaseName: payload.diseaseName,
+      probability: payload.probability,
+      genes: payload.genes,
+      diet: payload.diet,
+      sequencing: payload.sequencing
+    })
+  }
+}
 
 export const buildDiagnosisPayload = (patient) => {
   if (patient.disease === '遗传性血色病') {
@@ -383,7 +522,7 @@ export const buildDiagnosisPayload = (patient) => {
 }
 
 export const toAiFinding = (diagnosisPayload) => ({
-  biochemical: diagnosisPayload.indicators.map((item) => `${item.name} ${item.value}${item.unit}`).join('，'),
+  biochemical: formatIndicatorSummary(diagnosisPayload.indicators),
   clinical: diagnosisPayload.diet,
   probability: String(diagnosisPayload.probability),
   disease: diagnosisPayload.diseaseName
