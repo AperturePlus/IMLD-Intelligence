@@ -21,6 +21,20 @@
       <span>{{ BRANDING.workspaceName }}</span>
     </div>
 
+    <div v-if="showBrowserHomeShortcut" class="home-shortcut-wrapper">
+      <button
+        type="button"
+        class="home-shortcut"
+        :class="{ 'is-active': isWelcomeActive, 'is-collapsed': isCollapse }"
+        :title="isCollapse ? '返回首页' : undefined"
+        :disabled="isWelcomeActive"
+        @click="goWelcome"
+      >
+        <el-icon class="home-shortcut-icon"><component :is="'House'" /></el-icon>
+        <span v-show="!isCollapse">首页</span>
+      </button>
+    </div>
+
     <el-scrollbar class="sidebar-scrollbar">
       <el-menu
         :default-active="activeMenu"
@@ -86,7 +100,7 @@ import { ElMessage } from 'element-plus'
 import logoImg from '@/assets/logo.svg'
 import defaultDoctorAvatar from '@/assets/default-doctor.svg'
 import accountApi from '@/api/account'
-import { navigationGroups } from '@/app/router/routeCatalog'
+import { centerRouteDefinitions, navigationGroups } from '@/app/router/routeCatalog'
 import { BRANDING } from '@/constants/branding'
 import type { AccountProfileResponse } from '@/types/account'
 
@@ -94,6 +108,13 @@ const router = useRouter()
 const route = useRoute()
 const isCollapse = ref(false)
 provide('isCollapse', isCollapse)
+
+const isElectronShell = computed(
+  () => typeof window !== 'undefined' && Boolean(window.electron?.shell)
+)
+const showBrowserHomeShortcut = computed(() => !isElectronShell.value)
+const welcomePath = centerRouteDefinitions.welcome.fullPath
+const isWelcomeActive = computed(() => route.path === welcomePath)
 
 const activeMenu = ref('/center/patient-list')
 const userDisplayName = ref('医生用户')
@@ -122,6 +143,13 @@ const roleLabelMap: Record<string, string> = {
 
 function toggleCollapse() {
   isCollapse.value = !isCollapse.value
+}
+
+function goWelcome() {
+  if (isWelcomeActive.value) {
+    return
+  }
+  router.push(welcomePath)
 }
 
 function parseStoredRoles(): string[] {
@@ -300,6 +328,53 @@ onBeforeUnmount(() => {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.home-shortcut-wrapper {
+  padding: 0 12px 10px;
+  flex-shrink: 0;
+}
+
+.home-shortcut {
+  width: 100%;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #112a41;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #a6adb4;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.home-shortcut:hover:not(:disabled) {
+  color: #ffffff;
+  border-color: rgba(64, 158, 255, 0.5);
+  background: rgba(64, 158, 255, 0.2);
+}
+
+.home-shortcut:disabled {
+  cursor: default;
+}
+
+.home-shortcut.is-active {
+  color: #ffffff;
+  border-color: var(--el-color-primary);
+  background: rgba(64, 158, 255, 0.26);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.24);
+}
+
+.home-shortcut.is-collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.home-shortcut-icon {
+  font-size: 16px;
 }
 
 .sidebar-scrollbar {

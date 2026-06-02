@@ -13,6 +13,7 @@ import {
   buildDiagnosisResultFromExpertReport,
   buildDiagnosisResultFromSession,
   extractInferencePayload,
+  formatDiagnosisIndicatorSummary,
   mapInferenceIndicators,
   normalizeDiagnosisResultPayload,
   type DiagnosisSessionApi
@@ -27,6 +28,7 @@ interface IdentityPatientApi {
 
 const SUCCESS_CODE = 200
 const MAX_PAGE_SIZE = 200
+const MOCK_REFERENCE_NOTE = 'mock参考区间，实际以检验机构为准'
 
 const parsePositiveInteger = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
@@ -218,7 +220,10 @@ const buildExpertReport = (
     date: toDateOnly(session.completedAt || session.startedAt),
     status: signed ? '已签发' : '待签发',
     aiFindings: {
-      biochemical: indicators.map((item) => `${item.name} ${item.value}`).join('，') || '见诊断会话明细',
+      biochemical: formatDiagnosisIndicatorSummary(
+        indicators,
+        import.meta.env.VITE_USE_MOCK === 'true' ? { referenceNote: MOCK_REFERENCE_NOTE } : undefined
+      ),
       clinical: (inference.suggestions || [])[0] || '请结合病史与临床体征综合判断',
       probability: String(probability),
       disease: primaryResult.diseaseName || '遗传代谢性肝病风险提示'

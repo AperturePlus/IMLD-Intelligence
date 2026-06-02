@@ -78,17 +78,53 @@ const toProgressStatus = (severity: string | undefined): ProgressStatus => {
   if (!severity) {
     return ''
   }
-  if (severity.includes('高')) {
+  const normalized = severity.toLowerCase()
+  if (severity.includes('高') || severity.includes('显著') || normalized.includes('exception') || normalized.includes('high')) {
     return 'exception'
   }
-  if (severity.includes('中')) {
+  if (severity.includes('中') || severity.includes('异常') || severity.includes('偏离') || normalized.includes('warning') || normalized.includes('medium')) {
     return 'warning'
+  }
+  if (severity.includes('正常') || normalized.includes('success')) {
+    return 'success'
   }
   return ''
 }
 
 const sortResults = (results: DiagnosisResultItemApi[] = []): DiagnosisResultItemApi[] => {
   return [...results].sort((a, b) => (a.rankNo || 0) - (b.rankNo || 0))
+}
+
+const indicatorStatusLabel = (status: ProgressStatus): string => {
+  if (status === 'exception') {
+    return '显著偏离'
+  }
+  if (status === 'warning') {
+    return '偏离'
+  }
+  if (status === 'success') {
+    return '正常'
+  }
+  return '已纳入'
+}
+
+export const formatDiagnosisIndicatorSummary = (
+  indicators: DiagnosisIndicator[] = [],
+  options: { referenceNote?: string } = {}
+): string => {
+  if (indicators.length === 0) {
+    return '见诊断会话明细'
+  }
+
+  const summary = indicators
+    .map((item) => {
+      const unit = item.unit ? `${item.unit === '%' ? '' : ' '}${item.unit}` : ''
+      const reference = item.normal && item.normal !== '--' ? `参考 ${item.normal}` : '参考 --'
+      return `${item.name} ${item.value}${unit} (${reference} / ${indicatorStatusLabel(item.status)})`
+    })
+    .join('，')
+
+  return options.referenceNote ? `${summary}（${options.referenceNote}）` : summary
 }
 
 export const extractInferencePayload = (session: DiagnosisSessionApi): InferencePayloadApi => {
@@ -184,13 +220,18 @@ const parseLegacyBiochemicalIndicators = (text: string | undefined): DiagnosisIn
       if (!Number.isFinite(value)) {
         return null
       }
-      const status: ProgressStatus = /升高|降低|异常|极低|显著|高/.test(segment) ? 'warning' : ''
+      const normal = segment.match(/参考\s*([^,，/()（）]+)/)?.[1]?.trim() || '--'
+      const status: ProgressStatus = /显著偏离|显著升高|显著降低|极低|极高/.test(segment)
+        ? 'exception'
+        : /偏离|升高|降低|异常|高|低/.test(segment)
+          ? 'warning'
+          : ''
       return {
         name: matched[1].trim(),
         value,
         unit: matched[3] || '',
-        normal: '--',
-        percentage: status ? 76 : 50,
+        normal,
+        percentage: status === 'exception' ? 92 : status === 'warning' ? 76 : 50,
         status
       }
     })

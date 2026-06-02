@@ -39,6 +39,37 @@
       :title="`最近导入：${importSourceLabel}｜置信度 ${importConfidenceText}｜追踪号 ${importMeta.traceId}`"
     />
 
+    <el-alert
+      v-if="validationSummary"
+      type="error"
+      show-icon
+      class="record-flow-alert validation-summary-alert"
+      @close="clearValidationSummary"
+    >
+      <template #title>
+        <div class="validation-summary-title">
+          <span>
+            仍有 {{ validationSummary.count }} 个必填项未完善，最早缺失：{{ validationSummary.firstLabel }}
+          </span>
+          <el-button link type="danger" @click.stop="goToValidationField()">
+            定位到第一项
+          </el-button>
+        </div>
+      </template>
+      <div class="validation-summary-fields">
+        <el-tag
+          v-for="field in validationSummaryPreviewFields"
+          :key="field.field"
+          type="danger"
+          effect="plain"
+          class="validation-summary-field"
+          @click="goToValidationField(field.field)"
+        >
+          {{ field.label }}
+        </el-tag>
+      </div>
+    </el-alert>
+
     <div class="form-wrapper">
       <el-form
         ref="formRef"
@@ -207,6 +238,7 @@
                   v-if="formData.history.surgeryHistory.status === 'YES'"
                   label="手术史明细"
                   prop="history.surgeryHistory.detail"
+                  :required="formData.history.surgeryHistory.status === 'YES'"
                 >
                   <el-input
                     v-model="formData.history.surgeryHistory.detail"
@@ -235,6 +267,7 @@
                   v-if="formData.history.transfusionHistory.status === 'YES'"
                   label="输血史明细"
                   prop="history.transfusionHistory.detail"
+                  :required="formData.history.transfusionHistory.status === 'YES'"
                 >
                   <el-input
                     v-model="formData.history.transfusionHistory.detail"
@@ -582,7 +615,11 @@
                 </el-col>
               </el-row>
 
-              <el-form-item label="肝穿刺活检结果" prop="pathology.reportText">
+              <el-form-item
+                label="肝穿刺活检结果"
+                prop="pathology.reportText"
+                :required="formData.pathology.performed"
+              >
                 <el-input
                   v-model="formData.pathology.reportText"
                   type="textarea"
@@ -621,7 +658,11 @@
             <template v-else>
               <el-row :gutter="24">
                 <el-col :span="6">
-                  <el-form-item label="检测方法" prop="geneticSequencing.method">
+                  <el-form-item
+                    label="检测方法"
+                    prop="geneticSequencing.method"
+                    :required="formData.geneticSequencing.tested"
+                  >
                     <el-select v-model="formData.geneticSequencing.method" placeholder="请选择方法">
                       <el-option
                         v-for="option in geneticMethodOptions"
@@ -781,6 +822,11 @@
 
     <div class="action-footer">
       <el-button @click="resetForm" size="large">清空重置</el-button>
+      <el-button plain size="large" :icon="Plus" @click="startNewRecord">新建病历</el-button>
+      <el-button plain size="large" :icon="FolderOpened" @click="draftDrawerVisible = true">
+        草稿箱
+        <span v-if="drafts.length > 0" class="draft-count">({{ drafts.length }})</span>
+      </el-button>
       <el-button type="warning" plain size="large" @click="saveDraft">保存草稿</el-button>
       <el-button type="primary" size="large" @click="submitForm" :icon="Select" :loading="submitting">
         提交归档
@@ -839,13 +885,53 @@
         </el-tab-pane>
       </el-tabs>
     </el-drawer>
+
+    <el-drawer
+      v-model="draftDrawerVisible"
+      title="草稿箱（本地）"
+      size="540px"
+      destroy-on-close
+    >
+      <el-empty v-if="drafts.length === 0" description="暂无本地草稿" />
+
+      <div v-else class="draft-list">
+        <section
+          v-for="draft in drafts"
+          :key="draft.id"
+          class="draft-item"
+          :class="{ 'is-active': activeDraftId === draft.id }"
+        >
+          <div class="draft-item__body">
+            <div class="draft-item__title">
+              <el-tag v-if="activeDraftId === draft.id" size="small" type="success" effect="plain">
+                当前
+              </el-tag>
+              <span>{{ draft.name || '未填写姓名' }}</span>
+            </div>
+            <div class="draft-item__meta">
+              <span>病人ID号：{{ draft.patientNo || '未填写' }}</span>
+              <span>就诊单号：{{ draft.visitId || '-' }}</span>
+              <span>更新时间：{{ formatDraftTime(draft.updatedAt) }}</span>
+            </div>
+          </div>
+          <div class="draft-item__actions">
+            <el-button text type="primary" :icon="EditPen" @click="handleLoadDraft(draft.id)">
+              继续编辑
+            </el-button>
+            <el-button text type="danger" :icon="Delete" @click="removeDraft(draft.id)">
+              删除
+            </el-button>
+          </div>
+        </section>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Delete, DocumentAdd, Plus, Select, UploadFilled } from '@element-plus/icons-vue'
+import { Delete, DocumentAdd, EditPen, FolderOpened, Plus, Select, UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import patientApi from '@/api/patient'
 import type {
@@ -866,12 +952,20 @@ const router = useRouter()
 const {
   visitId,
   activeTab,
-  
+  formRef,
   submitting,
   formData,
   importMeta,
+  validationSummary,
+  drafts,
+  activeDraftId,
   rules,
+  clearValidationSummary,
+  goToValidationField,
   saveDraft,
+  loadDraft,
+  removeDraft,
+  startNewRecord,
   submitForm,
   resetForm,
   applyImportPreview,
@@ -882,6 +976,7 @@ const {
 } = usePatientRecordPage()
 
 const importDrawerVisible = ref(false)
+const draftDrawerVisible = ref(false)
 const importTab = ref<'hisLis' | 'image' | 'pdf'>('hisLis')
 const importing = ref(false)
 
@@ -1005,6 +1100,28 @@ const updateLaboratoryFieldValue = (groupKey: string, sectionKey: string, fieldK
 
 const imageFileName = computed(() => imageFile.value?.name ?? '')
 const pdfFileName = computed(() => pdfFile.value?.name ?? '')
+const validationSummaryPreviewFields = computed(() => validationSummary.value?.fields.slice(0, 8) ?? [])
+
+const formatDraftTime = (value: string): string => {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value || '-'
+  }
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(parsed)
+}
+
+const handleLoadDraft = async (draftId: string) => {
+  const loaded = await loadDraft(draftId)
+  if (loaded) {
+    draftDrawerVisible.value = false
+  }
+}
 
 const readFileAsBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
