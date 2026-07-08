@@ -24,8 +24,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
+import xenosoft.imldintelligence.module.identity.internal.service.TokenBlacklistService;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
 
+import java.time.Duration;
 import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -136,6 +138,25 @@ class JwtSecurityIntegrationTest {
         ModuleRequestAuthorizationCustomizer testModuleRequestAuthorizationCustomizer() {
             return requests -> requests.requestMatchers("/test/module-protected")
                     .hasAnyAuthority("DOCTOR", "ROLE_DOCTOR");
+        }
+
+        /**
+         * No-op stub so {@link IdentitySecurityConfiguration#jwtRevocationFilter}
+         * can be wired in the security-enabled test context (Redis is excluded).
+         */
+        @Bean
+        TokenBlacklistService tokenBlacklistService() {
+            return new TokenBlacklistService() {
+                @Override
+                public void blacklist(String jti, Duration ttl) {
+                    // no-op
+                }
+
+                @Override
+                public boolean isBlacklisted(String jti) {
+                    return false;
+                }
+            };
         }
     }
 
