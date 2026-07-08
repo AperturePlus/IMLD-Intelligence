@@ -36,6 +36,7 @@
 
   /* 语义 */
   --imld-primary: #409eff;
+  --imld-primary-rgb: 64, 158, 255;
   --imld-success: #67c23a;
   --imld-warning: #e6a23c;
   --imld-danger: #f56c6c;

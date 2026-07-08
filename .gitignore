@@ -62,3 +62,5 @@ src/main/resources/models/imld/
 !/README.md
 
 model_export
+
+.playwright-mcp*
