@@ -3,86 +3,110 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import * as echarts from 'echarts/core'
-import { PieChart } from 'echarts/charts'
-import { TooltipComponent, LegendComponent } from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-import type { RiskDonutProps } from './RiskDonut.types'
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import * as echarts from "echarts/core";
+import { PieChart } from "echarts/charts";
+import { TooltipComponent, LegendComponent } from "echarts/components";
+import { CanvasRenderer } from "echarts/renderers";
+import type { RiskDonutProps } from "./RiskDonut.types";
 
-echarts.use([PieChart, TooltipComponent, LegendComponent, CanvasRenderer])
+function getCssVar(name: string, fallback = ""): string {
+  if (typeof document === "undefined") return fallback;
+  const val = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return val || fallback;
+}
 
-const props = defineProps<RiskDonutProps>()
+echarts.use([PieChart, TooltipComponent, LegendComponent, CanvasRenderer]);
 
-const chartRef = ref<HTMLDivElement | null>(null)
-let chartInstance: echarts.ECharts | null = null
+const props = defineProps<RiskDonutProps>();
+
+const chartRef = ref<HTMLDivElement | null>(null);
+let chartInstance: echarts.ECharts | null = null;
 
 const buildOption = (): echarts.EChartsCoreOption => ({
   tooltip: {
-    trigger: 'item',
-    formatter: '{b}: {c} ({d}%)'
+    trigger: "item",
+    formatter: "{b}: {c} ({d}%)",
   },
   legend: {
     bottom: 0,
-    left: 'center',
+    left: "center",
     itemWidth: 10,
     itemHeight: 10,
     textStyle: {
-      color: 'var(--imld-muted)',
-      fontSize: 12
-    }
+      color: getCssVar("--imld-muted", "#6a7d90"),
+      fontSize: 12,
+    },
   },
   series: [
     {
-      type: 'pie',
-      radius: ['45%', '70%'],
-      center: ['50%', '45%'],
+      type: "pie",
+      radius: ["45%", "70%"],
+      center: ["50%", "45%"],
       avoidLabelOverlap: false,
       label: {
         show: true,
-        position: 'center',
+        position: "center",
         formatter: () => `总计\n${props.total}`,
         fontSize: 14,
-        fontWeight: 'bold',
-        color: 'var(--imld-text)'
+        fontWeight: "bold",
+        color: getCssVar("--imld-text", "#1c2d3f"),
       },
       emphasis: {
-        label: { show: true }
+        label: { show: true },
       },
       labelLine: { show: false },
       data: [
-        { value: props.high, name: '高危', itemStyle: { color: 'var(--imld-risk-high)' } },
-        { value: props.mid, name: '中危', itemStyle: { color: 'var(--imld-risk-mid)' } },
-        { value: props.low, name: '低危', itemStyle: { color: 'var(--imld-risk-low)' } }
-      ]
-    }
-  ]
-})
+        {
+          value: props.high,
+          name: "高危",
+          itemStyle: { color: getCssVar("--imld-risk-high", "#f56c6c") },
+        },
+        {
+          value: props.mid,
+          name: "中危",
+          itemStyle: { color: getCssVar("--imld-risk-mid", "#e6a23c") },
+        },
+        {
+          value: props.low,
+          name: "低危",
+          itemStyle: { color: getCssVar("--imld-risk-low", "#67c23a") },
+        },
+      ],
+    },
+  ],
+});
 
 const initChart = () => {
-  if (!chartRef.value) return
-  chartInstance = echarts.init(chartRef.value)
-  chartInstance.setOption(buildOption())
-}
+  if (!chartRef.value) return;
+  chartInstance = echarts.init(chartRef.value);
+  chartInstance.setOption(buildOption());
+};
 
 const handleResize = () => {
-  chartInstance?.resize()
-}
+  chartInstance?.resize();
+};
 
 onMounted(() => {
-  initChart()
-  window.addEventListener('resize', handleResize)
-})
+  initChart();
+  window.addEventListener("resize", handleResize);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-  chartInstance?.dispose()
-  chartInstance = null
-})
+  window.removeEventListener("resize", handleResize);
+  chartInstance?.dispose();
+  chartInstance = null;
+});
 
-watch(() => [props.high, props.mid, props.low, props.total], () => {
-  chartInstance?.setOption(buildOption())
-}, { deep: true })
+watch(
+  () => [props.high, props.mid, props.low, props.total],
+  () => {
+    chartInstance?.setOption(buildOption());
+  },
+  { deep: true }
+);
 </script>
 
 <style scoped>

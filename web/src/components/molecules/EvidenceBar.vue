@@ -2,7 +2,7 @@
   <div class="evidence-bar" :class="{ 'is-weak': props.weak }">
     <div class="evidence-bar-header">
       <span class="evidence-label">{{ props.label }}</span>
-      <span class="evidence-weight">权重 {{ formattedWeight }}</span>
+      <span v-if="showMetric" class="evidence-weight">{{ metricCaption }} {{ formattedWeight }}</span>
     </div>
     <div class="evidence-track">
       <div class="evidence-fill" :style="fillStyle" />
@@ -22,6 +22,9 @@ const clampedWeight = computed(() =>
 )
 
 const formattedWeight = computed(() => `${Math.round(clampedWeight.value)}%`)
+
+const showMetric = computed(() => props.metricLabel !== null)
+const metricCaption = computed(() => props.metricLabel ?? '权重')
 
 const fillStyle = computed(() => ({
   width: `${clampedWeight.value}%`,

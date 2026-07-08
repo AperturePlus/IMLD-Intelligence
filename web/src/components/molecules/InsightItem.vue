@@ -5,7 +5,7 @@
       <div class="insight-meta">
         <span class="insight-time">{{ props.time }}</span>
         <span v-if="props.confidence != null" class="insight-confidence"
-          >置信 {{ Math.round(props.confidence) }}%</span
+          >置信 {{ Math.round(props.confidence * 100) }}%</span
         >
       </div>
       <div class="insight-title">{{ props.title }}</div>
@@ -14,16 +14,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { InsightItemProps } from './InsightItem.types'
+import { computed } from "vue";
+import type { InsightItemProps } from "./InsightItem.types";
 
-const props = defineProps<InsightItemProps>()
+const props = defineProps<InsightItemProps>();
 
 const severityClass = computed(() => {
-  if (props.severity === 'high') return 'is-high'
-  if (props.severity === 'mid') return 'is-mid'
-  return 'is-low'
-})
+  if (props.severity === "high") return "is-high";
+  if (props.severity === "mid") return "is-mid";
+  return "is-low";
+});
 </script>
 
 <style scoped>

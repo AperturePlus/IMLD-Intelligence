@@ -1,30 +1,21 @@
 <template>
   <div class="chat-message" :class="`is-${props.role}`">
     <div class="chat-bubble">
-      <StreamingText
+      <span class="chat-text">{{ props.text }}</span>
+      <span
         v-if="props.streaming && props.role === 'ai'"
-        :text="props.text"
-        :speed="25"
-        @complete="handleComplete"
+        class="chat-cursor"
+        aria-hidden="true"
       />
-      <span v-else>{{ props.text }}</span>
     </div>
     <div v-if="props.source" class="chat-source">来源：{{ props.source }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import StreamingText from "@/components/atoms/StreamingText.vue";
 import type { ChatMessageProps } from "./ChatMessage.types";
 
 const props = defineProps<ChatMessageProps>();
-const emit = defineEmits<{
-  (e: "streamComplete"): void;
-}>();
-
-const handleComplete = () => {
-  emit("streamComplete");
-};
 </script>
 
 <style scoped>
@@ -48,6 +39,18 @@ const handleComplete = () => {
   font-size: 14px;
   line-height: 1.5;
   word-break: break-word;
+}
+.chat-text {
+  white-space: pre-wrap;
+}
+.chat-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: imld-blink 1s step-end infinite;
 }
 .chat-message.is-user .chat-bubble {
   background: var(--imld-primary);

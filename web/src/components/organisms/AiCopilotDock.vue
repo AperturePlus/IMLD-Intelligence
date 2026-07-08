@@ -5,14 +5,27 @@
         <BaseIcon name="spark" :size="16" />
         <span>IMLD 智能助手</span>
       </div>
-      <PrivacyBadge />
+      <div class="dock-header-actions">
+        <PrivacyBadge />
+        <button
+          type="button"
+          class="dock-close"
+          aria-label="关闭助手"
+          @click="emit('close')"
+        >
+          <BaseIcon name="close" :size="16" />
+        </button>
+      </div>
     </div>
 
     <div class="dock-messages">
       <ChatMessage
-        v-for="(msg, i) in props.messages"
-        :key="i"
-        v-bind="msg"
+        v-for="msg in props.messages"
+        :key="msg.__id ?? -1"
+        :role="msg.role"
+        :text="msg.text"
+        :streaming="msg.streaming"
+        :source="msg.source"
       />
     </div>
 
@@ -35,6 +48,7 @@ import type { AiCopilotDockProps } from './AiCopilotDock.types'
 const props = defineProps<AiCopilotDockProps>()
 const emit = defineEmits<{
   (e: 'send', text: string): void
+  (e: 'close'): void
 }>()
 </script>
 
@@ -64,6 +78,29 @@ const emit = defineEmits<{
   gap: var(--imld-sp-2);
   font-size: 14px;
   font-weight: 600;
+  color: var(--imld-text);
+}
+.dock-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--imld-sp-2);
+}
+.dock-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--imld-radius-sm);
+  background: transparent;
+  color: var(--imld-muted);
+  cursor: pointer;
+  transition: background 0.2s var(--imld-ease-out), color 0.2s var(--imld-ease-out);
+}
+.dock-close:hover {
+  background: var(--imld-border);
   color: var(--imld-text);
 }
 .dock-messages {

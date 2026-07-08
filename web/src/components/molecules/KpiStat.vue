@@ -1,5 +1,5 @@
 <template>
-  <div class="kpi-stat">
+  <div class="kpi-stat" :class="`tone-${props.tone ?? 'default'}`">
     <div class="kpi-label">{{ props.label }}</div>
     <div class="kpi-value-row">
       <span class="kpi-value">{{ displayValue }}</span>
@@ -59,6 +59,15 @@ const sparklineColor = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--imld-sp-2);
+  padding: var(--imld-sp-4) var(--imld-sp-5);
+  border-radius: var(--imld-radius-md);
+  background: var(--imld-card);
+  border: 1px solid var(--imld-border);
+  box-shadow: var(--imld-shadow-card);
+  transition: transform 0.2s var(--imld-ease-out);
+}
+.kpi-stat:hover {
+  transform: translateY(-2px);
 }
 .kpi-label {
   font-size: 12px;
@@ -71,10 +80,19 @@ const sparklineColor = computed(() => {
   gap: var(--imld-sp-2);
 }
 .kpi-value {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--imld-text);
   line-height: 1.2;
+}
+.tone-danger .kpi-value {
+  color: var(--imld-risk-high);
+}
+.tone-success .kpi-value {
+  color: var(--imld-risk-low);
+}
+.tone-warning .kpi-value {
+  color: var(--imld-risk-mid);
 }
 .kpi-delta {
   font-size: 12px;

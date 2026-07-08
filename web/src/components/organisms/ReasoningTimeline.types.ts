@@ -1,6 +1,6 @@
 export interface ReasoningStep {
   title: string
-  evidenceBars?: { label: string; weight: number; weak?: boolean }[]
+  evidenceBars?: { label: string; weight: number; weak?: boolean; metricLabel?: string | null }[]
   candidates?: { name: string; prob: number; win?: boolean; why?: string }[]
   confidence?: { percentage: number; level: 'low' | 'mid' | 'high'; label: string }
 }
@@ -14,11 +14,11 @@ export interface ReasoningTimelineProps {
 }
 
 export interface ReasoningTimelineEmits {
-  (e: 'replay'): void
-  (e: 'expandReport'): void
+  (e: 'complete'): void
+  (e: 'skip'): void
 }
 
 export type ReasoningTimelineEvents = {
-  replay: []
-  expandReport: []
+  complete: []
+  skip: []
 }
