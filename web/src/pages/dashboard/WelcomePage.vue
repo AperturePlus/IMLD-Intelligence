@@ -1,301 +1,158 @@
 <template>
   <div class="welcome-page">
-    <section class="hero-card">
-      <div class="hero-content">
-        <p class="hero-kicker">Clinical Workspace</p>
-        <h1>{{ username }}，欢迎回来</h1>
-        <p class="hero-subtitle">
-          今天可以继续处理患者档案、AI 诊断和慢病管理任务。所有核心功能可在院内网络下独立运行。
-        </p>
-        <div class="hero-tags">
-          <el-tag effect="light" type="info">离线可运行</el-tag>
-          <el-tag effect="light" type="success">审计可追溯</el-tag>
-          <el-tag effect="light" type="warning">最小数据出域</el-tag>
+    <WorklistBanner
+      :greeting="greeting"
+      :high-risk-count="cohortMetrics?.highRiskCount.data ?? 0"
+      :cases="worklistCases"
+      @open-case="handleOpenCase"
+    />
+
+    <KpiGrid :items="kpiItems" />
+
+    <el-row :gutter="20">
+      <el-col :span="12">
+        <div class="panel-card">
+          <div class="panel-title">风险分布</div>
+          <RiskDonut
+            :high="cohortMetrics?.highRiskCount.data ?? 0"
+            :mid="cohortMetrics?.midRiskCount.data ?? 0"
+            :low="cohortMetrics?.lowRiskCount.data ?? 0"
+            :total="cohortMetrics?.totalPatients.data ?? 0"
+          />
         </div>
-      </div>
-
-      <div class="hero-actions">
-        <el-button type="primary" size="large" @click="go('/center/patient-list')">
-          进入患者列表
-        </el-button>
-        <el-button size="large" @click="go('/center/patient-record')">
-          新建病历
-        </el-button>
-      </div>
-    </section>
-
-    <section class="stats-grid">
-      <article v-for="item in stats" :key="item.label" class="stat-card">
-        <div class="stat-top">
-          <span class="icon-badge">
-            <el-icon :size="18">
-              <component :is="item.icon" />
-            </el-icon>
-          </span>
-          <span class="stat-trend">{{ item.trend }}</span>
+      </el-col>
+      <el-col :span="12">
+        <div class="panel-card">
+          <div class="panel-title">疾病谱</div>
+          <DiseaseSpectrum :items="diseaseSpectrum" />
         </div>
-        <p class="stat-value">{{ item.value }}</p>
-        <p class="stat-label">{{ item.label }}</p>
-      </article>
-    </section>
+      </el-col>
+    </el-row>
 
-    <section class="quick-section">
-      <h2>快捷入口</h2>
-      <div class="quick-grid">
-        <button
-          v-for="action in quickActions"
-          :key="action.title"
-          class="quick-item"
-          type="button"
-          @click="go(action.path)"
-        >
-          <span class="quick-title">{{ action.title }}</span>
-          <span class="quick-desc">{{ action.desc }}</span>
-        </button>
-      </div>
-    </section>
+    <div class="panel-card">
+      <div class="panel-title">洞察流</div>
+      <InsightFeed :items="insights" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { UserFilled, DataLine, Cpu, Bell } from '@element-plus/icons-vue'
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import WorklistBanner from "@/components/organisms/WorklistBanner.vue";
+import KpiGrid from "@/components/organisms/KpiGrid.vue";
+import RiskDonut from "@/components/organisms/RiskDonut.vue";
+import DiseaseSpectrum from "@/components/organisms/DiseaseSpectrum.vue";
+import InsightFeed from "@/components/organisms/InsightFeed.vue";
+import { useIntelligenceEngine } from "@/features/intelligence/composables/useIntelligenceEngine";
+import type { KpiStatProps } from "@/components/molecules/KpiStat.types";
 
-const router = useRouter()
-const username = ref('医生')
+const router = useRouter();
+const { cohortMetrics, worklist, insights, forecast } = useIntelligenceEngine();
 
-const stats = [
-  { label: '待随访患者', value: '126', trend: '较昨日 +8', icon: UserFilled },
-  { label: 'AI 预警病例', value: '19', trend: '高危 7 例', icon: Cpu },
-  { label: '本周筛查完成率', value: '87%', trend: '达标', icon: DataLine },
-  { label: '未读通知', value: '12', trend: '含 3 条重点', icon: Bell }
-]
+const greeting = computed(() => {
+  const total = cohortMetrics.value?.totalPatients.data ?? 0;
+  return `欢迎回来 · 今日队列 ${total} 人`;
+});
 
-const quickActions = [
-  { title: '患者列表', desc: '按风险等级快速检索', path: '/center/patient-list' },
-  { title: '病历录入', desc: '结构化录入临床信息', path: '/center/patient-record' },
-  { title: '智能诊断', desc: '启动 AI 辅助诊断流程', path: '/center/ai-diagnosis' },
-  { title: '筛查数据', desc: '查看数据质控与出域状态', path: '/center/data-screening' }
-]
+// 近 8 周新检出量（引擎合成的趋势序列），作为「自动报告」吞吐量火花线
+const weeklyVolume = computed(() =>
+  (forecast.value?.history.data ?? []).map((p) => p.y).slice(-8)
+);
 
-const go = (path: string) => {
-  router.push(path)
-}
+// 由序列末两点推导环比趋势与变化幅度
+const seriesTrend = (
+  series: number[]
+): { trend: KpiStatProps["trend"]; delta: number | null } => {
+  if (series.length < 2) return { trend: "flat", delta: null };
+  const last = series[series.length - 1];
+  const prev = series[series.length - 2];
+  if (!Number.isFinite(prev) || prev === 0) {
+    return { trend: "flat", delta: null };
+  }
+  const pct = Math.round(((last - prev) / prev) * 100);
+  return { trend: pct > 0 ? "up" : pct < 0 ? "down" : "flat", delta: pct };
+};
 
-const storedName = localStorage.getItem('username')
-if (storedName) {
-  username.value = storedName
-}
+const kpiItems = computed<KpiStatProps[]>(() => {
+  const m = cohortMetrics.value;
+  if (!m) return [];
+  const volume = weeklyVolume.value;
+  const { trend, delta } = seriesTrend(volume);
+  return [
+    {
+      label: "在管患者",
+      value: m.totalPatients.data,
+      format: "number",
+    },
+    {
+      label: "AI 高危",
+      value: m.highRiskCount.data,
+      format: "number",
+      tone: "danger",
+    },
+    {
+      label: "阳性率",
+      value: Math.round(m.positiveRate.data * 100),
+      format: "percent",
+    },
+    {
+      label: "自动报告",
+      value: m.autoReportCount.data,
+      format: "number",
+      sparklinePoints: volume,
+      trend,
+      delta,
+    },
+  ];
+});
+
+const worklistCases = computed(() =>
+  worklist.value.map((c) => ({
+    id: c.id,
+    name: c.name,
+    riskLevel: c.riskLevel,
+    score: c.riskScore,
+    reason: c.reason,
+  }))
+);
+
+const diseaseSpectrum = computed(
+  () => cohortMetrics.value?.diseaseSpectrum.data ?? []
+);
+
+const handleOpenCase = (patientId: string) => {
+  router.push({ path: "/center/ai-diagnosis", query: { patientId } });
+};
 </script>
 
 <style scoped>
 .welcome-page {
-  min-height: 100vh;
-  padding: 28px;
+  min-height: 100%;
+  padding: var(--imld-sp-6);
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background:
-    radial-gradient(circle at 8% 8%, rgba(34, 163, 159, 0.18), transparent 38%),
-    radial-gradient(circle at 90% 0%, rgba(14, 110, 141, 0.18), transparent 40%),
-    #f3f7fb;
+  gap: var(--imld-sp-5);
+  background: radial-gradient(
+      circle at 8% 8%,
+      rgba(34, 163, 159, 0.18),
+      transparent 38%
+    ),
+    radial-gradient(circle at 90% 0%, rgba(15, 109, 141, 0.18), transparent 40%),
+    var(--imld-bg);
 }
 
-.hero-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 28px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #0f6d8d, #1f8e98 64%, #22a39f);
-  color: #f5fbff;
-  box-shadow: 0 18px 36px rgba(15, 109, 141, 0.24);
-  animation: riseIn 0.55s ease-out;
+.panel-card {
+  padding: var(--imld-sp-4) var(--imld-sp-5);
+  border-radius: var(--imld-radius-md);
+  background: var(--imld-card);
+  box-shadow: var(--imld-shadow-card);
 }
 
-.hero-content {
-  flex: 1;
-}
-
-.hero-kicker {
-  margin: 0 0 8px;
-  font-size: 0.82rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  opacity: 0.9;
-}
-
-.hero-card h1 {
-  margin: 0;
-  font-size: clamp(1.7rem, 3vw, 2.2rem);
-  font-weight: 700;
-}
-
-.hero-subtitle {
-  margin: 12px 0 0;
-  line-height: 1.7;
-  max-width: 640px;
-  color: rgba(237, 247, 255, 0.93);
-}
-
-.hero-tags {
-  margin-top: 16px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.hero-actions {
-  min-width: 190px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #e5edf4;
-  padding: 16px;
-  box-shadow: 0 10px 24px rgba(23, 48, 66, 0.05);
-  animation: riseIn 0.55s ease-out;
-}
-
-.stat-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.icon-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: #e6f4f8;
-  color: #0f6d8d;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-trend {
-  font-size: 0.8rem;
-  color: #5d7388;
-}
-
-.stat-value {
-  margin: 14px 0 2px;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1c2d3f;
-}
-
-.stat-label {
-  margin: 0;
-  color: #667b8f;
-  font-size: 0.88rem;
-}
-
-.quick-section {
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #e5edf4;
-  padding: 20px;
-  box-shadow: 0 10px 24px rgba(23, 48, 66, 0.05);
-  animation: riseIn 0.6s ease-out;
-}
-
-.quick-section h2 {
-  margin: 0 0 14px;
-  font-size: 1.05rem;
-  color: #264056;
-}
-
-.quick-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.quick-item {
-  border: 1px solid #dbe7f1;
-  background: linear-gradient(180deg, #fbfdff, #f4f8fc);
-  border-radius: 14px;
-  padding: 16px;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.quick-item:hover {
-  transform: translateY(-2px);
-  border-color: #8bcad0;
-  box-shadow: 0 10px 20px rgba(15, 109, 141, 0.12);
-}
-
-.quick-title {
-  display: block;
+.panel-title {
+  font-size: 15px;
   font-weight: 600;
-  color: #183449;
-}
-
-.quick-desc {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.82rem;
-  color: #5d7488;
-  line-height: 1.5;
-}
-
-@keyframes riseIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 1200px) {
-  .stats-grid,
-  .quick-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .welcome-page {
-    padding: 18px;
-  }
-
-  .hero-card {
-    flex-direction: column;
-    padding: 20px;
-  }
-
-  .hero-actions {
-    min-width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .hero-actions :deep(.el-button) {
-    flex: 1;
-  }
-
-  .stats-grid,
-  .quick-grid {
-    grid-template-columns: 1fr;
-  }
+  color: var(--imld-text);
+  margin-bottom: var(--imld-sp-3);
 }
 </style>
