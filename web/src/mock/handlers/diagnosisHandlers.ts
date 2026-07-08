@@ -111,11 +111,38 @@ const inferDiseaseCode = (diseaseName = '') => {
   if (diseaseName.includes('Wilson') || diseaseName.includes('肝豆')) {
     return 'WILSON_DISEASE'
   }
+  if (diseaseName.includes('Citrin')) {
+    return 'CITRIN_DEFICIENCY'
+  }
+  if (diseaseName.includes('PFIC2') || diseaseName.includes('ABCB11')) {
+    return 'PFIC2_ABCB11'
+  }
+  if (diseaseName.includes('PFIC3') || diseaseName.includes('ABCB4')) {
+    return 'PFIC3_ABCB4'
+  }
+  if (diseaseName.includes('Dubin')) {
+    return 'DUBIN_JOHNSON'
+  }
+  if (diseaseName.includes('Alagille')) {
+    return 'ALAGILLE_SYNDROME'
+  }
+  if (diseaseName.includes('NTCP') || diseaseName.includes('SLC10A1')) {
+    return 'NTCP_DEFICIENCY'
+  }
+  if (diseaseName.includes('脂肪酶') || diseaseName.includes('LIPA')) {
+    return 'LIPA_DEFICIENCY'
+  }
+  if (diseaseName.includes('糖原') || diseaseName.includes('G6PC')) {
+    return 'GLYCOGEN_STORAGE_DISEASE_I'
+  }
   if (diseaseName.includes('血色')) {
-    return 'HEMOCHROMATOSIS'
+    return diseaseName.includes('青年型') ? 'JUVENILE_HEMOCHROMATOSIS' : 'HEMOCHROMATOSIS'
   }
   if (diseaseName.includes('抗胰蛋白酶')) {
     return 'AAT_DEFICIENCY'
+  }
+  if (diseaseName.includes('Gilbert') || diseaseName.includes('吉尔伯特')) {
+    return 'GILBERT_SYNDROME'
   }
   return 'METABOLIC_LIVER_DISEASE'
 }
@@ -128,11 +155,38 @@ const inferGeneByDisease = (diseaseName = '') => {
   if (diseaseName.includes('Wilson') || diseaseName.includes('肝豆')) {
     return 'ATP7B'
   }
+  if (diseaseName.includes('Citrin')) {
+    return 'SLC25A13'
+  }
+  if (diseaseName.includes('PFIC2') || diseaseName.includes('ABCB11')) {
+    return 'ABCB11'
+  }
+  if (diseaseName.includes('PFIC3') || diseaseName.includes('ABCB4')) {
+    return 'ABCB4'
+  }
+  if (diseaseName.includes('Dubin')) {
+    return 'ABCC2'
+  }
+  if (diseaseName.includes('Alagille')) {
+    return 'JAG1'
+  }
+  if (diseaseName.includes('NTCP') || diseaseName.includes('SLC10A1')) {
+    return 'SLC10A1'
+  }
+  if (diseaseName.includes('脂肪酶') || diseaseName.includes('LIPA')) {
+    return 'LIPA'
+  }
+  if (diseaseName.includes('糖原') || diseaseName.includes('G6PC')) {
+    return 'G6PC'
+  }
   if (diseaseName.includes('血色')) {
-    return 'HFE'
+    return diseaseName.includes('青年型') ? 'HJV' : 'HFE'
   }
   if (diseaseName.includes('抗胰蛋白酶')) {
     return 'SERPINA1'
+  }
+  if (diseaseName.includes('Gilbert') || diseaseName.includes('吉尔伯特')) {
+    return 'UGT1A1'
   }
   return 'ATP7B'
 }
@@ -149,6 +203,9 @@ const severityFromIndicator = (indicator) => {
 
 const directionFromIndicator = (indicator) => {
   const name = String(indicator.name || '')
+  if (name === 'GLU' && Number(indicator.value) < 3.9) {
+    return 'low'
+  }
   return /铜蓝蛋白|AAT|抗胰蛋白酶/.test(name) ? 'low' : 'high'
 }
 

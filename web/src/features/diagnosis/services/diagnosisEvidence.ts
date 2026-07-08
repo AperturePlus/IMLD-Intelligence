@@ -156,6 +156,9 @@ const physicalEvidence = (record: PatientRecordPayload): DiagnosisEvidenceItem[]
   if (flagYes(exam.fattyLiver)) {
     items.push({ category: '体征', label: '脂肪肝线索阳性', source: '查体/影像摘要', severity: 'warning' })
   }
+  if (flagYes(exam.cholestasis)) {
+    items.push({ category: '体征', label: '胆汁淤积线索阳性', source: '查体/病程', severity: 'exception' })
+  }
   return items
 }
 
@@ -177,6 +180,48 @@ const narrativeEvidence = (record: PatientRecordPayload, diseaseName: string): D
       severity: 'warning'
     })
   } else if (diseaseName.includes('抗胰蛋白酶') && /肺气肿|咳喘|气促/.test(text)) {
+    items.push({
+      category: '临床表型',
+      label: truncate(record.chiefComplaint || record.presentIllness),
+      source: '主诉/现病史',
+      severity: 'warning'
+    })
+  } else if (diseaseName.includes('Citrin') && /低血糖|厌油|黄疸|高蛋白|高碳水/.test(text)) {
+    items.push({
+      category: '临床表型',
+      label: truncate(record.chiefComplaint || record.presentIllness),
+      source: '主诉/现病史',
+      severity: 'warning'
+    })
+  } else if ((diseaseName.includes('PFIC') || diseaseName.includes('ABCB') || diseaseName.includes('Alagille')) && /瘙痒|胆汁|黄疸|生长|胆管/.test(text)) {
+    items.push({
+      category: '临床表型',
+      label: truncate(record.chiefComplaint || record.presentIllness),
+      source: '主诉/现病史',
+      severity: 'exception'
+    })
+  } else if ((diseaseName.includes('NTCP') || diseaseName.includes('SLC10A1')) && /胆汁酸|黄疸|体检/.test(text)) {
+    items.push({
+      category: '临床表型',
+      label: truncate(record.chiefComplaint || record.presentIllness),
+      source: '主诉/现病史',
+      severity: 'warning'
+    })
+  } else if ((diseaseName.includes('Dubin') || diseaseName.includes('ABCC2')) && /尿色|直接胆红素|黄疸/.test(text)) {
+    items.push({
+      category: '临床表型',
+      label: truncate(record.chiefComplaint || record.presentIllness),
+      source: '主诉/现病史',
+      severity: 'warning'
+    })
+  } else if ((diseaseName.includes('脂肪酶') || diseaseName.includes('LIPA')) && /肝脾大|血脂|转氨酶|肥胖/.test(text)) {
+    items.push({
+      category: '临床表型',
+      label: truncate(record.chiefComplaint || record.presentIllness),
+      source: '主诉/现病史',
+      severity: 'warning'
+    })
+  } else if ((diseaseName.includes('糖原') || diseaseName.includes('G6PC')) && /低血糖|肝大|腹胀|生长/.test(text)) {
     items.push({
       category: '临床表型',
       label: truncate(record.chiefComplaint || record.presentIllness),
