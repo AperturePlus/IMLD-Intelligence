@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import xenosoft.imldintelligence.module.identity.internal.service.TokenBlacklistService;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
 
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ public class IdentitySecurityConfiguration {
     SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http,
                                                IdentitySecurityProperties properties,
                                                JwtAuthenticationFilter jwtAuthenticationFilter,
+                                               JwtRevocationFilter jwtRevocationFilter,
                                                AuthenticationEntryPoint authenticationEntryPoint,
                                                AccessDeniedHandler accessDeniedHandler,
                                                ObjectProvider<ModuleRequestAuthorizationCustomizer> authorizationCustomizers) throws Exception {
@@ -64,7 +66,8 @@ public class IdentitySecurityConfiguration {
                     authorizationCustomizers.orderedStream().forEach(customizer -> customizer.customize(authorize));
                     authorize.anyRequest().authenticated();
                 })
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtRevocationFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -97,6 +100,22 @@ public class IdentitySecurityConfiguration {
     JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil,
                                                     AuthenticationEntryPoint authenticationEntryPoint) {
         return new JwtAuthenticationFilter(jwtUtil, authenticationEntryPoint);
+    }
+
+    /**
+     * 创建访问令牌吊销过滤器 Bean。
+     *
+     * @param jwtUtil JWT 工具类
+     * @param tokenBlacklistService 令牌黑名单服务
+     * @param authenticationEntryPoint 未认证请求处理入口
+     * @return 访问令牌吊销过滤器实例
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "imld.security", name = "enabled", havingValue = "true")
+    JwtRevocationFilter jwtRevocationFilter(JwtUtil jwtUtil,
+                                            TokenBlacklistService tokenBlacklistService,
+                                            AuthenticationEntryPoint authenticationEntryPoint) {
+        return new JwtRevocationFilter(jwtUtil, tokenBlacklistService, authenticationEntryPoint);
     }
 
     /**
