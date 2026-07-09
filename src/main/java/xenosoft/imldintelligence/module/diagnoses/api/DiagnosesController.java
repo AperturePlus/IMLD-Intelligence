@@ -43,6 +43,8 @@ import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisR
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisSessionRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DoctorFeedbackRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.ModelRegistryRepository;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.DiagnosisSessionQuery;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.ModelRegistryQuery;
 import xenosoft.imldintelligence.module.diagnoses.internal.service.DiagnosesCommandService;
 import xenosoft.imldintelligence.module.diagnoses.internal.service.ImldInferenceService;
 import xenosoft.imldintelligence.module.identity.internal.model.Encounter;
@@ -84,25 +86,27 @@ public class DiagnosesController implements DiagnosesControllerContract {
         DiagnosesApiDtos.Query.SessionPageQuery q = query == null
                 ? new DiagnosesApiDtos.Query.SessionPageQuery(null, null, null, null, null, null, null)
                 : query;
-        List<DiagnosisSession> sessions = pickSessions(tenantId, q).stream()
-                .filter(s -> q.doctorId() == null || Objects.equals(q.doctorId(), s.getDoctorId()))
-                .filter(s -> q.triggeredBy() == null || eqIgnoreCase(q.triggeredBy(), s.getTriggeredBy()))
-                .filter(s -> q.status() == null || eqIgnoreCase(q.status(), s.getStatus()))
-                .filter(s -> q.startedFrom() == null || !sortTime(s).isBefore(q.startedFrom()))
-                .filter(s -> q.startedTo() == null || !sortTime(s).isAfter(q.startedTo()))
-                .sorted(Comparator
-                        .comparing(this::sortTime, Comparator.reverseOrder())
-                        .thenComparing(DiagnosisSession::getId, Comparator.reverseOrder()))
-                .toList();
 
         int page = pageQuery == null || pageQuery.page() == null ? DEFAULT_PAGE : Math.max(pageQuery.page(), 0);
         int size = pageQuery == null || pageQuery.size() == null ? DEFAULT_SIZE : Math.min(Math.max(pageQuery.size(), 1), 200);
-        int from = Math.min(page * size, sessions.size());
-        int to = Math.min(from + size, sessions.size());
-        List<DiagnosesApiDtos.Response.DiagnosisSessionResponse> items = sessions.subList(from, to).stream()
+
+        DiagnosisSessionQuery sessionQuery = new DiagnosisSessionQuery();
+        sessionQuery.setTenantId(tenantId);
+        sessionQuery.setPatientId(q.patientId());
+        sessionQuery.setEncounterId(q.encounterId());
+        sessionQuery.setDoctorId(q.doctorId());
+        sessionQuery.setStatus(q.status());
+        sessionQuery.setTriggeredBy(q.triggeredBy());
+        sessionQuery.setStartedFrom(q.startedFrom());
+        sessionQuery.setStartedTo(q.startedTo());
+
+        long total = sessionRepository.count(sessionQuery);
+        long offset = (long) page * size;
+        List<DiagnosesApiDtos.Response.DiagnosisSessionResponse> items = sessionRepository
+                .query(sessionQuery, offset, size).stream()
                 .map(s -> toSessionResponse(tenantId, s))
                 .toList();
-        return ApiResponse.success(new PagedResultResponse<>(page, size, sessions.size(), items));
+        return ApiResponse.success(new PagedResultResponse<>(page, size, total, items));
     }
 
     @Override
@@ -163,20 +167,23 @@ public class DiagnosesController implements DiagnosesControllerContract {
         DiagnosesApiDtos.Query.ModelRegistryPageQuery q = query == null
                 ? new DiagnosesApiDtos.Query.ModelRegistryPageQuery(null, null, null)
                 : query;
-        List<ModelRegistry> filtered = modelRegistryRepository.listByTenantId(tenantId).stream()
-                .filter(m -> q.provider() == null || eqIgnoreCase(q.provider(), m.getProvider()))
-                .filter(m -> q.modelType() == null || eqIgnoreCase(q.modelType(), m.getModelType()))
-                .filter(m -> q.status() == null || eqIgnoreCase(q.status(), m.getStatus()))
-                .sorted(Comparator.comparing(ModelRegistry::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-                .toList();
+
         int page = pageQuery == null || pageQuery.page() == null ? DEFAULT_PAGE : Math.max(pageQuery.page(), 0);
         int size = pageQuery == null || pageQuery.size() == null ? DEFAULT_SIZE : Math.min(Math.max(pageQuery.size(), 1), 200);
-        int from = Math.min(page * size, filtered.size());
-        int to = Math.min(from + size, filtered.size());
-        List<DiagnosesApiDtos.Response.ModelRegistryResponse> items = filtered.subList(from, to).stream()
+
+        ModelRegistryQuery modelQuery = new ModelRegistryQuery();
+        modelQuery.setTenantId(tenantId);
+        modelQuery.setProvider(q.provider());
+        modelQuery.setModelType(q.modelType());
+        modelQuery.setStatus(q.status());
+
+        long total = modelRegistryRepository.count(modelQuery);
+        long offset = (long) page * size;
+        List<DiagnosesApiDtos.Response.ModelRegistryResponse> items = modelRegistryRepository
+                .query(modelQuery, offset, size).stream()
                 .map(this::toModelResponse)
                 .toList();
-        return ApiResponse.success(new PagedResultResponse<>(page, size, filtered.size(), items));
+        return ApiResponse.success(new PagedResultResponse<>(page, size, total, items));
     }
 
     @Override
@@ -185,12 +192,6 @@ public class DiagnosesController implements DiagnosesControllerContract {
             DiagnosesApiDtos.Request.RegisterModelRequest request) {
         ModelRegistry model = diagnosesCommandService.registerModel(tenantId, request);
         return ApiResponse.success(toModelResponse(model));
-    }
-
-    private List<DiagnosisSession> pickSessions(Long tenantId, DiagnosesApiDtos.Query.SessionPageQuery q) {
-        if (q.patientId() != null) return sessionRepository.listByPatientId(tenantId, q.patientId());
-        if (q.encounterId() != null) return sessionRepository.listByEncounterId(tenantId, q.encounterId());
-        return sessionRepository.listByTenantId(tenantId);
     }
 
     private DiagnosesApiDtos.Response.DiagnosisSessionResponse toSessionResponse(Long tenantId, DiagnosisSession s) {
@@ -526,10 +527,6 @@ public class DiagnosesController implements DiagnosesControllerContract {
         return trimmed == null ? fallback : trimmed.toUpperCase(Locale.ROOT);
     }
 
-    private boolean eqIgnoreCase(String a, String b) {
-        return a != null && b != null && a.equalsIgnoreCase(b);
-    }
-
     private String trimToNull(String value) {
         if (value == null) return null;
         String trimmed = value.trim();
@@ -538,10 +535,6 @@ public class DiagnosesController implements DiagnosesControllerContract {
 
     private OffsetDateTime now() {
         return OffsetDateTime.now(ZoneOffset.UTC).withNano(0);
-    }
-
-    private OffsetDateTime sortTime(DiagnosisSession s) {
-        return s.getStartedAt() != null ? s.getStartedAt() : (s.getCreatedAt() != null ? s.getCreatedAt() : now());
     }
 
     private int clamp(int value, int min, int max) {
