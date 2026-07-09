@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.RequiredArgsConstructor;
+import xenosoft.imldintelligence.common.RequireAnyRole;
 import xenosoft.imldintelligence.common.dto.ApiResponse;
 import xenosoft.imldintelligence.common.dto.PageQueryRequest;
 import xenosoft.imldintelligence.common.dto.PagedResultResponse;
@@ -61,6 +62,8 @@ import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSu
 public class DiagnosesController implements DiagnosesControllerContract {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 20;
+    private static final String ROLE_DOCTOR = "DOCTOR";
+    private static final String ROLE_SYSTEM_ADMIN = "SYSTEM_ADMIN";
     private final DiagnosisSessionRepository sessionRepository;
     private final DiagnosisResultRepository resultRepository;
     private final DiagnosisRecommendationRepository recommendationRepository;
@@ -79,6 +82,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     private final CurrentUserSubjectProvider currentUserSubjectProvider;
 
     @Override
+    @RequireAnyRole({ROLE_DOCTOR, ROLE_SYSTEM_ADMIN})
     public ApiResponse<PagedResultResponse<DiagnosesApiDtos.Response.DiagnosisSessionResponse>> listSessions(
             Long tenantId,
             DiagnosesApiDtos.Query.SessionPageQuery query,
@@ -110,6 +114,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     }
 
     @Override
+    @RequireAnyRole({ROLE_DOCTOR, ROLE_SYSTEM_ADMIN})
     public ApiResponse<DiagnosesApiDtos.Response.DiagnosisSessionResponse> getSession(Long tenantId, Long sessionId) {
         DiagnosisSession session = sessionRepository.findById(tenantId, sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Diagnosis session not found"));
@@ -117,6 +122,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     }
 
     @Override
+    @RequireAnyRole({ROLE_DOCTOR, ROLE_SYSTEM_ADMIN})
     public ApiResponse<DiagnosesApiDtos.Response.DiagnosisSessionResponse> startSession(
             Long tenantId,
             DiagnosesApiDtos.Request.StartDiagnosisSessionRequest request) {
@@ -152,6 +158,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     }
 
     @Override
+    @RequireAnyRole({ROLE_DOCTOR, ROLE_SYSTEM_ADMIN})
     public ApiResponse<DiagnosesApiDtos.Response.DiagnosisSessionResponse> submitDoctorFeedback(
             Long tenantId,
             DiagnosesApiDtos.Request.SubmitDoctorFeedbackRequest request) {
@@ -160,6 +167,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     }
 
     @Override
+    @RequireAnyRole({ROLE_DOCTOR, ROLE_SYSTEM_ADMIN})
     public ApiResponse<PagedResultResponse<DiagnosesApiDtos.Response.ModelRegistryResponse>> listModels(
             Long tenantId,
             DiagnosesApiDtos.Query.ModelRegistryPageQuery query,
@@ -187,6 +195,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     }
 
     @Override
+    @RequireAnyRole({ROLE_SYSTEM_ADMIN})
     public ApiResponse<DiagnosesApiDtos.Response.ModelRegistryResponse> registerModel(
             Long tenantId,
             DiagnosesApiDtos.Request.RegisterModelRequest request) {
