@@ -23,6 +23,7 @@ import org.springframework.test.context.aot.DisabledInAotMode;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import xenosoft.imldintelligence.common.handler.GlobalExceptionHandler;
 import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.service.TokenBlacklistService;
 import xenosoft.imldintelligence.module.identity.internal.util.JwtUtil;
@@ -60,6 +61,9 @@ class JwtSecurityIntegrationTest {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private RecordingBlacklist tokenBlacklist;
+
     @Test
     void shouldAllowPublicEndpointWithoutToken() throws Exception {
         mockMvc.perform(get("/test/public"))
@@ -82,6 +86,31 @@ class JwtSecurityIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().string("12:34"));
+    }
+
+    @Test
+    void shouldRejectAuthenticatedRequestWithMismatchedTenantHeader() throws Exception {
+        String token = jwtUtil.generateAccessToken(new UserSubject(12L, 34L, "doctor", "ICU", Set.of("doctor")));
+
+        mockMvc.perform(get("/test/protected")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .header("X-Tenant-Id", 99))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403))
+                .andExpect(jsonPath("$.message").value("X-Tenant-Id header does not match authenticated tenant"));
+    }
+
+    @Test
+    void shouldRejectBlacklistedAccessToken() throws Exception {
+        String token = jwtUtil.generateAccessToken(new UserSubject(12L, 34L, "doctor", "ICU", Set.of("doctor")));
+        String jti = jwtUtil.extractJti(token);
+        tokenBlacklist.blacklisted.add(jti);
+
+        mockMvc.perform(get("/test/protected")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .header("X-Tenant-Id", 34))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("unauthorized"));
     }
 
     @Test
@@ -132,7 +161,9 @@ class JwtSecurityIntegrationTest {
             RedisRepositoriesAutoConfiguration.class,
             RabbitAutoConfiguration.class
     })
-    @Import({IdentitySecurityConfiguration.class, JwtUtil.class, IdentityRequestAuthorizationCustomizer.class, TestController.class})
+    @Import({IdentitySecurityConfiguration.class, JwtUtil.class, IdentityRequestAuthorizationCustomizer.class,
+            CurrentUserSubjectProvider.class, TenantHeaderInterceptor.class, TenantSecurityWebMvcConfigurer.class,
+            GlobalExceptionHandler.class, TestController.class})
     static class TestApplication {
         @Bean
         ModuleRequestAuthorizationCustomizer testModuleRequestAuthorizationCustomizer() {
@@ -141,22 +172,31 @@ class JwtSecurityIntegrationTest {
         }
 
         /**
-         * No-op stub so {@link IdentitySecurityConfiguration#jwtRevocationFilter}
+         * Mutable stub so {@link IdentitySecurityConfiguration#jwtRevocationFilter}
          * can be wired in the security-enabled test context (Redis is excluded).
+         * Tests can add a jti to {@link RecordingBlacklist#blacklisted} to simulate revocation.
          */
         @Bean
-        TokenBlacklistService tokenBlacklistService() {
-            return new TokenBlacklistService() {
-                @Override
-                public void blacklist(String jti, Duration ttl) {
-                    // no-op
-                }
+        RecordingBlacklist tokenBlacklistService() {
+            return new RecordingBlacklist();
+        }
+    }
 
-                @Override
-                public boolean isBlacklisted(String jti) {
-                    return false;
-                }
-            };
+    /**
+     * In-memory {@link TokenBlacklistService} backed by a concurrent set, so tests can
+     * black-list a jti and have {@link #isBlacklisted(String)} reflect it.
+     */
+    static class RecordingBlacklist implements TokenBlacklistService {
+        final java.util.Set<String> blacklisted = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+        @Override
+        public void blacklist(String jti, Duration ttl) {
+            blacklisted.add(jti);
+        }
+
+        @Override
+        public boolean isBlacklisted(String jti) {
+            return blacklisted.contains(jti);
         }
     }
 
