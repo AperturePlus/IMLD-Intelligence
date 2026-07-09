@@ -1,6 +1,7 @@
 package xenosoft.imldintelligence.module.diagnoses.internal.repository;
 
 import xenosoft.imldintelligence.module.diagnoses.internal.model.ModelRegistry;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.ModelRegistryQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,26 @@ public interface ModelRegistryRepository {
      * @return 符合条件的模型注册信息列表
      */
     List<ModelRegistry> listByTenantId(Long tenantId);
+
+    /**
+     * 按查询条件分页查询模型注册信息，过滤/排序/分页均在 SQL 层完成。
+     *
+     * <p>排序规则与 {@code listModels} 一致：按 created_at 倒序。</p>
+     *
+     * @param query 筛选条件
+     * @param offset 偏移量（从 0 开始）
+     * @param limit 每页条数
+     * @return 当前页的模型注册信息列表
+     */
+    List<ModelRegistry> query(ModelRegistryQuery query, long offset, int limit);
+
+    /**
+     * 按查询条件统计匹配的模型注册信息总数。
+     *
+     * @param query 筛选条件
+     * @return 匹配的记录数
+     */
+    long count(ModelRegistryQuery query);
 
     /**
      * 新增模型注册信息。

@@ -13,6 +13,8 @@ import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisResult
 import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisSession;
 import xenosoft.imldintelligence.module.diagnoses.internal.model.DoctorFeedback;
 import xenosoft.imldintelligence.module.diagnoses.internal.model.ModelRegistry;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.DiagnosisSessionQuery;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.ModelRegistryQuery;
 import xenosoft.imldintelligence.module.identity.internal.model.Encounter;
 import xenosoft.imldintelligence.module.identity.internal.model.Patient;
 import xenosoft.imldintelligence.module.identity.internal.model.Tenant;
@@ -23,6 +25,7 @@ import xenosoft.imldintelligence.module.identity.internal.repository.TenantRepos
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -223,6 +226,103 @@ class DiagnosesRepositoryIntegrationTest extends AbstractPostgresIntegrationTest
 
         assertThat(doctorFeedbackRepository.deleteById(tenant.getId(), feedback.getId())).isTrue();
         assertThat(doctorFeedbackRepository.findById(tenant.getId(), feedback.getId())).isEmpty();
+    }
+
+    @Test
+    void diagnosisSessionQueryPaginatesFiltersAndSortsInSql() {
+        Tenant tenant = createTenant();
+        Patient patient = createPatient(tenant.getId());
+        UserAccount doctorA = createUserAccount(tenant.getId());
+        UserAccount doctorB = createUserAccount(tenant.getId());
+        Encounter encounter = createEncounter(tenant.getId(), patient.getId(), doctorA.getId());
+        ModelRegistry registry = createModelRegistry(tenant.getId());
+
+        DiagnosisSession runningA = createSession(tenant.getId(), patient.getId(), encounter.getId(),
+                doctorA.getId(), registry.getId(), "MANUAL", "RUNNING");
+        DiagnosisSession completedB = createSession(tenant.getId(), patient.getId(), encounter.getId(),
+                doctorB.getId(), registry.getId(), "AUTO", "COMPLETED");
+        DiagnosisSession runningC = createSession(tenant.getId(), patient.getId(), encounter.getId(),
+                doctorA.getId(), registry.getId(), "MANUAL", "RUNNING");
+
+        DiagnosisSessionQuery runningByA = new DiagnosisSessionQuery();
+        runningByA.setTenantId(tenant.getId());
+        runningByA.setDoctorId(doctorA.getId());
+        runningByA.setStatus("RUNNING");
+
+        assertThat(diagnosisSessionRepository.count(runningByA)).isEqualTo(2L);
+        List<DiagnosisSession> firstPage = diagnosisSessionRepository.query(runningByA, 0, 1);
+        assertThat(firstPage).hasSize(1);
+        // newest first (id desc as tiebreak on equal started_at): the later-inserted runningC
+        assertThat(firstPage.get(0).getId()).isEqualTo(runningC.getId());
+
+        List<DiagnosisSession> secondPage = diagnosisSessionRepository.query(runningByA, 1, 1);
+        assertThat(secondPage).hasSize(1);
+        assertThat(secondPage.get(0).getId()).isEqualTo(runningA.getId());
+
+        // status filter excludes the completed session
+        DiagnosisSessionQuery allTenant = new DiagnosisSessionQuery();
+        allTenant.setTenantId(tenant.getId());
+        assertThat(diagnosisSessionRepository.count(allTenant)).isEqualTo(3L);
+
+        DiagnosisSessionQuery completedOnly = new DiagnosisSessionQuery();
+        completedOnly.setTenantId(tenant.getId());
+        completedOnly.setStatus("COMPLETED");
+        assertThat(diagnosisSessionRepository.count(completedOnly)).isEqualTo(1L);
+        assertThat(diagnosisSessionRepository.query(completedOnly, 0, 10))
+                .extracting(DiagnosisSession::getId).containsExactly(completedB.getId());
+    }
+
+    @Test
+    void modelRegistryQueryPaginatesFiltersInSql() {
+        Tenant tenant = createTenant();
+
+        ModelRegistry active = createModelRegistryWith(tenant.getId(), "LOCAL", "ML", "ACTIVE");
+        ModelRegistry inactive = createModelRegistryWith(tenant.getId(), "OPENAI", "LLM", "INACTIVE");
+        ModelRegistry activeRule = createModelRegistryWith(tenant.getId(), "LOCAL", "RULE", "ACTIVE");
+
+        ModelRegistryQuery activeLocal = new ModelRegistryQuery();
+        activeLocal.setTenantId(tenant.getId());
+        activeLocal.setProvider("LOCAL");
+        activeLocal.setStatus("ACTIVE");
+
+        assertThat(modelRegistryRepository.count(activeLocal)).isEqualTo(2L);
+        List<ModelRegistry> page = modelRegistryRepository.query(activeLocal, 0, 1);
+        assertThat(page).hasSize(1);
+        assertThat(modelRegistryRepository.query(activeLocal, 1, 1)).hasSize(1);
+
+        ModelRegistryQuery all = new ModelRegistryQuery();
+        all.setTenantId(tenant.getId());
+        assertThat(modelRegistryRepository.count(all)).isEqualTo(3L);
+    }
+
+    private DiagnosisSession createSession(Long tenantId, Long patientId, Long encounterId,
+                                           Long doctorId, Long modelRegistryId, String triggeredBy, String status) {
+        DiagnosisSession session = new DiagnosisSession();
+        session.setTenantId(tenantId);
+        session.setPatientId(patientId);
+        session.setEncounterId(encounterId);
+        session.setDoctorId(doctorId);
+        session.setTriggeredBy(triggeredBy);
+        session.setModelRegistryId(modelRegistryId);
+        session.setInputSnapshot(OBJECT_MAPPER.createObjectNode().put("k", "v"));
+        session.setStatus(status);
+        session.setStartedAt(OffsetDateTime.now().withNano(0));
+        diagnosisSessionRepository.save(session);
+        return session;
+    }
+
+    private ModelRegistry createModelRegistryWith(Long tenantId, String provider, String modelType, String status) {
+        ModelRegistry registry = new ModelRegistry();
+        registry.setTenantId(tenantId);
+        registry.setModelCode("MODEL_" + unique("code"));
+        registry.setModelName("Model");
+        registry.setModelType(modelType);
+        registry.setModelVersion("v" + System.nanoTime());
+        registry.setProvider(provider);
+        registry.setStatus(status);
+        registry.setReleasedAt(OffsetDateTime.now().withNano(0));
+        modelRegistryRepository.save(registry);
+        return registry;
     }
 
     private ModelRegistry createModelRegistry(Long tenantId) {

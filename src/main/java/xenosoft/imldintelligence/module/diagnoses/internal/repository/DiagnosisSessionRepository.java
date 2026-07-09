@@ -1,6 +1,7 @@
 package xenosoft.imldintelligence.module.diagnoses.internal.repository;
 
 import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisSession;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.DiagnosisSessionQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,26 @@ public interface DiagnosisSessionRepository {
      * @return 符合条件的诊断会话列表
      */
     List<DiagnosisSession> listByEncounterId(Long tenantId, Long encounterId);
+
+    /**
+     * 按查询条件分页查询诊断会话，过滤/排序/分页均在 SQL 层完成。
+     *
+     * <p>排序规则与 {@code listSessions} 一致：按 started_at（缺失时回退 created_at）倒序，再按 id 倒序。</p>
+     *
+     * @param query 筛选条件
+     * @param offset 偏移量（从 0 开始）
+     * @param limit 每页条数
+     * @return 当前页的诊断会话列表
+     */
+    List<DiagnosisSession> query(DiagnosisSessionQuery query, long offset, int limit);
+
+    /**
+     * 按查询条件统计匹配的诊断会话总数。
+     *
+     * @param query 筛选条件
+     * @return 匹配的记录数
+     */
+    long count(DiagnosisSessionQuery query);
 
     /**
      * 新增诊断会话。

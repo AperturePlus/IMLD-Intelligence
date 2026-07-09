@@ -15,6 +15,15 @@ describe('disease display fields', () => {
   test('resolves disease-specific fallback content', () => {
     const cases = [
       { disease: '肝豆状核变性 (Wilson病)', gene: 'ATP7B', tag: '低铜饮食' },
+      { disease: 'Citrin缺乏症', gene: 'SLC25A13', tag: '分散碳水' },
+      { disease: 'PFIC2/ABCB11', gene: 'ABCB11', tag: '脂溶维生素' },
+      { disease: 'PFIC3/ABCB4', gene: 'ABCB4', tag: '熊去氧胆酸评估' },
+      { disease: 'Dubin-Johnson综合征', gene: 'ABCC2', tag: '胆红素随访' },
+      { disease: 'Alagille综合征', gene: 'JAG1', tag: '高能量' },
+      { disease: 'NTCP缺乏症/SLC10A1', gene: 'SLC10A1', tag: '避免过度限制' },
+      { disease: '溶酶体酸性脂肪酶缺乏症/LIPA', gene: 'LIPA', tag: '低胆固醇' },
+      { disease: '糖原累积病I型/G6PC', gene: 'G6PC', tag: '避免空腹' },
+      { disease: '青年型遗传性血色病', gene: 'HJV', tag: '家系筛查' },
       { disease: '遗传性血色病', gene: 'HFE', tag: '限制红肉' },
       { disease: 'α1-抗胰蛋白酶缺乏症', gene: 'SERPINA1', tag: '高蛋白低脂' },
       { disease: '代谢相关脂肪性肝病', gene: '', tag: '控制总热量' },
@@ -248,33 +257,33 @@ describe('diagnosis result mapper', () => {
       id: 'REP-202311-001',
       patientId: 'P001',
       visitId: 'MZ8849201',
-      patientName: '林建国',
+      patientName: '方亦辰',
       gender: '男',
-      age: 58,
-      date: '2023-11-20',
+      age: 14,
+      date: '2026-05-02',
       status: '已签发',
       aiFindings: {
-        biochemical: '血清铁蛋白 850 ng/mL (参考 30-300 / 显著偏离)，转铁蛋白饱和度 65 % (参考 20-45 / 显著偏离)（mock参考区间，实际以检验机构为准）',
-        clinical: '皮肤色素沉着伴轻度肝肿大。',
-        probability: '89',
-        disease: '遗传性血色病'
+        biochemical: '血清铜蓝蛋白 0.055 g/L (参考 0.20-0.60 / 显著偏离)，ALT 126 U/L (参考 9-50 / 显著偏离)（mock参考区间，实际以检验机构为准）',
+        clinical: '手抖和注意力下降，裂隙灯提示可疑 K-F 环。',
+        probability: '94',
+        disease: '肝豆状核变性 (Wilson病)'
       },
       expertConclusion: '',
       treatmentPlan: ''
     })
 
     expect(result.indicators[0]).toMatchObject({
-      name: '血清铁蛋白',
-      value: 850,
-      unit: 'ng/mL',
-      normal: '30-300',
+      name: '血清铜蓝蛋白',
+      value: 0.055,
+      unit: 'g/L',
+      normal: '0.20-0.60',
       status: 'exception'
     })
     expect(result.indicators[1]).toMatchObject({
-      name: '转铁蛋白饱和度',
-      value: 65,
-      unit: '%',
-      normal: '20-45',
+      name: 'ALT',
+      value: 126,
+      unit: 'U/L',
+      normal: '9-50',
       status: 'exception'
     })
   })

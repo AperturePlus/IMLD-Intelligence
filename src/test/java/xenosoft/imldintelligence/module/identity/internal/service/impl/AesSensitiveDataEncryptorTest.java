@@ -115,12 +115,45 @@ class AesSensitiveDataEncryptorTest {
     void throwsWhenKeyTooShort() {
         assertThatThrownBy(() -> new AesSensitiveDataEncryptor("short"))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("at least 16 bytes");
+                .hasMessageContaining("must be exactly 16, 24, or 32 bytes");
+    }
+
+    @Test
+    void throwsWhenKeyLengthIsBetweenAesSizes() {
+        // 17 bytes: silently truncated to AES-128 previously.
+        assertThatThrownBy(() -> new AesSensitiveDataEncryptor("012345678901234567"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must be exactly 16, 24, or 32 bytes");
+        // 25 bytes: a mistaken "AES-192" key must be rejected, not truncated.
+        assertThatThrownBy(() -> new AesSensitiveDataEncryptor("0123456789012345678901234"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must be exactly 16, 24, or 32 bytes");
+        // 31 bytes: one byte short of AES-256; must be rejected, not truncated.
+        assertThatThrownBy(() -> new AesSensitiveDataEncryptor("0123456789012345678901234567890"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must be exactly 16, 24, or 32 bytes");
+    }
+
+    @Test
+    void throwsWhenKeyTooLong() {
+        // 33 bytes: longer than AES-256; must be rejected, not truncated.
+        assertThatThrownBy(() -> new AesSensitiveDataEncryptor("012345678901234567890123456789012"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("must be exactly 16, 24, or 32 bytes");
     }
 
     @Test
     void worksWithSixteenByteKey() {
         AesSensitiveDataEncryptor encryptor = new AesSensitiveDataEncryptor("0123456789012345");
+
+        String encrypted = encryptor.encrypt("hello");
+        String decrypted = encryptor.decrypt(encrypted);
+        assertThat(decrypted).isEqualTo("hello");
+    }
+
+    @Test
+    void worksWithTwentyFourByteKey() {
+        AesSensitiveDataEncryptor encryptor = new AesSensitiveDataEncryptor("012345678901234567890123");
 
         String encrypted = encryptor.encrypt("hello");
         String decrypted = encryptor.decrypt(encrypted);

@@ -13,7 +13,7 @@
         :title="isCollapse ? '展开菜单' : '折叠菜单'"
         @click="toggleCollapse"
       >
-        <el-icon><component :is="isCollapse ? 'Expand' : 'Fold'" /></el-icon>
+        <BaseIcon :name="isCollapse ? 'expand' : 'fold'" :size="16" />
       </div>
     </div>
 
@@ -30,7 +30,7 @@
         :disabled="isWelcomeActive"
         @click="goWelcome"
       >
-        <el-icon class="home-shortcut-icon"><component :is="'House'" /></el-icon>
+        <BaseIcon name="house" :size="16" class="home-shortcut-icon" />
         <span v-show="!isCollapse">首页</span>
       </button>
     </div>
@@ -41,8 +41,8 @@
         class="modern-menu"
         :collapse="isCollapse"
         background-color="transparent"
-        text-color="#a6adb4"
-        active-text-color="#ffffff"
+        text-color="var(--imld-on-dark-secondary)"
+        active-text-color="var(--imld-white)"
         unique-opened
         router
         :collapse-transition="false"
@@ -71,12 +71,14 @@
     <div class="sidebar-footer">
       <el-dropdown placement="top" trigger="click" class="user-dropdown">
         <div class="user-profile-card" :class="{ 'is-collapsed': isCollapse }">
-          <el-avatar :size="32" :src="doctorAvatar" class="user-avatar" />
+          <BaseAvatar :size="32" :src="doctorAvatar" class="user-avatar" />
           <div v-show="!isCollapse" class="user-info">
             <div class="user-name">{{ userDisplayName }}</div>
             <div class="user-role">{{ userRoleLabel }}</div>
           </div>
-          <el-icon v-show="!isCollapse" class="more-icon"><MoreFilled /></el-icon>
+          <el-icon v-show="!isCollapse" class="more-icon"
+            ><MoreFilled
+          /></el-icon>
         </div>
         <template #dropdown>
           <el-dropdown-menu class="modern-dropdown-menu">
@@ -94,157 +96,184 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, provide, ref, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import logoImg from '@/assets/logo.svg'
-import defaultDoctorAvatar from '@/assets/default-doctor.svg'
-import accountApi from '@/api/account'
-import { centerRouteDefinitions, navigationGroups } from '@/app/router/routeCatalog'
-import { BRANDING } from '@/constants/branding'
-import type { AccountProfileResponse } from '@/types/account'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  ref,
+  watchEffect,
+} from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import logoImg from "@/assets/logo.svg";
+import defaultDoctorAvatar from "@/assets/default-doctor.svg";
+import accountApi from "@/api/account";
+import {
+  centerRouteDefinitions,
+  navigationGroups,
+} from "@/app/router/routeCatalog";
+import { BRANDING } from "@/constants/branding";
+import BaseAvatar from "@/components/atoms/BaseAvatar.vue";
+import BaseIcon from "@/components/atoms/BaseIcon.vue";
+import type { AccountProfileResponse } from "@/types/account";
 
-const router = useRouter()
-const route = useRoute()
-const isCollapse = ref(false)
-provide('isCollapse', isCollapse)
+const router = useRouter();
+const route = useRoute();
+const isCollapse = ref(false);
+provide("isCollapse", isCollapse);
 
 const isElectronShell = computed(
-  () => typeof window !== 'undefined' && Boolean(window.electron?.shell)
-)
-const showBrowserHomeShortcut = computed(() => !isElectronShell.value)
-const welcomePath = centerRouteDefinitions.welcome.fullPath
-const isWelcomeActive = computed(() => route.path === welcomePath)
+  () => typeof window !== "undefined" && Boolean(window.electron?.shell)
+);
+const showBrowserHomeShortcut = computed(() => !isElectronShell.value);
+const welcomePath = centerRouteDefinitions.welcome.fullPath;
+const isWelcomeActive = computed(() => route.path === welcomePath);
 
-const activeMenu = ref('/center/patient-list')
-const userDisplayName = ref('医生用户')
-const userRoleLabel = ref('医生')
+const activeMenu = ref("/center/patient-list");
+const userDisplayName = ref("医生用户");
+const userRoleLabel = ref("医生");
 
 const doctorAvatar = computed(() => {
-  const storedAvatar = localStorage.getItem('userAvatar')
-  if (typeof storedAvatar === 'string' && storedAvatar.trim()) {
-    return storedAvatar.trim()
+  const storedAvatar = localStorage.getItem("userAvatar");
+  if (typeof storedAvatar === "string" && storedAvatar.trim()) {
+    return storedAvatar.trim();
   }
-  return defaultDoctorAvatar
-})
+  return defaultDoctorAvatar;
+});
 
 watchEffect(() => {
-  activeMenu.value = route.path
-})
+  activeMenu.value = route.path;
+});
 
 const roleLabelMap: Record<string, string> = {
-  SYSTEM_ADMIN: '系统管理员',
-  COMPLIANCE_AUDITOR: '合规审计员',
-  DOCTOR: '医生',
-  NURSE: '护士',
-  ADMIN: '管理员',
-  PATIENT: '患者'
-}
+  SYSTEM_ADMIN: "系统管理员",
+  COMPLIANCE_AUDITOR: "合规审计员",
+  DOCTOR: "医生",
+  NURSE: "护士",
+  ADMIN: "管理员",
+  PATIENT: "患者",
+};
 
 function toggleCollapse() {
-  isCollapse.value = !isCollapse.value
+  isCollapse.value = !isCollapse.value;
 }
 
 function goWelcome() {
   if (isWelcomeActive.value) {
-    return
+    return;
   }
-  router.push(welcomePath)
+  router.push(welcomePath);
 }
 
 function parseStoredRoles(): string[] {
   try {
-    const raw = localStorage.getItem('roleCodes')
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
+    const raw = localStorage.getItem("roleCodes");
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
   } catch {
-    return []
+    return [];
   }
 }
 
-function resolveRoleLabel(roleCodes: string[], userType: string | null): string {
-  const firstRole = roleCodes.find((role) => roleLabelMap[role])
+function resolveRoleLabel(
+  roleCodes: string[],
+  userType: string | null
+): string {
+  const firstRole = roleCodes.find((role) => roleLabelMap[role]);
   if (firstRole) {
-    return roleLabelMap[firstRole]
+    return roleLabelMap[firstRole];
   }
 
-  const normalizedType = typeof userType === 'string' ? userType.trim().toUpperCase() : ''
-  return roleLabelMap[normalizedType] || normalizedType || '医生'
+  const normalizedType =
+    typeof userType === "string" ? userType.trim().toUpperCase() : "";
+  return roleLabelMap[normalizedType] || normalizedType || "医生";
 }
 
 function persistProfile(profile: AccountProfileResponse): void {
-  localStorage.setItem('username', profile.username || '')
-  localStorage.setItem('userDisplayName', profile.displayName || profile.username || '')
-  localStorage.setItem('userType', profile.userType || '')
-  localStorage.setItem('roleCodes', JSON.stringify(profile.roleCodes || []))
-  localStorage.setItem('userId', String(profile.userId))
-  localStorage.setItem('tenantId', String(profile.tenantId))
+  localStorage.setItem("username", profile.username || "");
+  localStorage.setItem(
+    "userDisplayName",
+    profile.displayName || profile.username || ""
+  );
+  localStorage.setItem("userType", profile.userType || "");
+  localStorage.setItem("roleCodes", JSON.stringify(profile.roleCodes || []));
+  localStorage.setItem("userId", String(profile.userId));
+  localStorage.setItem("tenantId", String(profile.tenantId));
 }
 
 function refreshUserFromStorage(): void {
-  const displayName = localStorage.getItem('userDisplayName') || localStorage.getItem('username') || ''
-  const userType = localStorage.getItem('userType')
-  const roleCodes = parseStoredRoles()
-  userDisplayName.value = displayName.trim() || '医生用户'
-  userRoleLabel.value = resolveRoleLabel(roleCodes, userType)
+  const displayName =
+    localStorage.getItem("userDisplayName") ||
+    localStorage.getItem("username") ||
+    "";
+  const userType = localStorage.getItem("userType");
+  const roleCodes = parseStoredRoles();
+  userDisplayName.value = displayName.trim() || "医生用户";
+  userRoleLabel.value = resolveRoleLabel(roleCodes, userType);
 }
 
 async function loadCurrentProfile(): Promise<void> {
-  if (!localStorage.getItem('token')) {
-    refreshUserFromStorage()
-    return
+  if (!localStorage.getItem("token")) {
+    refreshUserFromStorage();
+    return;
   }
 
   try {
-    const response = await accountApi.getCurrentProfile()
+    const response = await accountApi.getCurrentProfile();
     if (response.data?.code === 200 && response.data.data) {
-      persistProfile(response.data.data)
+      persistProfile(response.data.data);
     }
   } catch {
     // The global interceptor handles expired sessions; sidebar identity refresh can fail silently.
   } finally {
-    refreshUserFromStorage()
+    refreshUserFromStorage();
   }
 }
 
 function clearSessionStorage(): void {
-  localStorage.removeItem('token')
-  localStorage.removeItem('refreshToken')
-  localStorage.removeItem('username')
-  localStorage.removeItem('userDisplayName')
-  localStorage.removeItem('userType')
-  localStorage.removeItem('roleCodes')
-  localStorage.removeItem('userId')
-  localStorage.removeItem('tenantId')
-  localStorage.removeItem('userAvatar')
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("username");
+  localStorage.removeItem("userDisplayName");
+  localStorage.removeItem("userType");
+  localStorage.removeItem("roleCodes");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("tenantId");
+  localStorage.removeItem("userAvatar");
 }
 
 function handleAccountSettings() {
-  router.push('/center/account-settings')
+  router.push("/center/account-settings");
 }
 
 function handleLogout() {
-  clearSessionStorage()
-  refreshUserFromStorage()
+  clearSessionStorage();
+  refreshUserFromStorage();
   ElMessage({
-    message: '您已成功退出！',
-    type: 'success',
-    duration: 2000
-  })
+    message: "您已成功退出！",
+    type: "success",
+    duration: 2000,
+  });
   setTimeout(() => {
-    router.push('/')
-  }, 1000)
+    router.push("/");
+  }, 1000);
 }
 
 onMounted(() => {
-  refreshUserFromStorage()
-  loadCurrentProfile()
-  window.addEventListener('imld:user-profile-updated', refreshUserFromStorage)
-})
+  refreshUserFromStorage();
+  loadCurrentProfile();
+  window.addEventListener("imld:user-profile-updated", refreshUserFromStorage);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('imld:user-profile-updated', refreshUserFromStorage)
-})
+  window.removeEventListener(
+    "imld:user-profile-updated",
+    refreshUserFromStorage
+  );
+});
 </script>
 
 <style scoped>
@@ -252,8 +281,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--electron-titlebar-safe-top));
-  background-color: #001529;
-  color: #fff;
+  background-color: var(--imld-navy);
+  color: var(--imld-white);
   transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   z-index: 100;
@@ -265,7 +294,7 @@ onBeforeUnmount(() => {
   align-items: center;
   height: 64px;
   padding: 0 16px;
-  background-color: #001529;
+  background-color: var(--imld-navy);
   flex-shrink: 0;
 }
 
@@ -290,7 +319,7 @@ onBeforeUnmount(() => {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #ffffff;
+  color: var(--imld-white);
   line-height: 1.1;
   margin-bottom: 2px;
 }
@@ -298,7 +327,7 @@ onBeforeUnmount(() => {
 .product-name-sub {
   font-size: 12px;
   font-weight: 400;
-  color: #a6adb4;
+  color: var(--imld-on-dark-secondary);
   margin-top: 1px;
   line-height: 1.1;
 }
@@ -310,20 +339,19 @@ onBeforeUnmount(() => {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  color: #8c939d;
+  color: var(--imld-on-dark-tertiary);
   border-radius: 6px;
   transition: all 0.2s;
 }
-
 .collapse-trigger:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--imld-white);
+  background-color: rgba(var(--imld-white-rgb), 0.1);
 }
 
 .workspace-label {
   padding: 16px 20px 8px 20px;
   font-size: 12px;
-  color: #6e7a89;
+  color: var(--imld-on-dark-quaternary);
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -343,16 +371,16 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   gap: 8px;
   padding: 0 12px;
-  border: 1px solid #112a41;
+  border: 1px solid var(--imld-dark-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  color: #a6adb4;
+  background: rgba(var(--imld-white-rgb), 0.03);
+  color: var(--imld-on-dark-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .home-shortcut:hover:not(:disabled) {
-  color: #ffffff;
+  color: var(--imld-white);
   border-color: rgba(64, 158, 255, 0.5);
   background: rgba(64, 158, 255, 0.2);
 }
@@ -362,7 +390,7 @@ onBeforeUnmount(() => {
 }
 
 .home-shortcut.is-active {
-  color: #ffffff;
+  color: var(--imld-white);
   border-color: var(--el-color-primary);
   background: rgba(64, 158, 255, 0.26);
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.24);
@@ -398,19 +426,19 @@ onBeforeUnmount(() => {
 
 :deep(.el-sub-menu__title:hover),
 :deep(.el-menu-item:hover) {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  background-color: rgba(var(--imld-white-rgb), 0.08) !important;
+  color: var(--imld-white) !important;
 }
 
 :deep(.el-menu-item.is-active) {
   background-color: var(--el-color-primary) !important;
-  color: #ffffff !important;
+  color: var(--imld-white) !important;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 :deep(.el-menu--inline) {
-  background-color: #000c17 !important;
+  background-color: var(--imld-navy-deep) !important;
   border-radius: 8px;
   padding: 4px 0;
   margin-bottom: 8px;
@@ -420,14 +448,13 @@ onBeforeUnmount(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #6e7a89;
+  background-color: var(--imld-on-dark-quaternary);
   margin-right: 12px;
   margin-left: 2px;
   transition: background-color 0.2s;
 }
-
 :deep(.el-menu-item.is-active) .menu-dot {
-  background-color: #ffffff;
+  background-color: var(--imld-white);
 }
 
 :deep(.el-menu--collapse) {
@@ -442,8 +469,8 @@ onBeforeUnmount(() => {
 
 .sidebar-footer {
   padding: 12px;
-  background-color: #001529;
-  border-top: 1px solid #112a41;
+  background-color: var(--imld-navy);
+  border-top: 1px solid var(--imld-dark-border);
   flex-shrink: 0;
 }
 
@@ -461,9 +488,8 @@ onBeforeUnmount(() => {
   width: 100%;
   box-sizing: border-box;
 }
-
 .user-profile-card:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(var(--imld-white-rgb), 0.08);
 }
 
 .user-profile-card.is-collapsed {
@@ -485,7 +511,7 @@ onBeforeUnmount(() => {
 .user-name {
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--imld-white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -493,12 +519,12 @@ onBeforeUnmount(() => {
 
 .user-role {
   font-size: 12px;
-  color: #8c939d;
+  color: var(--imld-on-dark-tertiary);
   margin-top: 2px;
 }
 
 .more-icon {
-  color: #8c939d;
+  color: var(--imld-on-dark-tertiary);
   font-size: 16px;
 }
 
@@ -508,12 +534,11 @@ onBeforeUnmount(() => {
 }
 
 .modern-dropdown-menu .danger-item {
-  color: #f56c6c;
+  color: var(--imld-danger);
 }
 
 .modern-dropdown-menu .danger-item:hover {
-  color: #f56c6c;
+  color: var(--imld-danger);
   background-color: #fef0f0;
 }
 </style>
-

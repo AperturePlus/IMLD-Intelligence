@@ -27,14 +27,15 @@ public class AesSensitiveDataEncryptor implements SensitiveDataEncryptor {
             this.keyBytes = null;
         } else {
             byte[] raw = dataEncryptionKey.getBytes(StandardCharsets.UTF_8);
-            if (raw.length < 16) {
+            // AES only accepts 16 (AES-128), 24 (AES-192), or 32 (AES-256) byte keys.
+            // Reject any other length rather than silently truncating, so a mis-sized
+            // configured key fails loudly at startup instead of degrading to AES-128.
+            if (raw.length != 16 && raw.length != 24 && raw.length != 32) {
                 throw new IllegalStateException(
-                        "imld.security.data-encryption-key must be at least 16 bytes");
+                        "imld.security.data-encryption-key must be exactly 16, 24, or 32 bytes, got "
+                                + raw.length + " bytes");
             }
-            // Use first 16 bytes (AES-128) or 32 bytes (AES-256) depending on length
-            int keyLen = raw.length >= 32 ? 32 : 16;
-            this.keyBytes = new byte[keyLen];
-            System.arraycopy(raw, 0, this.keyBytes, 0, keyLen);
+            this.keyBytes = raw;
         }
     }
 

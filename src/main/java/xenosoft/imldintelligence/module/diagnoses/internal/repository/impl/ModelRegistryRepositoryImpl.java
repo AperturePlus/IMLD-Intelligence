@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.diagnoses.internal.model.ModelRegistry;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.ModelRegistryRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.mybatis.ModelRegistryMapper;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.ModelRegistryQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,36 @@ public class ModelRegistryRepositoryImpl implements ModelRegistryRepository {
         return modelRegistryMapper.selectList(new LambdaQueryWrapper<ModelRegistry>()
                 .eq(ModelRegistry::getTenantId, tenantId)
                 .orderByDesc(ModelRegistry::getId));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<ModelRegistry> query(ModelRegistryQuery query, long offset, int limit) {
+        return modelRegistryMapper.selectList(buildQueryWrapper(query)
+                .last("ORDER BY created_at DESC NULLS LAST"
+                        + " LIMIT " + Math.max(1, limit)
+                        + " OFFSET " + Math.max(0, offset)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long count(ModelRegistryQuery query) {
+        return modelRegistryMapper.selectCount(buildQueryWrapper(query));
+    }
+
+    private LambdaQueryWrapper<ModelRegistry> buildQueryWrapper(ModelRegistryQuery query) {
+        return new LambdaQueryWrapper<ModelRegistry>()
+                .eq(ModelRegistry::getTenantId, query.getTenantId())
+                .eq(query.getProvider() != null && !query.getProvider().isEmpty(),
+                        ModelRegistry::getProvider, query.getProvider())
+                .eq(query.getModelType() != null && !query.getModelType().isEmpty(),
+                        ModelRegistry::getModelType, query.getModelType())
+                .eq(query.getStatus() != null && !query.getStatus().isEmpty(),
+                        ModelRegistry::getStatus, query.getStatus());
     }
 
     /**

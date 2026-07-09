@@ -98,6 +98,96 @@ const DISEASE_PROFILES: DiseaseProfile[] = [
     geneRecommendationTitle: 'ATP7B 基因检测建议'
   },
   {
+    match: (name) => name.includes('Citrin') || name.includes('SLC25A13'),
+    differentials: ['Wilson病（需鉴别）', '胆汁淤积性肝病（需排除）', '糖原累积病（结合低血糖鉴别）'],
+    keySigns: ['反复黄疸或厌油', '低血糖/高氨血症线索', '高碳水不耐受需核实'],
+    dietTags: ['分散碳水', '高蛋白高脂', '低血糖监测'],
+    genes: ['SLC25A13'],
+    diet: '建议避免高碳水负荷，采用少量多餐、相对高蛋白高脂饮食，并补充脂溶性维生素。',
+    sequencing: '建议进行 SLC25A13 基因检测，并对父母和同胞开展携带者筛查。',
+    geneRecommendationTitle: 'SLC25A13 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('PFIC2') || name.includes('ABCB11'),
+    differentials: ['PFIC3/ABCB4（需鉴别）', '胆道闭锁后遗症（需排除）', 'Alagille综合征（需鉴别）'],
+    keySigns: ['儿童期胆汁淤积', '总胆汁酸显著升高', '低或正常 GGT 表型'],
+    dietTags: ['脂溶维生素', '中链脂肪', '瘙痒管理'],
+    genes: ['ABCB11'],
+    diet: '建议补充脂溶性维生素和中链脂肪，瘙痒明显时评估胆汁酸转运相关治疗。',
+    sequencing: '建议 ABCB11 靶向测序或胆汁淤积 panel，并评估家系复发风险。',
+    geneRecommendationTitle: 'ABCB11 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('PFIC3') || name.includes('ABCB4'),
+    differentials: ['PFIC2/ABCB11（需鉴别）', '胆石症相关胆汁淤积（需排除）', '药物性胆汁淤积（需结合用药史）'],
+    keySigns: ['儿童或青少年胆汁淤积', 'GGT 明显升高', 'ABCB4 相关胆管损伤线索'],
+    dietTags: ['脂溶维生素', '熊去氧胆酸评估', '纤维化随访'],
+    genes: ['ABCB4'],
+    diet: '建议脂溶性维生素补充，保持足量能量摄入，并在医生指导下评估熊去氧胆酸反应。',
+    sequencing: '建议 ABCB4 基因检测，必要时纳入 PFIC/胆汁淤积 panel 进行复核。',
+    geneRecommendationTitle: 'ABCB4 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('Dubin') || name.includes('ABCC2'),
+    differentials: ['Rotor综合征（需鉴别）', '胆汁淤积性肝病（低可能）', '药物相关直接胆红素升高（需结合用药史）'],
+    keySigns: ['直接胆红素升高', '肝酶多为正常或轻度异常', '尿色加深但整体病程稳定'],
+    dietTags: ['均衡饮食', '避免不明保健品', '胆红素随访'],
+    genes: ['ABCC2'],
+    diet: '多数病例无需特殊饮食限制，建议避免不必要用药刺激并定期复查胆红素分型。',
+    sequencing: '建议 ABCC2 基因检测，结合直接胆红素升高和家族史完成分型。',
+    geneRecommendationTitle: 'ABCC2 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('Alagille') || name.includes('JAG1') || name.includes('NOTCH2'),
+    differentials: ['PFIC3/ABCB4（需鉴别）', '胆道闭锁后遗症（需排除）', '其他胆管稀少综合征（需鉴别）'],
+    keySigns: ['胆汁淤积和皮肤瘙痒', '胆管稀少或心血管线索', '脂溶性维生素缺乏风险'],
+    dietTags: ['高能量', '脂溶维生素', '心肝联合随访'],
+    genes: ['JAG1', 'NOTCH2'],
+    diet: '建议高能量饮食和脂溶性维生素补充，瘙痒明显时按胆汁淤积路径管理。',
+    sequencing: '建议 JAG1/NOTCH2 基因检测，并联合心血管、眼科和骨骼系统评估。',
+    geneRecommendationTitle: 'JAG1/NOTCH2 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('NTCP') || name.includes('SLC10A1'),
+    differentials: ['其他胆汁酸转运障碍（需鉴别）', '胆汁淤积性肝病（低可能）', '采血或检测误差（需复核）'],
+    keySigns: ['总胆汁酸显著升高', '肝酶可正常', '儿童期筛查发现为常见场景'],
+    dietTags: ['均衡饮食', '避免过度限制', '胆汁酸随访'],
+    genes: ['SLC10A1'],
+    diet: '多以观察随访为主，建议均衡饮食，避免因单项胆汁酸升高过度限制营养。',
+    sequencing: '建议 SLC10A1 基因检测，结合胆汁酸显著升高且肝酶正常的表型确认。',
+    geneRecommendationTitle: 'SLC10A1 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('脂肪酶') || name.includes('LIPA'),
+    differentials: ['代谢相关脂肪性肝病（需鉴别）', '家族性高胆固醇血症（需排除）', '糖原累积病（结合低血糖鉴别）'],
+    keySigns: ['LDL-C 或 TG 升高', '肝脾大或肝酶异常', '非肥胖儿童/青少年脂质异常'],
+    dietTags: ['低胆固醇', '血脂随访', '酶替代评估'],
+    genes: ['LIPA'],
+    diet: '建议低胆固醇饮食并避免过度高脂摄入，评估酶替代治疗适应证。',
+    sequencing: '建议 LIPA 基因检测，必要时补充溶酶体酸性脂肪酶活性检测。',
+    geneRecommendationTitle: 'LIPA 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('糖原') || name.includes('G6PC') || name.includes('SLC37A4'),
+    differentials: ['Citrin缺乏症（结合饮食偏好鉴别）', '脂肪酸氧化障碍（需排除）', '内分泌性低血糖（需鉴别）'],
+    keySigns: ['晨起或空腹低血糖', '肝大伴高甘油三酯', '高尿酸或乳酸异常需复核'],
+    dietTags: ['避免空腹', '夜间加餐', '尿酸血脂管理'],
+    genes: ['G6PC', 'SLC37A4'],
+    diet: '建议避免长时间空腹，评估夜间生玉米淀粉方案，并控制高尿酸和高甘油三酯。',
+    sequencing: '建议 G6PC/SLC37A4 基因检测，并结合低血糖、高乳酸或高尿酸表型分型。',
+    geneRecommendationTitle: 'G6PC/SLC37A4 基因检测建议'
+  },
+  {
+    match: (name) => name.includes('青年型') && name.includes('血色'),
+    differentials: ['HFE相关遗传性血色病（需鉴别）', '继发性铁过载（需排除）', '肝豆状核变性（低可能）'],
+    keySigns: ['青年起病铁过载', '铁蛋白或转铁蛋白饱和度升高', '皮肤色素沉着或内分泌受累需评估'],
+    dietTags: ['限制红肉', '避免维生素C同餐', '家系筛查'],
+    genes: ['HJV (HFE2)', 'HAMP', 'TFR2'],
+    diet: '建议限制红肉和动物内脏，避免随餐补充维生素 C，治疗前不自行使用铁剂。',
+    sequencing: '建议 HJV/HAMP/HFE/TFR2 铁代谢 panel，并对一级亲属开展家系筛查。',
+    geneRecommendationTitle: '青年型铁过载基因检测建议'
+  },
+  {
     match: (name) => name.includes('血色') || name.toLowerCase().includes('hemochromatosis'),
     differentials: ['肝豆状核变性（低可能）', '代谢相关脂肪性肝病（需鉴别）', '酒精相关肝病（需结合病史）'],
     keySigns: ['铁蛋白或转铁蛋白饱和度升高', '皮肤色素沉着/关节症状需核实', '糖代谢异常需同步评估'],

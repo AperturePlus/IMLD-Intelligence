@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { ElConfigProvider } from 'element-plus'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import DesktopTitlebar from '@/layouts/components/DesktopTitlebar.vue'
+import { computed, ref } from "vue";
+import { ElConfigProvider } from "element-plus";
+import zhCn from "element-plus/es/locale/lang/zh-cn";
+import DesktopTitlebar from "@/components/organisms/DesktopTitlebar.vue";
 
-const locale = ref(zhCn)
+const locale = ref(zhCn);
 const isFramelessShell = computed(
-  () => typeof window !== 'undefined' && Boolean(window.electron?.shell?.frameless)
-)
+  () =>
+    typeof window !== "undefined" && Boolean(window.electron?.shell?.frameless)
+);
 </script>
 
 <template>
@@ -16,4 +17,3 @@ const isFramelessShell = computed(
     <router-view />
   </el-config-provider>
 </template>
-

@@ -13,19 +13,20 @@ export const screeningExactHandlers = {
           { title: 'AI 干预采纳数', value: 890, color: '#67c23a', icon: 'MagicStick', trend: 12.4, suffix: '次' }
         ],
         riskDistribution: [
-          { level: '极高', count: 85, percentage: 15, color: '#f56c6c' },
-          { level: '高', count: 257, percentage: 35, color: '#e6a23c' },
-          { level: '中', count: 420, percentage: 55, color: '#e6a23c' },
-          { level: '低', count: 11688, percentage: 100, color: '#67c23a' }
+          { level: '极高', count: 85, percentage: 1, color: '#f56c6c' },
+          { level: '高', count: 257, percentage: 2, color: '#e6a23c' },
+          { level: '中', count: 420, percentage: 3, color: '#e6a23c' },
+          { level: '低', count: 11688, percentage: 94, color: '#67c23a' }
         ],
         topGenes: [
-          { name: 'UGT1A1', desc: 'Gilbert综合征', percentage: 85 },
-          { name: 'SLC10A1', desc: '胆盐输出泵相关', percentage: 78 },
-          { name: 'ABCB4', desc: '多药耐药相关', percentage: 72 },
-          { name: 'ATP7B', desc: '肝豆状核变性', percentage: 65 },
-          { name: 'ABCC2', desc: '多药耐药相关', percentage: 58 },
-          { name: 'HFE', desc: '遗传性血色病', percentage: 45 },
-          { name: 'SERPINA1', desc: 'α1-抗胰蛋白酶缺乏', percentage: 32 }
+          { name: 'ATP7B', desc: '肝豆状核变性', percentage: 88 },
+          { name: 'SLC25A13', desc: 'Citrin缺乏症', percentage: 82 },
+          { name: 'ABCB11', desc: 'PFIC2', percentage: 76 },
+          { name: 'ABCB4', desc: 'PFIC3', percentage: 70 },
+          { name: 'JAG1', desc: 'Alagille综合征', percentage: 64 },
+          { name: 'SLC10A1', desc: 'NTCP缺乏症', percentage: 58 },
+          { name: 'LIPA', desc: '溶酶体酸性脂肪酶缺乏', percentage: 52 },
+          { name: 'G6PC', desc: '糖原累积病I型', percentage: 45 }
         ],
         aiEfficiency: {
           diagnosisMatchRate: 94.6,
@@ -33,10 +34,10 @@ export const screeningExactHandlers = {
           avgDuration: '1.2s'
         },
         highRiskPatients: [
-          { date: '2023-11-24', name: '李*豪', age: 14, clue: '铜蓝蛋白极低 (0.05 g/L)，AST/ALT 比例失调', aiSuggest: 'Wilson病 (极高危)' },
-          { date: '2023-11-23', name: '赵*刚', age: 52, clue: '铁蛋白 > 1000 ng/mL，转铁蛋白饱和度 75%', aiSuggest: '遗传性血色病' },
-          { date: '2023-11-22', name: '陈*明', age: 28, clue: '持续性非结合胆红素升高', aiSuggest: 'Gilbert综合征' },
-          { date: '2023-11-21', name: '王*宇', age: 6, clue: '空腹低血糖伴乳酸酸中毒', aiSuggest: '糖原累积病' }
+          { date: '2026-05-24', name: '方*辰', age: 14, clue: '铜蓝蛋白 0.055 g/L，ALT/AST 升高，疑似 K-F 环', aiSuggest: 'Wilson病 (极高危)' },
+          { date: '2026-05-23', name: '何*澜', age: 6, clue: 'DBIL 68 μmol/L，TBA 180 μmol/L，GGT 不高', aiSuggest: 'PFIC2/ABCB11' },
+          { date: '2026-05-22', name: '韩*一', age: 7, clue: '晨起低血糖 2.9 mmol/L，TG 与尿酸升高', aiSuggest: '糖原累积病I型/G6PC' },
+          { date: '2026-05-21', name: '唐*曜', age: 16, clue: '非肥胖青少年 LDL-C 5.0 mmol/L，肝脾大', aiSuggest: 'LIPA缺乏症' }
         ]
       }
     }

@@ -13,9 +13,38 @@ interface SeedBasics {
   presentIllness: string
 }
 
+const estimateBody = (basics: SeedBasics) => {
+  const age = basics.age
+  const male = basics.gender === '男'
+  if (age <= 5) return { heightCm: 110, weightKg: 19 }
+  if (age <= 6) return { heightCm: 118, weightKg: 21 }
+  if (age <= 7) return { heightCm: 124, weightKg: 23 }
+  if (age <= 8) return { heightCm: 130, weightKg: 26 }
+  if (age <= 9) return { heightCm: 135, weightKg: 30 }
+  if (age <= 11) return { heightCm: 145, weightKg: 38 }
+  if (age <= 14) return { heightCm: male ? 165 : 158, weightKg: male ? 52 : 48 }
+  if (age <= 17) return { heightCm: male ? 170 : 160, weightKg: male ? 60 : 50 }
+  if (age <= 23) return { heightCm: male ? 174 : 162, weightKg: male ? 68 : 52 }
+  return { heightCm: male ? 176 : 163, weightKg: male ? 72 : 54 }
+}
+
+const calculateBmi = (heightCm: number, weightKg: number) => {
+  const meters = heightCm / 100
+  return Number((weightKg / (meters * meters)).toFixed(1))
+}
+
+const estimateVitals = (age: number) => {
+  if (age <= 8) return { systolic: 98, diastolic: 62, heartRate: 88 }
+  if (age <= 14) return { systolic: 108, diastolic: 68, heartRate: 82 }
+  if (age <= 17) return { systolic: 114, diastolic: 72, heartRate: 78 }
+  return { systolic: 120, diastolic: 76, heartRate: 76 }
+}
+
 // 正常基线：填充展示/推理关心的化验为正常值，其余留空（视图显示「—」，推理回退中位数）。
 const buildBaseline = (basics: SeedBasics): PatientRecordPayload => {
   const labs = createInitialLaboratoryScreening()
+  const body = estimateBody(basics)
+  const vitals = estimateVitals(basics.age)
   Object.assign(labs.clinicalBiochemistry.liverFunction, {
     tbil: '12', dbil: '4', ibil: '8', alt: '25', ast: '24', astAltRatio: '1.0',
     tp: '72', alb: '45', glob: '27', albGlobRatio: '1.6', glu: '5.0',
@@ -64,11 +93,11 @@ const buildBaseline = (basics: SeedBasics): PatientRecordPayload => {
       familyHistory: '无特殊'
     },
     physicalExam: {
-      heightCm: basics.gender === '男' ? 172 : 160,
-      weightKg: basics.gender === '男' ? 70 : 56,
-      bmi: basics.gender === '男' ? 23.7 : 21.9,
-      bloodPressureSystolic: 122, bloodPressureDiastolic: 78,
-      respiratoryRate: 18, heartRate: 76,
+      heightCm: body.heightCm,
+      weightKg: body.weightKg,
+      bmi: calculateBmi(body.heightCm, body.weightKg),
+      bloodPressureSystolic: vitals.systolic, bloodPressureDiastolic: vitals.diastolic,
+      respiratoryRate: 18, heartRate: vitals.heartRate,
       liverFibrosis: 'NO', cirrhosis: 'NO', fattyLiver: 'NO',
       liverFailure: 'NO', cholestasis: 'NO', viralHepatitis: 'NO'
     },
@@ -92,120 +121,120 @@ const withOverrides = (
 
 export const SEED_PATIENT_RECORDS: PatientRecordPayload[] = [
   withOverrides(
-    { patientNo: 'P001', name: '林建国', gender: '男', age: 58, visitDate: '2026-05-02', chiefComplaint: '皮肤色素沉着伴乏力、关节疼痛半年', presentIllness: '近半年皮肤渐进性色素沉着，乏力、多关节隐痛，否认输血史。' },
+    { patientNo: 'P001', name: '方亦辰', gender: '男', age: 14, visitDate: '2026-05-02', occupation: '学生', chiefComplaint: '手抖、学习注意力下降伴肝功能异常2月', presentIllness: '近2月出现细小震颤和注意力下降，体检发现转氨酶升高，裂隙灯提示可疑 K-F 环。' },
     (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '30', alt: '110', ast: '92', ggt: '88', alb: '42' })
-      p.history.diseaseHistory.drinkingHistory = 'YES'
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '34', dbil: '12', ibil: '22', alt: '126', ast: '98', ggt: '48', alb: '40' })
+      p.laboratoryScreening.clinicalBiochemistry.metabolism.cer = '55'
+      p.physicalExam.cholestasis = 'YES'
+      p.imagingReports = [{ modality: 'MRI', reportText: '脑 MRI 基底节区 T2 信号轻度异常，需结合铜代谢评估。', sourceType: 'MANUAL', fileId: null }]
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'ATP7B 复合杂合变异', conclusion: '支持肝豆状核变性诊断', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ATP7B', hgvsC: 'c.2333G>T' }, { gene: 'ATP7B', hgvsC: 'c.2975C>T' }] }
+      p.clinicalDecision = { diagnosis: '肝豆状核变性 (Wilson病)', treatmentPlan: '启动驱铜治疗评估，低铜饮食，建议一级亲属 ATP7B 筛查。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P002', name: '梁知夏', gender: '女', age: 8, visitDate: '2026-05-03', occupation: '学生', chiefComplaint: '反复黄疸、厌油伴低血糖发作半年', presentIllness: '半年来反复巩膜黄染和厌油，晨起偶有低血糖样出汗乏力，家属诉高蛋白饮食后症状加重。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '42', dbil: '20', ibil: '22', alt: '92', ast: '75', glu: '3.2', tg: '2.8', nh3: '92' })
+      p.physicalExam.cholestasis = 'YES'
+      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'SLC25A13 复合杂合变异', conclusion: '支持 Citrin 缺乏症', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'SLC25A13', hgvsC: 'c.852_855del' }, { gene: 'SLC25A13', hgvsC: 'c.1638_1660dup' }] }
+      p.clinicalDecision = { diagnosis: 'Citrin缺乏症', treatmentPlan: '少量多餐，限制高碳水负荷，补充中链脂肪与脂溶性维生素，遗传咨询。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P003', name: '何星澜', gender: '男', age: 6, visitDate: '2026-05-04', occupation: '学龄前', chiefComplaint: '皮肤瘙痒、黄疸伴生长迟缓1年', presentIllness: '1年来反复胆汁淤积性黄疸和皮肤瘙痒，近期出现生长曲线下降，GGT 不高。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '96', dbil: '68', ibil: '28', alt: '180', ast: '150', ggt: '28', alp: '420', tba: '180', alb: '36' })
+      Object.assign(p.physicalExam, { cholestasis: 'YES', liverFibrosis: 'YES' })
+      p.imagingReports = [{ modality: 'ULTRASOUND', reportText: '肝实质回声增粗，胆道未见明确扩张。', sourceType: 'MANUAL', fileId: null }]
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'ABCB11 双等位变异', conclusion: '支持 PFIC2', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ABCB11', hgvsC: 'c.890A>G' }, { gene: 'ABCB11', hgvsP: 'p.Gly982Arg' }] }
+      p.clinicalDecision = { diagnosis: 'PFIC2/ABCB11', treatmentPlan: '胆汁淤积专病随访，补充脂溶性维生素，评估 IBAT 抑制剂或肝移植指征。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P004', name: '苏念青', gender: '女', age: 11, visitDate: '2026-05-05', occupation: '学生', chiefComplaint: '反复黄疸、皮肤瘙痒伴 GGT 升高8月', presentIllness: '8月来胆汁淤积反复，瘙痒明显，外院提示 GGT 与胆汁酸持续升高。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '72', dbil: '48', ibil: '24', alt: '132', ast: '104', ggt: '210', alp: '460', tba: '130' })
+      Object.assign(p.physicalExam, { cholestasis: 'YES', liverFibrosis: 'YES' })
+      p.pathology = { performed: true, reportText: '胆管损伤伴门管区纤维化，符合慢性胆汁淤积性改变。', nasScore: 4, fileId: null, sourceType: 'MANUAL' }
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'ABCB4 致病变异', conclusion: '支持 PFIC3', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ABCB4', hgvsC: 'c.959C>T' }] }
+      p.clinicalDecision = { diagnosis: 'PFIC3/ABCB4', treatmentPlan: '熊去氧胆酸试用，脂溶性维生素补充，动态评估纤维化进展。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P005', name: '江屿川', gender: '男', age: 17, visitDate: '2026-05-06', occupation: '学生', chiefComplaint: '运动后间断巩膜黄染2年', presentIllness: '考试熬夜或运动后出现轻度巩膜黄染，肝酶基本正常，溶血指标阴性。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '36', ibil: '31', dbil: '5', alt: '28', ast: '25' })
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'UGT1A1 启动子多态性', conclusion: '支持 Gilbert 综合征', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'UGT1A1', hgvsC: 'c.-41_-40dup' }] }
+      p.clinicalDecision = { diagnosis: 'Gilbert综合征', treatmentPlan: '良性病程，规律作息、避免饥饿与过劳，必要时复查胆红素分型。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P006', name: '许安琪', gender: '女', age: 19, visitDate: '2026-05-07', occupation: '学生', chiefComplaint: '直接胆红素升高伴尿色加深1年', presentIllness: '1年来间断尿色加深，体检多次提示直接胆红素升高，肝酶与凝血基本正常。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '58', dbil: '42', ibil: '16', alt: '32', ast: '29', ggt: '34', alp: '92' })
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'ABCC2 双等位变异', conclusion: '支持 Dubin-Johnson 综合征', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ABCC2', hgvsC: 'c.2302C>T' }] }
+      p.clinicalDecision = { diagnosis: 'Dubin-Johnson综合征', treatmentPlan: '多为良性经过，避免不必要抗感染治疗，随访胆红素分型与肝功。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P007', name: '林沐阳', gender: '男', age: 9, visitDate: '2026-05-08', occupation: '学生', chiefComplaint: '黄疸、瘙痒伴心脏杂音随访', presentIllness: '幼年起有胆汁淤积和皮肤瘙痒，伴外周肺动脉狭窄病史，近期胆红素升高。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '84', dbil: '62', ibil: '22', alt: '96', ast: '82', ggt: '260', alp: '520', tba: '150' })
+      Object.assign(p.physicalExam, { cholestasis: 'YES', liverFibrosis: 'YES' })
+      p.imagingReports = [{ modality: 'ULTRASOUND', reportText: '肝内胆管稀少可能，建议结合病理与遗传结果。', sourceType: 'MANUAL', fileId: null }]
+      p.pathology = { performed: true, reportText: '门管区胆管减少，符合胆管稀少综合征谱系。', nasScore: 3, fileId: null, sourceType: 'MANUAL' }
+      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'JAG1 致病变异', conclusion: '支持 Alagille 综合征', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'JAG1', hgvsC: 'c.703C>T' }] }
+      p.clinicalDecision = { diagnosis: 'Alagille综合征', treatmentPlan: '胆汁淤积和瘙痒分层管理，补充脂溶性维生素，心肝联合随访。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P008', name: '程小禾', gender: '女', age: 5, visitDate: '2026-05-09', occupation: '学龄前', chiefComplaint: '体检发现总胆汁酸显著升高', presentIllness: '幼儿园体检发现总胆汁酸持续升高，无明显黄疸和瘙痒，肝酶基本正常。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '18', dbil: '6', ibil: '12', alt: '26', ast: '28', ggt: '24', tba: '185' })
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'SLC10A1 变异', conclusion: '支持 NTCP 缺乏症', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'SLC10A1', hgvsC: 'c.800C>T' }] }
+      p.clinicalDecision = { diagnosis: 'NTCP缺乏症/SLC10A1', treatmentPlan: '以随访为主，避免过度治疗，动态观察胆汁酸、胆红素和生长发育。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P009', name: '唐景曜', gender: '男', age: 16, visitDate: '2026-05-10', occupation: '学生', chiefComplaint: '肝脾大、血脂异常伴转氨酶升高半年', presentIllness: '半年内多次体检提示 LDL-C 与甘油三酯升高，超声提示肝脾大，否认肥胖和饮酒。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '88', ast: '72', ggt: '75', tg: '3.4', chol: '7.2', ldlC: '5.0' })
       p.history.diseaseHistory.hyperlipidemiaHistory = 'YES'
+      Object.assign(p.physicalExam, { liverFibrosis: 'YES', fattyLiver: 'YES' })
+      p.imagingReports = [{ modality: 'ULTRASOUND', reportText: '肝脾轻度增大，肝实质回声增强，未见胆道扩张。', sourceType: 'MANUAL', fileId: null }]
+      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'LIPA 致病变异', conclusion: '支持溶酶体酸性脂肪酶缺乏症', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'LIPA', hgvsC: 'c.894G>A' }] }
+      p.clinicalDecision = { diagnosis: '溶酶体酸性脂肪酶缺乏症/LIPA', treatmentPlan: '低胆固醇饮食，评估酶替代治疗适应证，监测肝纤维化与血脂。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P010', name: '韩可一', gender: '女', age: 7, visitDate: '2026-05-11', occupation: '学生', chiefComplaint: '晨起低血糖、腹胀伴肝大1年', presentIllness: '1年来晨起易出汗乏力，进食后缓解，伴腹胀和生长迟缓，外院提示甘油三酯与尿酸升高。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '66', ast: '58', glu: '2.9', tg: '4.8', chol: '5.9' })
+      p.laboratoryScreening.clinicalBiochemistry.renalFunction.uric = '520'
+      Object.assign(p.physicalExam, { liverFibrosis: 'YES', heightCm: 113, weightKg: 20, bmi: 15.7 })
+      p.imagingReports = [{ modality: 'ULTRASOUND', reportText: '肝脏弥漫性增大，未见胆道梗阻征象。', sourceType: 'MANUAL', fileId: null }]
+      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'G6PC 双等位变异', conclusion: '支持糖原累积病 I 型', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'G6PC', hgvsC: 'c.648G>T' }] }
+      p.clinicalDecision = { diagnosis: '糖原累积病I型/G6PC', treatmentPlan: '夜间生玉米淀粉方案评估，避免长时间空腹，管理高尿酸和高甘油三酯。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P011', name: '沈予安', gender: '男', age: 23, visitDate: '2026-05-12', occupation: '研究生', chiefComplaint: '反复咳喘伴不明原因肝酶升高1年', presentIllness: '近1年反复咳喘，肺功能提示早期阻塞性改变，同时多次出现 ALT/AST 升高。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '78', ast: '64', ggt: '62', tbil: '20' })
+      p.laboratoryScreening.clinicalBiochemistry.metabolism.aat = '430'
+      p.imagingReports = [{ modality: 'CT', reportText: '双肺下叶轻度肺气肿样改变。', sourceType: 'MANUAL', fileId: null }]
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'SERPINA1 Pi*ZZ', conclusion: '支持 α1-抗胰蛋白酶缺乏症', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'SERPINA1', hgvsP: 'p.Glu342Lys' }] }
+      p.clinicalDecision = { diagnosis: 'α1-抗胰蛋白酶缺乏症', treatmentPlan: '戒烟避烟，高蛋白低脂饮食，肝肺联合随访。' }
+    }
+  ),
+  withOverrides(
+    { patientNo: 'P012', name: '叶清源', gender: '男', age: 29, visitDate: '2026-05-13', occupation: '设计师', chiefComplaint: '乏力、皮肤色素加深伴肝酶升高半年', presentIllness: '半年内出现乏力和皮肤色素加深，外院提示铁蛋白和转铁蛋白饱和度升高，无输血史。' },
+    (p) => {
+      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '28', alt: '105', ast: '88', ggt: '90', glu: '6.4' })
       p.physicalExam.liverFibrosis = 'YES'
-      p.imagingReports = [{ modality: 'MRI', reportText: '肝脏 T2* 信号减低，提示铁过载。', sourceType: 'MANUAL', fileId: null }]
-      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'HFE 基因 C282Y / H63D 变异', conclusion: '支持遗传性血色病', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'HFE', hgvsC: 'c.845G>A' }, { gene: 'HFE', hgvsC: 'c.187C>G' }] }
-      p.clinicalDecision = { diagnosis: '遗传性血色病', treatmentPlan: '限制高铁饮食，评估后行静脉放血治疗，HFE 家系筛查。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P002', name: '陈婉婷', gender: '女', age: 32, visitDate: '2026-05-03', chiefComplaint: '体检发现转氨酶轻度升高1周', presentIllness: '体检发现 ALT 轻度升高，无明显不适，否认饮酒。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '55', ast: '48' })
-      p.laboratoryScreening.clinicalBiochemistry.metabolism.cer = '180'
-      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'ATP7B 杂合携带', conclusion: '携带者，暂不支持临床诊断', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ATP7B', hgvsC: 'c.2333G>T' }] }
-      p.clinicalDecision = { diagnosis: '肝豆状核变性 (Wilson病)', treatmentPlan: '低铜饮食宣教，3-6 月复查铜代谢与肝功。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P003', name: '张明远', gender: '男', age: 45, visitDate: '2026-05-04', occupation: '教师', chiefComplaint: '反复咳喘伴肝功能异常1年', presentIllness: '反复咳嗽气促1年，肺功能提示早期肺气肿，伴肝酶升高。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '78', ast: '64', ggt: '70' })
-      p.laboratoryScreening.clinicalBiochemistry.metabolism.aat = '420'
-      p.history.diseaseHistory.smokingHistory = 'YES'
-      p.imagingReports = [{ modality: 'CT', reportText: '双肺下叶肺气肿样改变。', sourceType: 'MANUAL', fileId: null }]
-      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'SERPINA1 Pi*ZZ', conclusion: '支持 α1-抗胰蛋白酶缺乏症', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'SERPINA1', hgvsP: 'p.Glu342Lys' }] }
-      p.clinicalDecision = { diagnosis: 'α1-抗胰蛋白酶缺乏症', treatmentPlan: '戒烟，高蛋白低脂饮食，肝肺联合随访。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P004', name: '王淑芬', gender: '女', age: 62, visitDate: '2026-05-05', chiefComplaint: '体检发现脂肪肝伴血糖升高2年', presentIllness: '超声示中重度脂肪肝，空腹血糖升高，体型肥胖。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '96', ast: '70', ggt: '85', tg: '3.2', chol: '6.4', glu: '8.1', ldlC: '3.6' })
-      Object.assign(p.history.diseaseHistory, { diabetesHistory: 'YES', hypertensionHistory: 'YES', hyperlipidemiaHistory: 'YES' })
-      p.physicalExam.fattyLiver = 'YES'
-      Object.assign(p.physicalExam, { weightKg: 76, bmi: 29.7 })
-      p.pathology = { performed: true, reportText: '肝细胞脂肪变性伴小叶炎症，NAS 评分中等。', nasScore: 5, fileId: null, sourceType: 'MANUAL' }
-      p.clinicalDecision = { diagnosis: '代谢相关脂肪性肝病', treatmentPlan: '控制热量与精制碳水，减重与运动，管理血糖血脂。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P005', name: '李浩宇', gender: '男', age: 28, visitDate: '2026-05-06', occupation: '工程师', chiefComplaint: '间断巩膜黄染、疲劳时明显2年', presentIllness: '劳累或饥饿后间断巩膜黄染，肝酶正常，溶血指标阴性。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '32', ibil: '27', dbil: '5' })
-      p.clinicalDecision = { diagnosis: 'Gilbert综合征', treatmentPlan: '良性病程，规律作息、避免饥饿与过劳，定期随访。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P006', name: '赵雪梅', gender: '女', age: 51, visitDate: '2026-05-07', chiefComplaint: '乏力伴肝功能异常3月', presentIllness: '近3月乏力，肝酶轻中度升高，无黄疸。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '72', ast: '60', ggt: '65', tbil: '22' })
-      p.history.diseaseHistory.hyperlipidemiaHistory = 'YES'
-      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'HFE H63D 杂合', conclusion: '提示血色病易感', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'HFE', hgvsC: 'c.187C>G' }] }
-      p.clinicalDecision = { diagnosis: '遗传性血色病', treatmentPlan: '限铁饮食，监测铁蛋白与转铁蛋白饱和度。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P007', name: '刘振华', gender: '男', age: 66, visitDate: '2026-05-06', chiefComplaint: '乏力、双手震颤伴言语含糊3月', presentIllness: '渐进性乏力，双上肢静止性震颤伴构音障碍，否认肝炎史。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { tbil: '38', dbil: '14', ibil: '24', alt: '168', ast: '142', ggt: '95', alb: '38' })
-      p.laboratoryScreening.clinicalBiochemistry.metabolism.cer = '42'
-      Object.assign(p.physicalExam, { liverFibrosis: 'YES', cirrhosis: 'YES' })
-      p.imagingReports = [{ modality: 'ULTRASOUND', reportText: '肝实质回声增粗，符合肝硬化改变。', sourceType: 'MANUAL', fileId: null }]
-      p.pathology = { performed: true, reportText: '肝细胞铜染色阳性，活动性炎症。', nasScore: 4, fileId: null, sourceType: 'MANUAL' }
-      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'ATP7B 复合杂合突变', conclusion: '支持肝豆状核变性诊断', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ATP7B', hgvsC: 'c.2333G>T' }, { gene: 'ATP7B', hgvsC: 'c.2975C>T' }] }
-      p.clinicalDecision = { diagnosis: '肝豆状核变性 (Wilson病)', treatmentPlan: '青霉胺驱铜，严格低铜饮食，一级亲属 ATP7B 筛查。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P008', name: '周小雅', gender: '女', age: 24, visitDate: '2026-05-08', occupation: '学生', chiefComplaint: '家族筛查发现铜代谢异常', presentIllness: '兄长确诊 Wilson 病，本人筛查发现铜蓝蛋白偏低，无症状。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '40', ast: '36' })
-      p.laboratoryScreening.clinicalBiochemistry.metabolism.cer = '170'
-      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'ATP7B 杂合', conclusion: '携带者，需随访', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ATP7B', hgvsC: 'c.2975C>T' }] }
-      p.clinicalDecision = { diagnosis: '肝豆状核变性 (Wilson病)', treatmentPlan: '低铜饮食宣教，定期复查铜代谢。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P009', name: '吴建强', gender: '男', age: 53, visitDate: '2026-05-09', chiefComplaint: '乏力、皮肤变黑伴血糖升高1年', presentIllness: '乏力伴皮肤色素沉着，空腹血糖升高，肝酶明显升高。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '135', ast: '105', ggt: '110', tbil: '34', glu: '7.2' })
-      Object.assign(p.history.diseaseHistory, { drinkingHistory: 'YES', diabetesHistory: 'YES' })
-      Object.assign(p.physicalExam, { liverFibrosis: 'YES', cirrhosis: 'YES' })
-      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'HFE C282Y 纯合', conclusion: '支持遗传性血色病', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'HFE', hgvsC: 'c.845G>A' }] }
-      p.clinicalDecision = { diagnosis: '遗传性血色病', treatmentPlan: '静脉放血治疗，限铁饮食，管理糖代谢。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P010', name: '郑丽丽', gender: '女', age: 38, visitDate: '2026-05-04', chiefComplaint: '肢体震颤伴肝功能异常半年', presentIllness: '半年来肢体震颤，肝酶升高，铜蓝蛋白偏低。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '88', ast: '72', tbil: '26' })
-      p.laboratoryScreening.clinicalBiochemistry.metabolism.cer = '95'
-      p.geneticSequencing = { tested: true, method: 'WES', reportSource: '院内', summary: 'ATP7B 杂合突变', conclusion: '结合临床支持 Wilson 病', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'ATP7B', hgvsC: 'c.2333G>T' }] }
-      p.clinicalDecision = { diagnosis: '肝豆状核变性 (Wilson病)', treatmentPlan: '驱铜治疗，低铜饮食，神经科随访。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P011', name: '孙立军', gender: '男', age: 41, visitDate: '2026-05-10', chiefComplaint: '体检发现肝酶轻度升高', presentIllness: '体检发现 ALT/AST 轻度升高，无症状，少量饮酒。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '52', ast: '44', ggt: '48', tbil: '18' })
-      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'HFE H63D 杂合', conclusion: '易感携带', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'HFE', hgvsC: 'c.187C>G' }] }
-      p.clinicalDecision = { diagnosis: '遗传性血色病', treatmentPlan: '监测铁代谢，限铁饮食宣教。' }
-    }
-  ),
-  withOverrides(
-    { patientNo: 'P012', name: '马桂英', gender: '女', age: 71, visitDate: '2026-05-11', chiefComplaint: '肥胖、血糖血脂升高伴肝功能异常3年', presentIllness: '长期肥胖伴糖尿病、高脂血症，超声示重度脂肪肝。' },
-    (p) => {
-      Object.assign(p.laboratoryScreening.clinicalBiochemistry.liverFunction, { alt: '102', ast: '82', ggt: '95', tg: '3.6', chol: '6.8', glu: '9.2', ldlC: '4.0' })
-      Object.assign(p.history.diseaseHistory, { diabetesHistory: 'YES', hypertensionHistory: 'YES', hyperlipidemiaHistory: 'YES', hyperuricemiaHistory: 'YES' })
-      Object.assign(p.physicalExam, { fattyLiver: 'YES', cirrhosis: 'YES', weightKg: 78, bmi: 30.5 })
-      p.pathology = { performed: true, reportText: '脂肪性肝炎伴桥接纤维化，NAS 评分高。', nasScore: 6, fileId: null, sourceType: 'MANUAL' }
-      p.clinicalDecision = { diagnosis: '代谢相关脂肪性肝病', treatmentPlan: '强化生活方式干预，控糖控脂，评估肝纤维化进展。' }
+      p.imagingReports = [{ modality: 'MRI', reportText: '肝脏 T2* 信号减低，符合肝铁沉积表现。', sourceType: 'MANUAL', fileId: null }]
+      p.geneticSequencing = { tested: true, method: 'PANEL', reportSource: '院内', summary: 'HJV 变异，提示青年型铁过载', conclusion: '支持青年型遗传性血色病', fileId: null, sourceType: 'HIS_LIS', variants: [{ gene: 'HJV', hgvsC: 'c.320T>G' }] }
+      p.clinicalDecision = { diagnosis: '青年型遗传性血色病', treatmentPlan: '完善铁代谢定量，评估静脉放血或铁螯合治疗，并开展家系筛查。' }
     }
   )
 ]

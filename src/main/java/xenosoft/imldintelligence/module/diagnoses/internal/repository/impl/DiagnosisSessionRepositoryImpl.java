@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import xenosoft.imldintelligence.module.diagnoses.internal.model.DiagnosisSession;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisSessionRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.mybatis.DiagnosisSessionMapper;
+import xenosoft.imldintelligence.module.diagnoses.internal.repository.query.DiagnosisSessionQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +60,40 @@ public class DiagnosisSessionRepositoryImpl implements DiagnosisSessionRepositor
                 .eq(DiagnosisSession::getTenantId, tenantId)
                 .eq(DiagnosisSession::getEncounterId, encounterId)
                 .orderByDesc(DiagnosisSession::getId));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<DiagnosisSession> query(DiagnosisSessionQuery query, long offset, int limit) {
+        return diagnosisSessionMapper.selectList(buildQueryWrapper(query)
+                // started_at 缺失时回退 created_at，与 listSessions 的 sortTime 语义一致
+                .last("ORDER BY COALESCE(started_at, created_at) DESC, id DESC"
+                        + " LIMIT " + Math.max(1, limit)
+                        + " OFFSET " + Math.max(0, offset)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long count(DiagnosisSessionQuery query) {
+        return diagnosisSessionMapper.selectCount(buildQueryWrapper(query));
+    }
+
+    private LambdaQueryWrapper<DiagnosisSession> buildQueryWrapper(DiagnosisSessionQuery query) {
+        return new LambdaQueryWrapper<DiagnosisSession>()
+                .eq(DiagnosisSession::getTenantId, query.getTenantId())
+                .eq(query.getPatientId() != null, DiagnosisSession::getPatientId, query.getPatientId())
+                .eq(query.getEncounterId() != null, DiagnosisSession::getEncounterId, query.getEncounterId())
+                .eq(query.getDoctorId() != null, DiagnosisSession::getDoctorId, query.getDoctorId())
+                .eq(query.getStatus() != null && !query.getStatus().isEmpty(),
+                        DiagnosisSession::getStatus, query.getStatus())
+                .eq(query.getTriggeredBy() != null && !query.getTriggeredBy().isEmpty(),
+                        DiagnosisSession::getTriggeredBy, query.getTriggeredBy())
+                .ge(query.getStartedFrom() != null, DiagnosisSession::getStartedAt, query.getStartedFrom())
+                .le(query.getStartedTo() != null, DiagnosisSession::getStartedAt, query.getStartedTo());
     }
 
     /**
