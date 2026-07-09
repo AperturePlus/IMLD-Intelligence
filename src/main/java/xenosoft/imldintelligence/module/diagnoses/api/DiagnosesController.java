@@ -48,9 +48,11 @@ import xenosoft.imldintelligence.module.diagnoses.internal.service.ImldInference
 import xenosoft.imldintelligence.module.identity.internal.model.Encounter;
 import xenosoft.imldintelligence.module.identity.internal.model.Patient;
 import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
+import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.repository.EncounterRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.PatientRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
+import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
 
 @RestController
 @RequiredArgsConstructor
@@ -72,6 +74,7 @@ public class DiagnosesController implements DiagnosesControllerContract {
     private final DiagnosesCommandService diagnosesCommandService;
     private final ImldInferenceService inferenceService;
     private final ObjectMapper objectMapper;
+    private final CurrentUserSubjectProvider currentUserSubjectProvider;
 
     @Override
     public ApiResponse<PagedResultResponse<DiagnosesApiDtos.Response.DiagnosisSessionResponse>> listSessions(
@@ -230,10 +233,12 @@ public class DiagnosesController implements DiagnosesControllerContract {
                 userAccountRepository.findById(tenantId, encounter.getAttendingDoctorId()).isPresent()) {
             return encounter.getAttendingDoctorId();
         }
-        return userAccountRepository.listByTenantId(tenantId).stream()
-                .filter(u -> "ACTIVE".equalsIgnoreCase(u.getStatus()))
-                .findFirst().map(UserAccount::getId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No active doctor in tenant"));
+        // Attribute to the authenticated doctor rather than an arbitrary tenant user,
+        // so audit/responsibility ownership reflects who actually started the session.
+        return currentUserSubjectProvider.getCurrentSubject()
+                .map(UserSubject::userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "No authenticated doctor to attribute session to"));
     }
 
     private ImldInferenceApiDtos.Request.ImldPredictRequest buildInferenceRequest(

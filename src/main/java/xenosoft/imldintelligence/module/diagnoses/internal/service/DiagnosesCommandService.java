@@ -21,7 +21,9 @@ import xenosoft.imldintelligence.module.diagnoses.internal.repository.DiagnosisS
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.DoctorFeedbackRepository;
 import xenosoft.imldintelligence.module.diagnoses.internal.repository.ModelRegistryRepository;
 import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
+import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
+import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -47,6 +49,7 @@ public class DiagnosesCommandService {
     private final ModelRegistryRepository modelRegistryRepository;
     private final UserAccountRepository userAccountRepository;
     private final ObjectMapper objectMapper;
+    private final CurrentUserSubjectProvider currentUserSubjectProvider;
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ModelRegistry resolveModel(Long tenantId, Long modelRegistryId) {
@@ -186,10 +189,12 @@ public class DiagnosesCommandService {
             return userAccountRepository.findById(tenantId, doctorId).map(UserAccount::getId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "doctorId does not exist"));
         }
-        return userAccountRepository.listByTenantId(tenantId).stream()
-                .filter(u -> "ACTIVE".equalsIgnoreCase(u.getStatus()))
-                .findFirst().map(UserAccount::getId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No active doctor in tenant"));
+        // Attribute to the authenticated doctor rather than an arbitrary tenant user,
+        // so audit/responsibility ownership reflects who actually performed the action.
+        return currentUserSubjectProvider.getCurrentSubject()
+                .map(UserSubject::userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "No authenticated doctor to attribute feedback to"));
     }
 
     private void savePrediction(Long tenantId, DiagnosisSession session, ImldInferenceApiDtos.Response.PredictData p) {

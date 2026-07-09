@@ -38,10 +38,10 @@ import xenosoft.imldintelligence.module.clinical.internal.repository.LabResultRe
 import xenosoft.imldintelligence.module.identity.api.dto.IdentityApiDtos;
 import xenosoft.imldintelligence.module.identity.internal.model.Encounter;
 import xenosoft.imldintelligence.module.identity.internal.model.Patient;
-import xenosoft.imldintelligence.module.identity.internal.model.UserAccount;
+import xenosoft.imldintelligence.module.identity.internal.model.UserSubject;
 import xenosoft.imldintelligence.module.identity.internal.repository.EncounterRepository;
 import xenosoft.imldintelligence.module.identity.internal.repository.PatientRepository;
-import xenosoft.imldintelligence.module.identity.internal.repository.UserAccountRepository;
+import xenosoft.imldintelligence.module.identity.internal.security.CurrentUserSubjectProvider;
 import xenosoft.imldintelligence.module.identity.internal.service.PatientService;
 
 @RestController
@@ -57,7 +57,6 @@ public class PatientRecordController implements PatientRecordControllerContract 
     private final PatientService patientService;
     private final PatientRepository patientRepository;
     private final EncounterRepository encounterRepository;
-    private final UserAccountRepository userAccountRepository;
     private final IndicatorDictRepository indicatorDictRepository;
     private final LabResultRepository labResultRepository;
     private final ImagingReportRepository imagingReportRepository;
@@ -65,6 +64,7 @@ public class PatientRecordController implements PatientRecordControllerContract 
     private final GeneticVariantRepository geneticVariantRepository;
     private final ClinicalHistoryEntryRepository clinicalHistoryEntryRepository;
     private final ObjectMapper objectMapper;
+    private final CurrentUserSubjectProvider currentUserSubjectProvider;
 
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -409,11 +409,12 @@ public class PatientRecordController implements PatientRecordControllerContract 
     }
 
     private Long resolveDoctorId(Long tenantId) {
-        return userAccountRepository.listByTenantId(tenantId).stream()
-                .filter(user -> "ACTIVE".equalsIgnoreCase(user.getStatus()))
-                .findFirst()
-                .map(UserAccount::getId)
-                .orElse(null);
+        // Attribute the record to the authenticated doctor rather than an arbitrary
+        // tenant user, so recordedBy/attendingDoctorId reflect who actually authored it.
+        return currentUserSubjectProvider.getCurrentSubject()
+                .map(UserSubject::userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        BAD_REQUEST, "Authenticated doctor is required to author a patient record"));
     }
 
     private String normalizeEncounterType(String encounterType) {
